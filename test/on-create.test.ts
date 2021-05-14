@@ -12,12 +12,12 @@ describe('makeOnCreateTrigger', () => {
     const articleAction = onCreateTrigger?.['article'];
     const bookmarkAction = onCreateTrigger?.['bookmark'];
 
-    it('only create action for article and bookmark', async () => {
+    it('only create action for article and bookmark', () => {
       const actionColNames = Object.keys(onCreateTrigger ?? {});
       expect(actionColNames).toStrictEqual(['article', 'bookmark']);
     });
 
-    it('init count field to 0', async () => {
+    it('set bookmarkCount to 0', async () => {
       const articleActionGetDoc: GetDoc = jest.fn();
 
       const articleActionResult = await articleAction?.({
@@ -36,7 +36,7 @@ describe('makeOnCreateTrigger', () => {
       });
     });
 
-    it('increase count field when a document added on counted collection', async () => {
+    it('increase bookmarkCount if new bookmark added', async () => {
       const bookmarkActionGetDoc: GetDoc = jest.fn();
 
       const bookmarkActionResult = await bookmarkAction?.({
@@ -82,13 +82,19 @@ describe('makeOnCreateTrigger', () => {
   });
 
   describe('creationTime field', () => {
-    it('returns creationTime field', async () => {
-      const onCreateTrigger = makeOnCreateTrigger({
-        colName: 'article',
-        fieldName: 'creationTime',
-        userColName: 'user',
-        field: { type: 'creationTime' },
-      });
+    const onCreateTrigger = makeOnCreateTrigger({
+      colName: 'article',
+      fieldName: 'creationTime',
+      userColName: 'user',
+      field: { type: 'creationTime' },
+    });
+
+    it('only create action for article and bookmark', () => {
+      const actionColNames = Object.keys(onCreateTrigger ?? {});
+      expect(actionColNames).toStrictEqual(['article']);
+    });
+
+    it('create creationTime field', async () => {
       const articleAction = onCreateTrigger?.['article'];
       const articleActionGetDoc: GetDoc = jest.fn();
 
@@ -112,7 +118,7 @@ describe('makeOnCreateTrigger', () => {
   });
 
   describe('image field', () => {
-    it('does not return action', async () => {
+    it('does not return action', () => {
       const onCreateTrigger = makeOnCreateTrigger({
         colName: 'article',
         fieldName: 'creationTime',
