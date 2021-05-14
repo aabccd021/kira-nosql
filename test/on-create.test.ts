@@ -14,9 +14,10 @@ describe('makeOnCreateTrigger', () => {
 
     it('init count field to 0', async () => {
       const postTriggerGetDoc: GetDoc = jest.fn();
+
       const postTriggerResult = await postTrigger?.({
-        snapshot: { id: 'post-0', data: {} },
         getDoc: postTriggerGetDoc,
+        snapshot: { id: 'post-0', data: {} },
       });
 
       expect(postTriggerGetDoc).not.toHaveBeenCalled();
@@ -34,7 +35,9 @@ describe('makeOnCreateTrigger', () => {
 
     it('increase count field when a document added on counted collection', async () => {
       const bookmarkTriggerGetDoc: GetDoc = jest.fn();
+
       const bookmarkTriggerResult = await bookmarkTrigger?.({
+        getDoc: bookmarkTriggerGetDoc,
         snapshot: {
           id: 'bookmark-0',
           data: {
@@ -43,7 +46,6 @@ describe('makeOnCreateTrigger', () => {
             },
           },
         },
-        getDoc: bookmarkTriggerGetDoc,
       });
 
       expect(bookmarkTriggerGetDoc).not.toHaveBeenCalled();
@@ -61,20 +63,54 @@ describe('makeOnCreateTrigger', () => {
 
     it('returns error if id is not string', async () => {
       const bookmarkTriggerGetDoc: GetDoc = jest.fn();
+
       const bookmarkTriggerResult = await bookmarkTrigger?.({
+        getDoc: bookmarkTriggerGetDoc,
         snapshot: {
           id: 'bookmark-0',
           data: {
             bookmarkedPost: 0,
           },
         },
-        getDoc: bookmarkTriggerGetDoc,
       });
 
       expect(bookmarkTriggerGetDoc).not.toHaveBeenCalled();
       expect(bookmarkTriggerResult).toStrictEqual({
         tag: 'left',
         error: { errorType: 'invalid_data_type' },
+      });
+    });
+  });
+
+  describe('creationTime field', () => {
+    it('returns creationTime field', async () => {
+      const onCreateTrigger = makeOnCreateTrigger({
+        colName: 'post',
+        fieldName: 'creationTime',
+        userColName: 'user',
+        field: { type: 'creationTime' },
+      });
+      const postTrigger = onCreateTrigger?.['post'];
+      const postTriggerGetDoc: GetDoc = jest.fn();
+
+      const postTriggerResult = await postTrigger?.({
+        getDoc: postTriggerGetDoc,
+        snapshot: {
+          id: 'post-0',
+          data: {},
+        },
+      });
+
+      expect(postTriggerGetDoc).not.toHaveBeenCalled();
+      expect(postTriggerResult).toStrictEqual({
+        tag: 'right',
+        value: {
+          post: {
+            'post-0': {
+              creationTime: { __fieldType: 'creationTime' },
+            },
+          },
+        },
       });
     });
   });
