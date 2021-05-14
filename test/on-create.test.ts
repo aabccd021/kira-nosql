@@ -4,28 +4,28 @@ import { GetDoc } from '../src/types';
 describe('makeOnCreateTrigger', () => {
   describe('count field', () => {
     const onCreateTrigger = makeOnCreateTrigger({
-      colName: 'post',
+      colName: 'article',
       fieldName: 'bookmarkCount',
       userColName: 'user',
-      field: { type: 'count', countedCol: 'bookmark', groupByRef: 'bookmarkedPost' },
+      field: { type: 'count', countedCol: 'bookmark', groupByRef: 'bookmarkedarticle' },
     });
-    const postTrigger = onCreateTrigger?.['post'];
+    const articleTrigger = onCreateTrigger?.['article'];
     const bookmarkTrigger = onCreateTrigger?.['bookmark'];
 
     it('init count field to 0', async () => {
-      const postTriggerGetDoc: GetDoc = jest.fn();
+      const articleTriggerGetDoc: GetDoc = jest.fn();
 
-      const postTriggerResult = await postTrigger?.({
-        getDoc: postTriggerGetDoc,
-        snapshot: { id: 'post-0', data: {} },
+      const articleTriggerResult = await articleTrigger?.({
+        getDoc: articleTriggerGetDoc,
+        snapshot: { id: 'article-0', data: {} },
       });
 
-      expect(postTriggerGetDoc).not.toHaveBeenCalled();
-      expect(postTriggerResult).toStrictEqual({
+      expect(articleTriggerGetDoc).not.toHaveBeenCalled();
+      expect(articleTriggerResult).toStrictEqual({
         tag: 'right',
         value: {
-          post: {
-            'post-0': {
+          article: {
+            'article-0': {
               bookmarkCount: 0,
             },
           },
@@ -41,8 +41,8 @@ describe('makeOnCreateTrigger', () => {
         snapshot: {
           id: 'bookmark-0',
           data: {
-            bookmarkedPost: {
-              id: 'post-0',
+            bookmarkedarticle: {
+              id: 'article-0',
             },
           },
         },
@@ -52,8 +52,8 @@ describe('makeOnCreateTrigger', () => {
       expect(bookmarkTriggerResult).toStrictEqual({
         tag: 'right',
         value: {
-          post: {
-            'post-0': {
+          article: {
+            'article-0': {
               bookmarkCount: { __fieldType: 'increment', value: 1 },
             },
           },
@@ -69,7 +69,7 @@ describe('makeOnCreateTrigger', () => {
         snapshot: {
           id: 'bookmark-0',
           data: {
-            bookmarkedPost: 0,
+            bookmarkedarticle: 0,
           },
         },
       });
@@ -85,33 +85,57 @@ describe('makeOnCreateTrigger', () => {
   describe('creationTime field', () => {
     it('returns creationTime field', async () => {
       const onCreateTrigger = makeOnCreateTrigger({
-        colName: 'post',
+        colName: 'article',
         fieldName: 'creationTime',
         userColName: 'user',
         field: { type: 'creationTime' },
       });
-      const postTrigger = onCreateTrigger?.['post'];
-      const postTriggerGetDoc: GetDoc = jest.fn();
+      const articleTrigger = onCreateTrigger?.['article'];
+      const articleTriggerGetDoc: GetDoc = jest.fn();
 
-      const postTriggerResult = await postTrigger?.({
-        getDoc: postTriggerGetDoc,
+      const articleTriggerResult = await articleTrigger?.({
+        getDoc: articleTriggerGetDoc,
         snapshot: {
-          id: 'post-0',
+          id: 'article-0',
           data: {},
         },
       });
 
-      expect(postTriggerGetDoc).not.toHaveBeenCalled();
-      expect(postTriggerResult).toStrictEqual({
+      expect(articleTriggerGetDoc).not.toHaveBeenCalled();
+      expect(articleTriggerResult).toStrictEqual({
         tag: 'right',
         value: {
-          post: {
-            'post-0': {
+          article: {
+            'article-0': {
               creationTime: { __fieldType: 'creationTime' },
             },
           },
         },
       });
+    });
+  });
+
+  describe('image field', () => {
+    it('does not return action', async () => {
+      const onCreateTrigger = makeOnCreateTrigger({
+        colName: 'article',
+        fieldName: 'creationTime',
+        userColName: 'user',
+        field: { type: 'image' },
+      });
+      const articleTrigger = onCreateTrigger?.['article'];
+      const articleTriggerGetDoc: GetDoc = jest.fn();
+
+      const articleTriggerResult = await articleTrigger?.({
+        getDoc: articleTriggerGetDoc,
+        snapshot: {
+          id: 'article-0',
+          data: {},
+        },
+      });
+
+      expect(articleTriggerGetDoc).not.toHaveBeenCalled();
+      expect(articleTriggerResult).toBeUndefined();
     });
   });
 });
