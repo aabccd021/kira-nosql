@@ -2,7 +2,7 @@ import { makeOnCreateTrigger } from '../src/on-create';
 import { GetDoc } from '../src/types';
 
 describe('makeOnCreateTrigger', () => {
-  describe('count field', () => {
+  describe('count field action maker', () => {
     const onCreateTrigger = makeOnCreateTrigger({
       colName: 'article',
       fieldName: 'bookmarkCount',
@@ -17,7 +17,7 @@ describe('makeOnCreateTrigger', () => {
       expect(actionColNames).toStrictEqual(['article', 'bookmark']);
     });
 
-    it('set bookmarkCount to 0', async () => {
+    it('set bookmarkCount to 0 when article created', async () => {
       const articleActionGetDoc: GetDoc = jest.fn();
 
       const articleActionResult = await articleAction?.({
@@ -81,7 +81,7 @@ describe('makeOnCreateTrigger', () => {
     });
   });
 
-  describe('creationTime field', () => {
+  describe('creationTime field action maker', () => {
     const onCreateTrigger = makeOnCreateTrigger({
       colName: 'article',
       fieldName: 'creationTime',
@@ -94,7 +94,7 @@ describe('makeOnCreateTrigger', () => {
       expect(actionColNames).toStrictEqual(['article']);
     });
 
-    it('create creationTime field', async () => {
+    it('create creationTime field when article created', async () => {
       const articleAction = onCreateTrigger?.['article'];
       const articleActionGetDoc: GetDoc = jest.fn();
 
@@ -117,7 +117,7 @@ describe('makeOnCreateTrigger', () => {
     });
   });
 
-  describe('image field', () => {
+  describe('image field action maker', () => {
     it('does not return action', () => {
       const onCreateTrigger = makeOnCreateTrigger({
         colName: 'article',
