@@ -57,7 +57,10 @@ export const makeOnCreateTrigger: MakeTrigger<DocSnapshot> = ({
         const data = document.data;
         const counterDocumentId = (data[groupByRef] as RefField).id;
         if (typeof counterDocumentId !== 'string') {
-          return { tag: 'left', error: { errorType: 'invalid_data_type' } };
+          return {
+            tag: 'left',
+            error: { errorType: 'invalid_data_type' },
+          };
         }
         return {
           tag: 'right',

@@ -58,5 +58,24 @@ describe('makeOnCreateTrigger', () => {
         },
       });
     });
+
+    it('returns error if id is not string', async () => {
+      const bookmarkTriggerGetDoc: GetDoc = jest.fn();
+      const bookmarkTriggerResult = await bookmarkTrigger?.({
+        snapshot: {
+          id: 'bookmark-0',
+          data: {
+            bookmarkedPost: 0,
+          },
+        },
+        getDoc: bookmarkTriggerGetDoc,
+      });
+
+      expect(bookmarkTriggerGetDoc).not.toHaveBeenCalled();
+      expect(bookmarkTriggerResult).toStrictEqual({
+        tag: 'left',
+        error: { errorType: 'invalid_data_type' },
+      });
+    });
   });
 });
