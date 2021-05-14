@@ -9,23 +9,23 @@
   "license": "MIT",
   "scripts": {
     "build": "tsc",
-    "lint": "eslint",
+    "lint": "eslint . --ext ts",
     "test": "jest"
   },
   "devDependencies": {
     "@types/jest": "^26.0.23",
     "@typescript-eslint/eslint-plugin": "^4.18.0",
-    "@typescript-eslint/parser": "^4.18.0",
+    "@typescript-eslint/parser": "^4.23.0",
     "eslint": "^7.26.0",
     "eslint-config-prettier": "^8.1.0",
     "eslint-plugin-filenames": "^1.3.2",
+    "eslint-plugin-functional": "^3.2.1",
     "eslint-plugin-import": "^2.22.1",
     "eslint-plugin-jest": "^24.3.6",
     "eslint-plugin-no-null": "^1.0.2",
     "eslint-plugin-only-warn": "^1.0.2",
     "eslint-plugin-prettier": "^3.3.1",
     "eslint-plugin-simple-import-sort": "^7.0.0",
-    "eslint-plugin-ts-immutable": "^0.3.0",
     "eslint-plugin-unused-imports": "^1.0.1",
     "jest": "^26.6.3",
     "prettier": "^2.2.1",
@@ -41,27 +41,42 @@
     "plugins": [
       "@typescript-eslint",
       "filenames",
+      "functional",
       "import",
       "jest",
       "no-null",
       "only-warn",
       "simple-import-sort",
-      "ts-immutable",
       "unused-imports"
     ],
     "extends": [
       "eslint:recommended",
       "plugin:@typescript-eslint/recommended",
+      "plugin:functional/all",
       "plugin:import/errors",
-      "plugin:import/warnings",
       "plugin:import/typescript",
+      "plugin:import/warnings",
       "plugin:jest/recommended",
       "plugin:jest/style",
       "plugin:prettier/recommended",
-      "plugin:ts-immutable/recommended",
       "prettier"
     ],
+    "ignorePatterns": [
+      "lib/**"
+    ],
+    "overrides": [
+      {
+        "files": [
+          "test/**/*.ts"
+        ],
+        "rules": {
+          "functional/no-expression-statement": "off",
+          "functional/functional-parameters": "off"
+        }
+      }
+    ],
     "rules": {
+      "functional/no-conditional-statement": "off",
       "@typescript-eslint/no-unused-vars": "off",
       "eqeqeq": "warn",
       "import/no-cycle": "warn",
@@ -91,5 +106,8 @@
         3
       ]
     }
+  },
+  "dependencies": {
+    "assert-never": "^1.2.1"
   }
 }
