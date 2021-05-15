@@ -37,7 +37,7 @@ export type ActionContext<T extends TriggerType> = {
   readonly snapshot: SnapshotOfTriggerType<T>;
 };
 
-type SnapshotOfTriggerType<T extends TriggerType> = T extends 'onCreate'
+export type SnapshotOfTriggerType<T extends TriggerType> = T extends 'onCreate'
   ? InDocSnapshot
   : T extends 'onDelete'
   ? InDocSnapshot
