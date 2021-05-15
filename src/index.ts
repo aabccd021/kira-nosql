@@ -12,6 +12,8 @@ import {
 import { SchemaToTriggerActions } from './type';
 import { schemaToTriggerActions } from './util';
 
+export * from 'kira-core';
+
 export const schemaToActions_1: SchemaToTriggerActions<Schema_1> = (schema) => {
   return schemaToTriggerActions({
     schema,
