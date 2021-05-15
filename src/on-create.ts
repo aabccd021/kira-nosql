@@ -8,7 +8,8 @@ import {
   StringField,
 } from 'kira-core';
 
-import { MakeTrigger_1, MakeTrigger_2, RefFieldData, Trigger } from './type';
+import { MakeTrigger_1, MakeTrigger_2, Trigger } from './type';
+import { inToOutField } from './util';
 
 function copyRefField({
   syncFields,
@@ -23,8 +24,8 @@ function copyRefField({
 }): Trigger<'onCreate'> {
   return {
     [colName]: async ({ getDoc, snapshot: doc }) => {
-      const refId = (doc.data?.[fieldName] as RefFieldData)?.id;
-      if (typeof refId !== 'string') {
+      const refField = doc.data?.[fieldName];
+      if (refField?.type !== 'ref') {
         return { tag: 'left', error: { errorType: 'invalid_data_type' } };
       }
       return {
@@ -32,12 +33,17 @@ function copyRefField({
         value: {
           [colName]: {
             [doc.id]: {
-              [fieldName]: await getDoc({ col: refCol, id: refId }).then((refDoc) => {
-                const syncFieldNames = Object.keys(syncFields ?? {});
-                return Object.fromEntries(
-                  Object.entries(refDoc.data).filter(([key]) => syncFieldNames.includes(key))
-                );
-              }),
+              [fieldName]: {
+                type: 'ref',
+                value: await getDoc({ col: refCol, id: refField.value.id }).then((refDoc) => {
+                  const syncFieldNames = Object.keys(syncFields ?? {});
+                  return Object.fromEntries(
+                    Object.entries(refDoc.data ?? {})
+                      .filter(([fieldName]) => syncFieldNames.includes(fieldName))
+                      .map(inToOutField)
+                  );
+                }),
+              },
             },
           },
         },
@@ -56,15 +62,14 @@ export const makeOnCreateCountFieldTrigger: MakeTrigger_2<'onCreate', CountField
     value: {
       [colName]: {
         [doc.id]: {
-          [fieldName]: 0,
+          [fieldName]: { type: 'number', value: 0 },
         },
       },
     },
   }),
   [countedCol]: async ({ snapshot: document }) => {
-    const data = document.data;
-    const counterDocumentId = (data[groupByRef] as RefFieldData).id;
-    if (typeof counterDocumentId !== 'string') {
+    const counterDoc = document.data?.[groupByRef];
+    if (counterDoc?.type !== 'ref') {
       return {
         tag: 'left',
         error: { errorType: 'invalid_data_type' },
@@ -74,8 +79,8 @@ export const makeOnCreateCountFieldTrigger: MakeTrigger_2<'onCreate', CountField
       tag: 'right',
       value: {
         [colName]: {
-          [counterDocumentId]: {
-            [fieldName]: { __fieldType: 'increment', value: 1 },
+          [counterDoc.value.id]: {
+            [fieldName]: { type: 'increment', incrementValue: 1 },
           },
         },
       },
@@ -92,7 +97,7 @@ export const makeOnCreateCreationTimeFieldTrigger: MakeTrigger_2<'onCreate', Cre
     value: {
       [colName]: {
         [doc.id]: {
-          [fieldName]: { __fieldType: 'creationTime' },
+          [fieldName]: { type: 'creationTime' },
         },
       },
     },

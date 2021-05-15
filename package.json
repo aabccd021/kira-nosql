@@ -1,6 +1,6 @@
 {
   "name": "kira-nosql",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "NoSQL utils for Kira",
   "repository": "git@github.com:aabccd021/kira-nosql.git",
   "author": "aabccd021 <aabccd021@gmail.com>",
@@ -17,7 +17,7 @@
   },
   "dependencies": {
     "assert-never": "^1.2.1",
-    "kira-core": "^0.3.7"
+    "kira-core": "^0.3.8"
   },
   "devDependencies": {
     "@types/jest": "^26.0.23",

@@ -1,7 +1,8 @@
-import { Dictionary, Field_1, Field_2, Schema } from 'kira-core';
+import { Dictionary, Field_1, Field_2, FieldOf, Schema } from 'kira-core';
+
+import { InDocSnapshot, OutDocData } from './doc-data';
 
 // utils
-
 export type Either<T, E> =
   | { readonly tag: 'right'; readonly value: T }
   | { readonly tag: 'left'; readonly error: E };
@@ -10,38 +11,11 @@ export type ActionError = {
   readonly errorType: 'invalid_data_type';
 };
 
-// Special Fields
-export type IncrementFieldValue = {
-  readonly __fieldType: 'increment';
-  readonly value: number;
-};
-
-export type CreationTimeFieldValue = {
-  readonly __fieldType: 'creation_time';
-};
-
 // Doc
 export type DocKey = { readonly col: string; readonly id: string };
 
-export type RefFieldData = { readonly id: string } & DocData;
-export type DocData = { readonly [key: string]: string | number | RefFieldData };
-
-export type DocSnapshot = {
-  readonly id: string;
-  readonly data: DocData;
-};
-
-export type ResultDocData = {
-  readonly [key: string]:
-    | string
-    | number
-    | IncrementFieldValue
-    | CreationTimeFieldValue
-    | ResultDocData;
-};
-
 // Db
-export type GetDoc = (key: DocKey) => Promise<DocSnapshot>;
+export type GetDoc = (key: DocKey) => Promise<InDocSnapshot>;
 
 export type Query<T extends string = string> = {
   readonly col: T;
@@ -50,15 +24,13 @@ export type Query<T extends string = string> = {
   readonly orderDirection?: 'asc' | 'desc';
 };
 
-export type QueryDoc = (query: Query) => Promise<readonly DocSnapshot[]>;
+export type QueryDoc = (query: Query) => Promise<readonly InDocSnapshot[]>;
 
 // Trigger
-export type DocChange = {
-  readonly before: DocSnapshot;
-  readonly after: DocSnapshot;
+export type InDocChange = {
+  readonly before: InDocSnapshot;
+  readonly after: InDocSnapshot;
 };
-
-export type Snapshot = DocSnapshot | DocChange;
 
 export type ActionContext<T extends TriggerType> = {
   readonly getDoc: GetDoc;
@@ -66,14 +38,14 @@ export type ActionContext<T extends TriggerType> = {
 };
 
 type SnapshotOfTriggerType<T extends TriggerType> = T extends 'onCreate'
-  ? DocSnapshot
+  ? InDocSnapshot
   : T extends 'onDelete'
-  ? DocSnapshot
+  ? InDocSnapshot
   : T extends 'onUpdate'
-  ? DocChange
+  ? InDocChange
   : never;
 
-export type ActionResult = Dictionary<Dictionary<ResultDocData>>;
+export type ActionResult = Dictionary<Dictionary<OutDocData>>;
 
 export type Action<T extends TriggerType> = (
   context: ActionContext<T>
@@ -105,10 +77,6 @@ export type FieldToTrigger<S extends Schema, T extends TriggerType> = (args: {
   readonly field: FieldOf<S>;
   readonly colName: string;
 }) => Trigger<T> | undefined;
-
-export type EntryOf<T> = T extends Dictionary<infer R> ? R : never;
-
-export type FieldOf<S extends Schema> = EntryOf<EntryOf<S['cols']>>;
 
 export type SchemaToTriggerActions<S extends Schema> = (schema: S) => Actions;
 
