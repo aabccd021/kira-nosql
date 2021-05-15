@@ -1,13 +1,14 @@
 import {
   CountField,
   CreationTimeField,
+  Dictionary,
   ImageField,
   OwnerField,
   RefField,
   StringField,
 } from 'kira-core';
 
-import { Dictionary, MakeTrigger_1, MakeTrigger_2, RefFieldData, Trigger } from './type';
+import { MakeTrigger_1, MakeTrigger_2, RefFieldData, Trigger } from './type';
 
 function copyRefField({
   syncFields,

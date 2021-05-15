@@ -1,6 +1,6 @@
-import { Dictionary } from 'kira-core';
+import { Dictionary, Schema } from 'kira-core';
 
-import { Action, Actions, FieldOf, FieldToTrigger, Schema, TriggerType } from './type';
+import { Action, Actions, FieldOf, FieldToTrigger, TriggerType } from './type';
 
 function isDefined<T>(t: T | undefined): t is T {
   return t !== undefined;
