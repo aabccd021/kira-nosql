@@ -1,7 +1,6 @@
-import { Field_1, Field_2, Schema_1, Schema_2 } from 'kira-core';
+import { Dictionary, Field_1, Field_2, Schema } from 'kira-core';
 
 // utils
-export type Dictionary<T> = Record<string, T>;
 
 export type Either<T, E> =
   | { readonly tag: 'right'; readonly value: T }
@@ -108,8 +107,6 @@ export type FieldToTrigger<S extends Schema, T extends TriggerType> = (args: {
 }) => Trigger<T> | undefined;
 
 export type EntryOf<T> = T extends Dictionary<infer R> ? R : never;
-
-export type Schema = Schema_1 | Schema_2;
 
 export type FieldOf<S extends Schema> = EntryOf<EntryOf<S['cols']>>;
 
