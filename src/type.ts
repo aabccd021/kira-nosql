@@ -16,6 +16,7 @@ export type DocKey = { readonly col: string; readonly id: string };
 
 // Db
 export type GetDoc = (key: DocKey) => Promise<InDocSnapshot>;
+export type WriteDoc<WR> = (key: DocKey, docData: OutDocData) => Promise<WR>;
 
 export type Query<T extends string = string> = {
   readonly col: T;

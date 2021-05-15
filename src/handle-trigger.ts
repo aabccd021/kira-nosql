@@ -1,4 +1,4 @@
-import { memoize } from 'lodash';
+import { memoize, merge } from 'lodash';
 
 import {
   Action,
@@ -8,53 +8,42 @@ import {
   GetDoc,
   SnapshotOfTriggerType,
   TriggerType,
+  WriteDoc,
 } from './type';
 
-export async function handleTrigger<T extends TriggerType>({
+export async function handleTrigger<T extends TriggerType, WR>({
   snapshot,
   actions,
   getDoc,
+  writeDoc,
 }: {
   readonly actions: readonly Action<T>[];
   readonly snapshot: SnapshotOfTriggerType<T>;
   readonly getDoc: GetDoc;
-}): Promise<void> {
+  readonly writeDoc: WriteDoc<WR>;
+}): Promise<Either<Promise<readonly PromiseSettledResult<WR>[]>, ActionError>> {
   const memoizedGetDoc = memoize(getDoc);
-  return (
-    // execute actions
-    Promise.all(actions.map((action) => action({ getDoc: memoizedGetDoc, snapshot })))
-      // write document updates
-      .then((updates) => {
-        const actionResults = updates.reduce<Either<readonly ActionResult[], ActionError>>(
-          (prev, current) => {
-            if (prev.tag === 'left') return prev;
-            if (current.tag === 'left') return current;
-            return { tag: 'right', value: [...prev.value, current.value] };
-          },
-          { tag: 'right', value: [] }
-        );
-        if (actionResults.tag === 'left') return actionResults;
-        return {
-          tag: 'right',
-
-        }
-        // Promise.allSettled(
-
-        // chain(updates)
-        //   .reduce(merge)
-        //   .flatMap((col, colName) =>
-        //     map(col, (doc, id) => writeDocument({ col: colName, id }, doc))
-        //   )
-        //   .value()
-        // )
-      })
-      // log results
-      .then((results) => {
-        forEach(results, (result) =>
-          result.status === 'rejected'
-            ? functions.logger.warn('Kira warning', { snapshot, eventContext, result })
-            : noop
-        );
-      })
+  return Promise.all(actions.map((action) => action({ getDoc: memoizedGetDoc, snapshot }))).then(
+    (updates) => {
+      const actionResult = updates.reduce<Either<ActionResult, ActionError>>(
+        (prev, current) => {
+          if (prev.tag === 'left') return prev;
+          if (current.tag === 'left') return current;
+          return { tag: 'right', value: merge(prev.value, current.value) };
+        },
+        { tag: 'right', value: {} }
+      );
+      if (actionResult.tag === 'left') return actionResult;
+      return {
+        tag: 'right',
+        value: Promise.allSettled(
+          Object.entries(actionResult.value).flatMap(([colName, col]) =>
+            Object.entries(col).map(([docId, docData]) =>
+              writeDoc({ col: colName, id: docId }, docData)
+            )
+          )
+        ),
+      };
+    }
   );
 }
