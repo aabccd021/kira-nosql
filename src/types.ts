@@ -1,4 +1,4 @@
-import { Field_1 } from 'kira-core';
+import { Field_1, Field_2 } from 'kira-core';
 
 // utils
 export type Dictionary<T> = Record<string, T>;
@@ -82,15 +82,27 @@ export type Action<T extends TriggerType> = (
 
 export type TriggerType = 'onCreate' | 'onUpdate' | 'onDelete';
 
-export type TriggerContext<F extends Field_1> = {
+export type Trigger<T extends TriggerType> = Dictionary<Action<T>>;
+
+// Field_1
+export type TriggerContext_1<F extends Field_1> = {
   readonly userColName: string;
   readonly colName: string;
   readonly field: F;
   readonly fieldName: string;
 };
 
-export type Trigger<T extends TriggerType> = Dictionary<Action<T>>;
+export type MakeTrigger_1<T extends TriggerType, F extends Field_1> = (
+  context: TriggerContext_1<F>
+) => Trigger<T> | undefined;
 
-export type MakeTrigger<T extends TriggerType, F extends Field_1> = (
-  context: TriggerContext<F>
+// Field_2
+export type TriggerContext_2<F extends Field_2> = {
+  readonly colName: string;
+  readonly field: F;
+  readonly fieldName: string;
+};
+
+export type MakeTrigger_2<T extends TriggerType, F extends Field_2> = (
+  context: TriggerContext_1<F>
 ) => Trigger<T> | undefined;

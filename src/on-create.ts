@@ -1,6 +1,6 @@
 import { CountField, CreationTimeField, ImageField, OwnerField, RefField } from 'kira-core';
 
-import { Dictionary, MakeTrigger, RefFieldData, Trigger } from './types';
+import { Dictionary, MakeTrigger_1, MakeTrigger_2, RefFieldData, Trigger } from './types';
 
 function copyRefField({
   syncFields,
@@ -38,7 +38,7 @@ function copyRefField({
   };
 }
 
-export const makeOnCreateCountFieldTrigger: MakeTrigger<'onCreate', CountField> = ({
+export const makeOnCreateCountFieldTrigger: MakeTrigger_2<'onCreate', CountField> = ({
   colName,
   field: { countedCol, groupByRef },
   fieldName,
@@ -75,7 +75,7 @@ export const makeOnCreateCountFieldTrigger: MakeTrigger<'onCreate', CountField> 
   },
 });
 
-export const makeOnCreateCreationTimeFieldTrigger: MakeTrigger<'onCreate', CreationTimeField> = ({
+export const makeOnCreateCreationTimeFieldTrigger: MakeTrigger_2<'onCreate', CreationTimeField> = ({
   colName,
   fieldName,
 }) => ({
@@ -92,20 +92,20 @@ export const makeOnCreateCreationTimeFieldTrigger: MakeTrigger<'onCreate', Creat
 });
 
 // eslint-disable-next-line functional/functional-parameters
-export const makeOnCreateImageFieldTrigger: MakeTrigger<'onCreate', ImageField> = () => undefined;
+export const makeOnCreateImageFieldTrigger: MakeTrigger_2<'onCreate', ImageField> = () => undefined;
 
-export const makeOnCreateOwnerFieldTrigger: MakeTrigger<'onCreate', OwnerField> = ({
+export const makeOnCreateOwnerFieldTrigger: MakeTrigger_1<'onCreate', OwnerField> = ({
   colName,
   userColName,
   fieldName,
   field: { syncFields },
 }) => copyRefField({ refCol: userColName, fieldName, colName, syncFields });
 
-export const makeOnCreateRefFieldTrigger: MakeTrigger<'onCreate', RefField> = ({
+export const makeOnCreateRefFieldTrigger: MakeTrigger_2<'onCreate', RefField> = ({
   colName,
   fieldName,
   field: { syncFields, refCol },
 }) => copyRefField({ refCol, fieldName, colName, syncFields });
 
 // eslint-disable-next-line functional/functional-parameters
-export const makeOnCreateStringFieldTrigger: MakeTrigger<'onCreate', ImageField> = () => undefined;
+export const makeOnCreateStringFieldTrigger: MakeTrigger_2<'onCreate', ImageField> = () => undefined;
