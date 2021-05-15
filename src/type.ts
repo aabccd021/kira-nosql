@@ -1,4 +1,4 @@
-import { Field_1, Field_2 } from 'kira-core';
+import { Field_1, Field_2, Schema_1, Schema_2 } from 'kira-core';
 
 // utils
 export type Dictionary<T> = Record<string, T>;
@@ -84,25 +84,39 @@ export type TriggerType = 'onCreate' | 'onUpdate' | 'onDelete';
 
 export type Trigger<T extends TriggerType> = Dictionary<Action<T>>;
 
-// Field_1
-export type TriggerContext_1<F extends Field_1> = {
+// Schema_1
+export type MakeTrigger_1<T extends TriggerType, F extends Field_1> = (context: {
   readonly userColName: string;
   readonly colName: string;
   readonly field: F;
   readonly fieldName: string;
-};
+}) => Trigger<T> | undefined;
 
-export type MakeTrigger_1<T extends TriggerType, F extends Field_1> = (
-  context: TriggerContext_1<F>
-) => Trigger<T> | undefined;
-
-// Field_2
-export type TriggerContext_2<F extends Field_2> = {
+// Schema_2
+export type MakeTrigger_2<T extends TriggerType, F extends Field_2> = (context: {
   readonly colName: string;
   readonly field: F;
   readonly fieldName: string;
-};
+}) => Trigger<T> | undefined;
 
-export type MakeTrigger_2<T extends TriggerType, F extends Field_2> = (
-  context: TriggerContext_1<F>
-) => Trigger<T> | undefined;
+// blackmagics
+export type FieldToTrigger<S extends Schema, T extends TriggerType> = (args: {
+  readonly schema: S;
+  readonly fieldName: string;
+  readonly field: FieldOf<S>;
+  readonly colName: string;
+}) => Trigger<T> | undefined;
+
+export type EntryOf<T> = T extends Dictionary<infer R> ? R : never;
+
+export type Schema = Schema_1 | Schema_2;
+
+export type FieldOf<S extends Schema> = EntryOf<EntryOf<S['cols']>>;
+
+export type SchemaToTriggerActions<S extends Schema> = (schema: S) => Actions;
+
+export type Actions = {
+  readonly onCreate: Dictionary<readonly Action<'onCreate'>[]>;
+  readonly onUpdate: Dictionary<readonly Action<'onUpdate'>[]>;
+  readonly onDelete: Dictionary<readonly Action<'onDelete'>[]>;
+};

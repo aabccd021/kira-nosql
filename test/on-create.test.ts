@@ -3,13 +3,12 @@ import {
   makeOnCreateCreationTimeFieldTrigger,
   makeOnCreateImageFieldTrigger,
 } from '../src/on-create';
-import { GetDoc } from '../src/types';
+import { GetDoc } from '../src/type';
 
 describe('makeOnCreateCountFieldTrigger', () => {
   const onCreateTrigger = makeOnCreateCountFieldTrigger({
     colName: 'article',
     fieldName: 'bookmarkCount',
-    userColName: 'user',
     field: { type: 'count', countedCol: 'bookmark', groupByRef: 'bookmarkedarticle' },
   });
   const articleAction = onCreateTrigger?.['article'];
@@ -88,7 +87,6 @@ describe('creationTime field action maker', () => {
   const onCreateTrigger = makeOnCreateCreationTimeFieldTrigger({
     colName: 'article',
     fieldName: 'creationTime',
-    userColName: 'user',
     field: { type: 'creationTime' },
   });
 
@@ -125,7 +123,6 @@ describe('image field action maker', () => {
     const onCreateTrigger = makeOnCreateImageFieldTrigger({
       colName: 'article',
       fieldName: 'creationTime',
-      userColName: 'user',
       field: { type: 'image' },
     });
     expect(onCreateTrigger).toBeUndefined();

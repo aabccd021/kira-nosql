@@ -2,15 +2,22 @@
   "name": "kira-nosql",
   "version": "0.1.0",
   "description": "NoSQL utils for Kira",
-  "types": "lib/index.d.ts",
-  "main": "index.js",
   "repository": "git@github.com:aabccd021/kira-nosql.git",
   "author": "aabccd021 <aabccd021@gmail.com>",
   "license": "MIT",
+  "main": "lib/index.js",
+  "types": "lib/index.d.ts",
+  "files": [
+    "lib"
+  ],
   "scripts": {
     "build": "tsc --build tsconfig.build.json",
     "lint": "eslint . --ext ts",
-    "test": "jest"
+    "test": "jest --coverage"
+  },
+  "dependencies": {
+    "assert-never": "^1.2.1",
+    "kira-core": "^0.3.4"
   },
   "devDependencies": {
     "@types/jest": "^26.0.23",
@@ -76,6 +83,7 @@
       }
     ],
     "rules": {
+      "functional/no-expression-statement": "off",
       "functional/no-conditional-statement": "off",
       "@typescript-eslint/no-unused-vars": "off",
       "eqeqeq": "warn",
@@ -106,9 +114,5 @@
         3
       ]
     }
-  },
-  "dependencies": {
-    "assert-never": "^1.2.1",
-    "kira-core": "^0.3.4"
   }
 }

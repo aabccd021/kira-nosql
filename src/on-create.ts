@@ -1,6 +1,13 @@
-import { CountField, CreationTimeField, ImageField, OwnerField, RefField } from 'kira-core';
+import {
+  CountField,
+  CreationTimeField,
+  ImageField,
+  OwnerField,
+  RefField,
+  StringField,
+} from 'kira-core';
 
-import { Dictionary, MakeTrigger_1, MakeTrigger_2, RefFieldData, Trigger } from './types';
+import { Dictionary, MakeTrigger_1, MakeTrigger_2, RefFieldData, Trigger } from './type';
 
 function copyRefField({
   syncFields,
@@ -108,4 +115,5 @@ export const makeOnCreateRefFieldTrigger: MakeTrigger_2<'onCreate', RefField> = 
 }) => copyRefField({ refCol, fieldName, colName, syncFields });
 
 // eslint-disable-next-line functional/functional-parameters
-export const makeOnCreateStringFieldTrigger: MakeTrigger_2<'onCreate', ImageField> = () => undefined;
+export const makeOnCreateStringFieldTrigger: MakeTrigger_2<'onCreate', StringField> = () =>
+  undefined;
