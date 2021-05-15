@@ -1,4 +1,4 @@
-import { Field } from './schema';
+import { Field_1 } from 'kira-core';
 
 // utils
 export type Dictionary<T> = Record<string, T>;
@@ -24,8 +24,8 @@ export type CreationTimeFieldValue = {
 // Doc
 export type DocKey = { readonly col: string; readonly id: string };
 
-export type RefField = { readonly id: string } & DocData;
-export type DocData = { readonly [key: string]: string | number | RefField };
+export type RefFieldData = { readonly id: string } & DocData;
+export type DocData = { readonly [key: string]: string | number | RefFieldData };
 
 export type DocSnapshot = {
   readonly id: string;
@@ -61,24 +61,36 @@ export type DocChange = {
 
 export type Snapshot = DocSnapshot | DocChange;
 
-export type ActionContext<T extends Snapshot> = {
+export type ActionContext<T extends TriggerType> = {
   readonly getDoc: GetDoc;
-  readonly snapshot: T;
+  readonly snapshot: SnapshotOfTriggerType<T>;
 };
+
+type SnapshotOfTriggerType<T extends TriggerType> = T extends 'onCreate'
+  ? DocSnapshot
+  : T extends 'onDelete'
+  ? DocSnapshot
+  : T extends 'onUpdate'
+  ? DocChange
+  : never;
 
 export type ActionResult = Dictionary<Dictionary<ResultDocData>>;
 
-export type Action<T extends Snapshot> = (
+export type Action<T extends TriggerType> = (
   context: ActionContext<T>
 ) => Promise<Either<ActionResult, ActionError>>;
 
-export type TriggerContext = {
+export type TriggerType = 'onCreate' | 'onUpdate' | 'onDelete';
+
+export type TriggerContext<F extends Field_1> = {
   readonly userColName: string;
   readonly colName: string;
-  readonly field: Field;
+  readonly field: F;
   readonly fieldName: string;
 };
 
-export type Trigger<T extends Snapshot> = Dictionary<Action<T>>;
+export type Trigger<T extends TriggerType> = Dictionary<Action<T>>;
 
-export type MakeTrigger<T extends Snapshot> = (context: TriggerContext) => Trigger<T> | undefined;
+export type MakeTrigger<T extends TriggerType, F extends Field_1> = (
+  context: TriggerContext<F>
+) => Trigger<T> | undefined;
