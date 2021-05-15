@@ -1,6 +1,7 @@
-import { Dictionary, Schema } from 'kira-core';
+import { Dictionary, FieldOf, Schema } from 'kira-core';
 
-import { Action, Actions, FieldOf, FieldToTrigger, TriggerType } from './type';
+import { InField, OutField } from './doc-data';
+import { Action, Actions, FieldToTrigger, TriggerType } from './type';
 
 function isDefined<T>(t: T | undefined): t is T {
   return t !== undefined;
@@ -44,4 +45,20 @@ export function schemaToTriggerActions<S extends Schema>({
     onUpdate: {},
     onDelete: {},
   };
+}
+
+export function inToOutField([fieldName, inField]: readonly [string, InField]): readonly [
+  string,
+  OutField
+] {
+  if (inField.type === 'ref') {
+    return [
+      fieldName,
+      {
+        type: 'ref',
+        value: Object.fromEntries(Object.entries(inField.value.data ?? []).map(inToOutField)),
+      },
+    ];
+  }
+  return [fieldName, inField];
 }

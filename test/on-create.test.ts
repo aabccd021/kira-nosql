@@ -9,7 +9,11 @@ describe('makeOnCreateCountFieldTrigger', () => {
   const onCreateTrigger = makeOnCreateCountFieldTrigger({
     colName: 'article',
     fieldName: 'bookmarkCount',
-    field: { type: 'count', countedCol: 'bookmark', groupByRef: 'bookmarkedarticle' },
+    field: {
+      type: 'count',
+      countedCol: 'bookmark',
+      groupByRef: 'bookmarkedarticle',
+    },
   });
   const articleAction = onCreateTrigger?.['article'];
   const bookmarkAction = onCreateTrigger?.['bookmark'];
@@ -24,7 +28,7 @@ describe('makeOnCreateCountFieldTrigger', () => {
 
     const articleActionResult = await articleAction?.({
       getDoc: articleActionGetDoc,
-      snapshot: { id: 'article-0', data: {} },
+      snapshot: { id: 'article0', data: {} },
     });
 
     expect(articleActionGetDoc).not.toHaveBeenCalled();
@@ -32,7 +36,12 @@ describe('makeOnCreateCountFieldTrigger', () => {
       tag: 'right',
       value: {
         article: {
-          'article-0': { bookmarkCount: 0 },
+          article0: {
+            bookmarkCount: {
+              type: 'number',
+              value: 0,
+            },
+          },
         },
       },
     });
@@ -44,9 +53,9 @@ describe('makeOnCreateCountFieldTrigger', () => {
     const bookmarkActionResult = await bookmarkAction?.({
       getDoc: bookmarkActionGetDoc,
       snapshot: {
-        id: 'bookmark-0',
+        id: 'bookmark0',
         data: {
-          bookmarkedarticle: { id: 'article-0' },
+          bookmarkedarticle: { type: 'ref', value: { id: 'article0' } },
         },
       },
     });
@@ -56,22 +65,24 @@ describe('makeOnCreateCountFieldTrigger', () => {
       tag: 'right',
       value: {
         article: {
-          'article-0': {
-            bookmarkCount: { __fieldType: 'increment', value: 1 },
+          article0: {
+            bookmarkCount: { type: 'increment', incrementValue: 1 },
           },
         },
       },
     });
   });
 
-  it('returns error if id is not string', async () => {
+  it('returns error if not ref field', async () => {
     const bookmarkActionGetDoc: GetDoc = jest.fn();
 
     const bookmarkActionResult = await bookmarkAction?.({
       getDoc: bookmarkActionGetDoc,
       snapshot: {
-        id: 'bookmark-0',
-        data: { bookmarkedarticle: 0 },
+        id: 'bookmark0',
+        data: {
+          bookmarkedarticle: { type: 'number', value: 0 },
+        },
       },
     });
 
@@ -101,7 +112,7 @@ describe('creationTime field action maker', () => {
 
     const articleActionResult = await articleAction?.({
       getDoc: articleActionGetDoc,
-      snapshot: { id: 'article-0', data: {} },
+      snapshot: { id: 'article0', data: {} },
     });
 
     expect(articleActionGetDoc).not.toHaveBeenCalled();
@@ -109,8 +120,8 @@ describe('creationTime field action maker', () => {
       tag: 'right',
       value: {
         article: {
-          'article-0': {
-            creationTime: { __fieldType: 'creationTime' },
+          article0: {
+            creationTime: { type: 'creationTime' },
           },
         },
       },
