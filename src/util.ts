@@ -1,6 +1,6 @@
 import { Dictionary, FieldOf, Schema } from 'kira-core';
 
-import { InField, OutField } from './doc-data';
+import { ReadField, WriteField } from './doc-data';
 import { Action, Actions, FieldToTrigger, TriggerType } from './type';
 
 function isDefined<T>(t: T | undefined): t is T {
@@ -47,16 +47,16 @@ export function schemaToTriggerActions<S extends Schema, GDE>({
   };
 }
 
-export function inToOutField([fieldName, inField]: readonly [string, InField]): readonly [
+export function readToWriteField([fieldName, inField]: readonly [string, ReadField]): readonly [
   string,
-  OutField
+  WriteField
 ] {
   if (inField.type === 'ref') {
     return [
       fieldName,
       {
         type: 'ref',
-        value: Object.fromEntries(Object.entries(inField.value.data ?? []).map(inToOutField)),
+        value: Object.fromEntries(Object.entries(inField.value.data ?? []).map(readToWriteField)),
       },
     ];
   }
