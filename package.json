@@ -1,6 +1,6 @@
 {
   "name": "kira-nosql",
-  "version": "0.1.5",
+  "version": "0.1.6",
   "description": "NoSQL utils for Kira",
   "repository": "git@github.com:aabccd021/kira-nosql.git",
   "author": "aabccd021 <aabccd021@gmail.com>",
@@ -17,12 +17,10 @@
   },
   "dependencies": {
     "assert-never": "^1.2.1",
-    "kira-core": "^0.3.8",
-    "lodash": "^4.17.21"
+    "kira-core": "^0.3.8"
   },
   "devDependencies": {
     "@types/jest": "^26.0.23",
-    "@types/lodash": "^4.14.169",
     "@typescript-eslint/eslint-plugin": "^4.18.0",
     "@typescript-eslint/parser": "^4.23.0",
     "eslint": "^7.26.0",
@@ -79,16 +77,15 @@
           "test/**/*.ts"
         ],
         "rules": {
-          "functional/no-expression-statement": "off",
           "functional/functional-parameters": "off"
         }
       }
     ],
     "rules": {
-      "functional/no-expression-statement": "off",
-      "functional/no-conditional-statement": "off",
       "@typescript-eslint/no-unused-vars": "off",
       "eqeqeq": "warn",
+      "functional/no-conditional-statement": "off",
+      "functional/no-expression-statement": "off",
       "import/no-cycle": "warn",
       "no-null/no-null": "warn",
       "no-unused-expressions": "off",

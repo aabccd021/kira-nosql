@@ -1,9 +1,9 @@
+import { GetDoc } from '../src';
 import {
   makeOnCreateCountFieldTrigger,
   makeOnCreateCreationTimeFieldTrigger,
   makeOnCreateImageFieldTrigger,
 } from '../src/on-create';
-import { GetDoc } from '../src/type';
 
 describe('makeOnCreateCountFieldTrigger', () => {
   const onCreateTrigger = makeOnCreateCountFieldTrigger({
@@ -24,7 +24,7 @@ describe('makeOnCreateCountFieldTrigger', () => {
   });
 
   it('set bookmarkCount to 0 when article created', async () => {
-    const articleActionGetDoc: GetDoc = jest.fn();
+    const articleActionGetDoc: GetDoc<unknown> = jest.fn();
 
     const articleActionResult = await articleAction?.({
       getDoc: articleActionGetDoc,
@@ -48,7 +48,7 @@ describe('makeOnCreateCountFieldTrigger', () => {
   });
 
   it('increase bookmarkCount if new bookmark added', async () => {
-    const bookmarkActionGetDoc: GetDoc = jest.fn();
+    const bookmarkActionGetDoc: GetDoc<unknown> = jest.fn();
 
     const bookmarkActionResult = await bookmarkAction?.({
       getDoc: bookmarkActionGetDoc,
@@ -74,7 +74,7 @@ describe('makeOnCreateCountFieldTrigger', () => {
   });
 
   it('returns error if not ref field', async () => {
-    const bookmarkActionGetDoc: GetDoc = jest.fn();
+    const bookmarkActionGetDoc: GetDoc<unknown> = jest.fn();
 
     const bookmarkActionResult = await bookmarkAction?.({
       getDoc: bookmarkActionGetDoc,
@@ -108,7 +108,7 @@ describe('creationTime field action maker', () => {
 
   it('create creationTime field when article created', async () => {
     const articleAction = onCreateTrigger?.['article'];
-    const articleActionGetDoc: GetDoc = jest.fn();
+    const articleActionGetDoc: GetDoc<unknown> = jest.fn();
 
     const articleActionResult = await articleAction?.({
       getDoc: articleActionGetDoc,

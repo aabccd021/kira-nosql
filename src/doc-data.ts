@@ -13,7 +13,7 @@ export type OutDocData = { readonly [key: string]: OutField };
 /**
  * Field
  */
-export type PrimitiveField = StringPrimitiveField | NumberPrimitiveField;
+export type PrimitiveField = StringPrimitiveField | NumberPrimitiveField | DatePrimitiveField;
 
 export type InField = PrimitiveField | RefInField;
 
@@ -30,6 +30,11 @@ export type StringPrimitiveField = {
 export type NumberPrimitiveField = {
   readonly type: 'number';
   readonly value: number;
+};
+
+export type DatePrimitiveField = {
+  readonly type: 'date';
+  readonly value: Date;
 };
 
 /**
