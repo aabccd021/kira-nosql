@@ -11,21 +11,21 @@ import {
   WriteDoc,
 } from './type';
 
-export async function handleTrigger<T extends TriggerType, WR>({
+export async function handleTrigger<T extends TriggerType, WR, GDE>({
   snapshot,
   actions,
   getDoc,
   writeDoc,
 }: {
-  readonly actions: readonly Action<T>[];
+  readonly actions: readonly Action<T, GDE>[];
   readonly snapshot: SnapshotOfTriggerType<T>;
-  readonly getDoc: GetDoc;
+  readonly getDoc: GetDoc<GDE>;
   readonly writeDoc: WriteDoc<WR>;
-}): Promise<Either<Promise<readonly PromiseSettledResult<WR>[]>, ActionError>> {
+}): Promise<Either<Promise<readonly PromiseSettledResult<WR>[]>, ActionError | GDE>> {
   const memoizedGetDoc = memoize(getDoc);
   return Promise.all(actions.map((action) => action({ getDoc: memoizedGetDoc, snapshot }))).then(
     (updates) => {
-      const actionResult = updates.reduce<Either<ActionResult, ActionError>>(
+      const actionResult = updates.reduce<Either<ActionResult, ActionError | GDE>>(
         (prev, current) => {
           if (prev.tag === 'left') return prev;
           if (current.tag === 'left') return current;

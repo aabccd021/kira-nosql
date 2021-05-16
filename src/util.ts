@@ -7,10 +7,10 @@ function isDefined<T>(t: T | undefined): t is T {
   return t !== undefined;
 }
 
-function _schemaToActions<S extends Schema, T extends TriggerType>(
+function _schemaToActions<S extends Schema, T extends TriggerType, GDE>(
   schema: S,
-  fieldToTrigger: FieldToTrigger<S, T>
-): Dictionary<readonly Action<T>[]> {
+  fieldToTrigger: FieldToTrigger<S, T, GDE>
+): Dictionary<readonly Action<T, GDE>[]> {
   return Object.entries(schema.cols)
     .flatMap(([colName, fieldDict]) =>
       Object.entries(fieldDict).map(([fieldName, field]) =>
@@ -18,7 +18,7 @@ function _schemaToActions<S extends Schema, T extends TriggerType>(
       )
     )
     .filter(isDefined)
-    .reduce<Dictionary<readonly Action<T>[]>>(
+    .reduce<Dictionary<readonly Action<T, GDE>[]>>(
       (prev, actionDict) =>
         Object.entries(actionDict).reduce(
           (prev, [colName, action]) => ({
@@ -31,15 +31,15 @@ function _schemaToActions<S extends Schema, T extends TriggerType>(
     );
 }
 
-export function schemaToTriggerActions<S extends Schema>({
+export function schemaToTriggerActions<S extends Schema, GDE>({
   schema,
   fieldToTrigger,
 }: {
   readonly schema: S;
   readonly fieldToTrigger: {
-    readonly onCreate: FieldToTrigger<S, 'onCreate'>;
+    readonly onCreate: FieldToTrigger<S, 'onCreate', GDE>;
   };
-}): Actions {
+}): Actions<GDE> {
   return {
     onCreate: _schemaToActions(schema, fieldToTrigger.onCreate),
     onUpdate: {},

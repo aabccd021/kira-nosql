@@ -79,16 +79,15 @@
           "test/**/*.ts"
         ],
         "rules": {
-          "functional/no-expression-statement": "off",
           "functional/functional-parameters": "off"
         }
       }
     ],
     "rules": {
-      "functional/no-expression-statement": "off",
-      "functional/no-conditional-statement": "off",
       "@typescript-eslint/no-unused-vars": "off",
       "eqeqeq": "warn",
+      "functional/no-conditional-statement": "off",
+      "functional/no-expression-statement": "off",
       "import/no-cycle": "warn",
       "no-null/no-null": "warn",
       "no-unused-expressions": "off",

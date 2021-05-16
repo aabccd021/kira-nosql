@@ -15,7 +15,7 @@ export type ActionError = {
 export type DocKey = { readonly col: string; readonly id: string };
 
 // Db
-export type GetDoc = (key: DocKey) => Promise<InDocSnapshot>;
+export type GetDoc<E> = (key: DocKey) => Promise<Either<InDocSnapshot, E>>;
 export type WriteDoc<WR> = (key: DocKey, docData: OutDocData) => Promise<WR>;
 
 export type Query<T extends string = string> = {
@@ -33,8 +33,8 @@ export type InDocChange = {
   readonly after: InDocSnapshot;
 };
 
-export type ActionContext<T extends TriggerType> = {
-  readonly getDoc: GetDoc;
+export type ActionContext<T extends TriggerType, GDE> = {
+  readonly getDoc: GetDoc<GDE>;
   readonly snapshot: SnapshotOfTriggerType<T>;
 };
 
@@ -48,41 +48,39 @@ export type SnapshotOfTriggerType<T extends TriggerType> = T extends 'onCreate'
 
 export type ActionResult = Dictionary<Dictionary<OutDocData>>;
 
-export type Action<T extends TriggerType> = (
-  context: ActionContext<T>
-) => Promise<Either<ActionResult, ActionError>>;
+export type Action<T extends TriggerType, GDE> = (
+  context: ActionContext<T, GDE>
+) => Promise<Either<ActionResult, ActionError | GDE>>;
 
 export type TriggerType = 'onCreate' | 'onUpdate' | 'onDelete';
 
-export type Trigger<T extends TriggerType> = Dictionary<Action<T>>;
+export type Trigger<T extends TriggerType, GDE> = Dictionary<Action<T, GDE>>;
 
 // Schema_1
-export type MakeTrigger_1<T extends TriggerType, F extends Field_1> = (context: {
+export type MakeTriggerContext_1<F extends Field_1> = {
   readonly userColName: string;
   readonly colName: string;
   readonly field: F;
   readonly fieldName: string;
-}) => Trigger<T> | undefined;
+};
 
 // Schema_2
-export type MakeTrigger_2<T extends TriggerType, F extends Field_2> = (context: {
+export type MakeTriggerContext_2<F extends Field_2> = {
   readonly colName: string;
   readonly field: F;
   readonly fieldName: string;
-}) => Trigger<T> | undefined;
+};
 
 // blackmagics
-export type FieldToTrigger<S extends Schema, T extends TriggerType> = (args: {
+export type FieldToTrigger<S extends Schema, T extends TriggerType, GDE> = (args: {
   readonly schema: S;
   readonly fieldName: string;
   readonly field: FieldOf<S>;
   readonly colName: string;
-}) => Trigger<T> | undefined;
+}) => Trigger<T, GDE> | undefined;
 
-export type SchemaToTriggerActions<S extends Schema> = (schema: S) => Actions;
-
-export type Actions = {
-  readonly onCreate: Dictionary<readonly Action<'onCreate'>[]>;
-  readonly onUpdate: Dictionary<readonly Action<'onUpdate'>[]>;
-  readonly onDelete: Dictionary<readonly Action<'onDelete'>[]>;
+export type Actions<GDE> = {
+  readonly onCreate: Dictionary<readonly Action<'onCreate', GDE>[]>;
+  readonly onUpdate: Dictionary<readonly Action<'onUpdate', GDE>[]>;
+  readonly onDelete: Dictionary<readonly Action<'onDelete', GDE>[]>;
 };

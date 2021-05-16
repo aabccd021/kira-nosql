@@ -9,10 +9,10 @@ import {
   makeOnCreateRefFieldTrigger,
   makeOnCreateStringFieldTrigger,
 } from './on-create';
-import { SchemaToTriggerActions } from './type';
+import { Actions } from './type';
 import { schemaToTriggerActions } from './util';
 
-export const schemaToActions_1: SchemaToTriggerActions<Schema_1> = (schema) => {
+export function schemaToActions_1<GDE>(schema: Schema_1): Actions<GDE> {
   return schemaToTriggerActions({
     schema,
     fieldToTrigger: {
@@ -29,9 +29,9 @@ export const schemaToActions_1: SchemaToTriggerActions<Schema_1> = (schema) => {
       },
     },
   });
-};
+}
 
-export const schemaToActions_2: SchemaToTriggerActions<Schema_2> = (schema) => {
+export function schemaToActions_2<GDE>(schema: Schema_2): Actions<GDE> {
   return schemaToTriggerActions({
     schema,
     fieldToTrigger: {
@@ -47,4 +47,4 @@ export const schemaToActions_2: SchemaToTriggerActions<Schema_2> = (schema) => {
       },
     },
   });
-};
+}
