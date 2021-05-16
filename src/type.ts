@@ -1,6 +1,6 @@
 import { Dictionary, Field_1, Field_2, FieldOf, Schema } from 'kira-core';
 
-import { InDocSnapshot, OutDocData } from './doc-data';
+import { ReadDocSnapshot, WriteDocData } from './doc-data';
 
 // utils
 export type Either<T, E> =
@@ -15,8 +15,8 @@ export type ActionError = {
 export type DocKey = { readonly col: string; readonly id: string };
 
 // Db
-export type GetDoc<E> = (key: DocKey) => Promise<Either<InDocSnapshot, E>>;
-export type WriteDoc<WR> = (key: DocKey, docData: OutDocData) => Promise<WR>;
+export type GetDoc<E> = (key: DocKey) => Promise<Either<ReadDocSnapshot, E>>;
+export type WriteDoc<WR> = (key: DocKey, docData: WriteDocData) => Promise<WR>;
 
 export type Query<T extends string = string> = {
   readonly col: T;
@@ -25,12 +25,12 @@ export type Query<T extends string = string> = {
   readonly orderDirection?: 'asc' | 'desc';
 };
 
-export type QueryDoc = (query: Query) => Promise<readonly InDocSnapshot[]>;
+export type QueryDoc = (query: Query) => Promise<readonly ReadDocSnapshot[]>;
 
 // Trigger
-export type InDocChange = {
-  readonly before: InDocSnapshot;
-  readonly after: InDocSnapshot;
+export type ReadDocChange = {
+  readonly before: ReadDocSnapshot;
+  readonly after: ReadDocSnapshot;
 };
 
 export type ActionContext<T extends TriggerType, GDE> = {
@@ -39,14 +39,14 @@ export type ActionContext<T extends TriggerType, GDE> = {
 };
 
 export type SnapshotOfTriggerType<T extends TriggerType> = T extends 'onCreate'
-  ? InDocSnapshot
+  ? ReadDocSnapshot
   : T extends 'onDelete'
-  ? InDocSnapshot
+  ? ReadDocSnapshot
   : T extends 'onUpdate'
-  ? InDocChange
+  ? ReadDocChange
   : never;
 
-export type ActionResult = Dictionary<Dictionary<OutDocData>>;
+export type ActionResult = Dictionary<Dictionary<WriteDocData>>;
 
 export type Action<T extends TriggerType, GDE> = (
   context: ActionContext<T, GDE>

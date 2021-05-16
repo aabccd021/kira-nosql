@@ -9,7 +9,7 @@ import {
 } from 'kira-core';
 
 import { MakeTriggerContext_1, MakeTriggerContext_2, Trigger } from './type';
-import { inToOutField } from './util';
+import { readToWriteField } from './util';
 
 function copyRefField<GDE>({
   syncFields,
@@ -43,7 +43,7 @@ function copyRefField<GDE>({
                 value: Object.fromEntries(
                   Object.entries(refDoc.value.data ?? {})
                     .filter(([fieldName]) => syncFieldNames.includes(fieldName))
-                    .map(inToOutField)
+                    .map(readToWriteField)
                 ),
               },
             },

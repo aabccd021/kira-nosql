@@ -1,23 +1,27 @@
-export type InDocSnapshot = {
+export type ReadDocSnapshot = {
   readonly id: string;
-  readonly data?: InDocData;
+  readonly data?: ReadDocData;
 };
 
 /**
  * DocData
  */
-export type InDocData = { readonly [key: string]: InField };
+export type ReadDocData = { readonly [key: string]: ReadField };
 
-export type OutDocData = { readonly [key: string]: OutField };
+export type WriteDocData = { readonly [key: string]: WriteField };
 
 /**
  * Field
  */
 export type PrimitiveField = StringPrimitiveField | NumberPrimitiveField | DatePrimitiveField;
 
-export type InField = PrimitiveField | RefInField;
+export type ReadField = PrimitiveField | RefReadField;
 
-export type OutField = PrimitiveField | CreationTimeOutField | IncrementOutField | RefOutField;
+export type WriteField =
+  | PrimitiveField
+  | CreationTimeWriteField
+  | ReadcrementWriteField
+  | RefWriteField;
 
 /**
  * Primitive Fields
@@ -38,26 +42,26 @@ export type DatePrimitiveField = {
 };
 
 /**
- * InFields
+ * ReadFields
  */
-export type RefInField = {
+export type RefReadField = {
   readonly type: 'ref';
-  readonly value: InDocSnapshot;
+  readonly value: ReadDocSnapshot;
 };
 
 /**
- * OutFields
+ * WriteFields
  */
-export type RefOutField = {
+export type RefWriteField = {
   readonly type: 'ref';
-  readonly value: OutDocData;
+  readonly value: WriteDocData;
 };
 
-export type CreationTimeOutField = {
+export type CreationTimeWriteField = {
   readonly type: 'creationTime';
 };
 
-export type IncrementOutField = {
+export type ReadcrementWriteField = {
   readonly type: 'increment';
   readonly incrementValue: number;
 };
