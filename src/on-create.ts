@@ -85,8 +85,10 @@ export function makeOnCreateOwnerFieldTrigger<GDE>({
         return { tag: 'left', error: { errorType: 'invalid_data_type' } };
       }
       const refDoc = await getDoc({ col: userColName, id: refField.value.id });
-
       if (refDoc.tag === 'left') return refDoc;
+
+      const refDocValueData = refDoc.value.data;
+      if (refDocValueData === undefined) return { tag: 'right', value: {} };
 
       const syncFieldNames = Object.keys(syncFields ?? {});
       return {
@@ -97,7 +99,7 @@ export function makeOnCreateOwnerFieldTrigger<GDE>({
               [fieldName]: {
                 type: 'ref',
                 value: Object.fromEntries(
-                  Object.entries(refDoc.value.data ?? {})
+                  Object.entries(refDocValueData)
                     .filter(([fieldName]) => syncFieldNames.includes(fieldName))
                     .map(readToWriteField)
                 ),
@@ -122,8 +124,10 @@ export function makeOnCreateRefFieldTrigger<GDE>({
         return { tag: 'left', error: { errorType: 'invalid_data_type' } };
       }
       const refDoc = await getDoc({ col: refCol, id: refField.value.id });
-
       if (refDoc.tag === 'left') return refDoc;
+
+      const refDocValueData = refDoc.value.data;
+      if (refDocValueData === undefined) return { tag: 'right', value: {} };
 
       const syncFieldNames = Object.keys(syncFields ?? {});
       return {
@@ -134,7 +138,7 @@ export function makeOnCreateRefFieldTrigger<GDE>({
               [fieldName]: {
                 type: 'ref',
                 value: Object.fromEntries(
-                  Object.entries(refDoc.value.data ?? {})
+                  Object.entries(refDocValueData)
                     .filter(([fieldName]) => syncFieldNames.includes(fieldName))
                     .map(readToWriteField)
                 ),
