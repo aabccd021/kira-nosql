@@ -283,6 +283,42 @@ describe('owner field action maker', () => {
     expect(articleActionGetDoc).toHaveBeenCalledWith({ col: 'user', id: 'user0' });
     expect(articleActionResult).toStrictEqual({ tag: 'right', value: {} });
   });
+
+  it('return empty trigger syncFields is undefined', async () => {
+    const onCreateTrigger = makeOnCreateOwnerFieldTrigger({
+      colName: 'article',
+      fieldName: 'ownerUser',
+      field: { type: 'owner' },
+      userColName: 'user',
+    });
+    const mockedGetDocReturn: ReturnType<GetDoc<unknown>> = Promise.resolve({
+      tag: 'right',
+      value: {
+        id: 'user0',
+        data: {
+          displayName: { type: 'string', value: 'USER 0 NAME' },
+        },
+      },
+    });
+    const articleActionGetDoc = jest.fn().mockReturnValueOnce(mockedGetDocReturn);
+    const articleActionResult = await onCreateTrigger?.['article']?.({
+      getDoc: articleActionGetDoc,
+      snapshot: {
+        id: 'article0',
+        data: {
+          ownerUser: {
+            type: 'ref',
+            value: { id: 'user0' },
+          },
+        },
+      },
+    });
+
+    expect(Object.keys(onCreateTrigger ?? {})).toStrictEqual(['article']);
+    expect(articleActionGetDoc).toHaveBeenCalledTimes(1);
+    expect(articleActionGetDoc).toHaveBeenCalledWith({ col: 'user', id: 'user0' });
+    expect(articleActionResult).toStrictEqual({ tag: 'right', value: {} });
+  });
 });
 
 describe('ref field action maker', () => {
@@ -398,7 +434,7 @@ describe('ref field action maker', () => {
     expect(articleActionResult).toStrictEqual({ tag: 'right', value: {} });
   });
 
-  it('return empty trigger syncFields is empty', async () => {
+  it('return empty trigger syncFields is undefined', async () => {
     const onCreateTrigger = makeOnCreateRefFieldTrigger({
       colName: 'articleReply',
       fieldName: 'repliedArticle',
