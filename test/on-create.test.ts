@@ -161,7 +161,7 @@ describe('image field action maker', () => {
 describe('owner field action maker', () => {
   const onCreateTrigger = makeOnCreateOwnerFieldTrigger({
     colName: 'article',
-    fieldName: 'owner',
+    fieldName: 'ownerUser',
     field: { type: 'owner' },
     userColName: 'user',
   });
@@ -194,7 +194,7 @@ describe('owner field action maker', () => {
       snapshot: {
         id: 'article0',
         data: {
-          owner: {
+          ownerUser: {
             type: 'string',
             value: 'somerandomstring',
           },
@@ -220,7 +220,7 @@ describe('owner field action maker', () => {
       snapshot: {
         id: 'article0',
         data: {
-          owner: {
+          ownerUser: {
             type: 'ref',
             value: { id: 'user0' },
           },
@@ -244,7 +244,7 @@ describe('owner field action maker', () => {
       snapshot: {
         id: 'article0',
         data: {
-          owner: {
+          ownerUser: {
             type: 'ref',
             value: { id: 'user0' },
           },
@@ -293,7 +293,7 @@ describe('ref field action maker', () => {
       snapshot: {
         id: 'articleReply0',
         data: {
-          owner: {
+          ownerUser: {
             type: 'string',
             value: 'somerandomstring',
           },
