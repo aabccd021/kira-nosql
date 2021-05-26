@@ -88,9 +88,11 @@ export function makeOnCreateOwnerFieldTrigger<GDE>({
       if (refDoc.tag === 'left') return refDoc;
 
       const refDocValueData = refDoc.value.data;
-      if (refDocValueData === undefined) return { tag: 'right', value: {} };
+      if (refDocValueData === undefined || syncFields === undefined) {
+        return { tag: 'right', value: {} };
+      }
 
-      const syncFieldNames = Object.keys(syncFields ?? {});
+      const syncFieldNames = Object.keys(syncFields);
       return {
         tag: 'right',
         value: {
@@ -127,9 +129,11 @@ export function makeOnCreateRefFieldTrigger<GDE>({
       if (refDoc.tag === 'left') return refDoc;
 
       const refDocValueData = refDoc.value.data;
-      if (refDocValueData === undefined) return { tag: 'right', value: {} };
+      if (refDocValueData === undefined || syncFields === undefined) {
+        return { tag: 'right', value: {} };
+      }
 
-      const syncFieldNames = Object.keys(syncFields ?? {});
+      const syncFieldNames = Object.keys(syncFields);
       return {
         tag: 'right',
         value: {
