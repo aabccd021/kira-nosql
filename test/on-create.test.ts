@@ -3,9 +3,10 @@ import {
   makeOnCreateCountFieldTrigger,
   makeOnCreateCreationTimeFieldTrigger,
   makeOnCreateImageFieldTrigger,
+  makeOnCreateStringFieldTrigger,
 } from '../src/on-create';
 
-describe('makeOnCreateCountFieldTrigger', () => {
+describe('count field action maker', () => {
   const onCreateTrigger = makeOnCreateCountFieldTrigger({
     colName: 'article',
     fieldName: 'bookmarkCount',
@@ -135,6 +136,17 @@ describe('image field action maker', () => {
       colName: 'article',
       fieldName: 'creationTime',
       field: { type: 'image' },
+    });
+    expect(onCreateTrigger).toBeUndefined();
+  });
+});
+
+describe('string field action maker', () => {
+  it('does not return action', () => {
+    const onCreateTrigger = makeOnCreateStringFieldTrigger({
+      colName: 'article',
+      fieldName: 'text',
+      field: { type: 'string' },
     });
     expect(onCreateTrigger).toBeUndefined();
   });
