@@ -76,7 +76,7 @@ describe('count field action maker', () => {
     });
   });
 
-  it('returns error if not ref field', async () => {
+  it('returns error if counterDoc is not ref field', async () => {
     const bookmarkActionGetDoc: GetDoc<unknown> = jest.fn();
 
     const bookmarkActionResult = await bookmarkAction?.({
@@ -87,6 +87,21 @@ describe('count field action maker', () => {
           bookmarkedarticle: { type: 'number', value: 0 },
         },
       },
+    });
+
+    expect(bookmarkActionGetDoc).not.toHaveBeenCalled();
+    expect(bookmarkActionResult).toStrictEqual({
+      tag: 'left',
+      error: { errorType: 'invalid_data_type' },
+    });
+  });
+
+  it('returns error if counterDoc is empty', async () => {
+    const bookmarkActionGetDoc: GetDoc<unknown> = jest.fn();
+
+    const bookmarkActionResult = await bookmarkAction?.({
+      getDoc: bookmarkActionGetDoc,
+      snapshot: { id: 'bookmark0' },
     });
 
     expect(bookmarkActionGetDoc).not.toHaveBeenCalled();
