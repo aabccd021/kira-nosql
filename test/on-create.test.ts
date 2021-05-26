@@ -316,6 +316,62 @@ describe('owner field action maker', () => {
     expect(mockedGetDoc).toHaveBeenCalledWith({ col: 'user', id: 'user0' });
     expect(actionResult).toStrictEqual({ tag: 'right', value: {} });
   });
+
+  it('copy owner fields', async () => {
+    const onCreateTrigger = makeOnCreateOwnerFieldTrigger({
+      colName: 'article',
+      fieldName: 'ownerUser',
+      field: {
+        type: 'owner',
+        syncFields: { displayName: true, bio: true },
+      },
+      userColName: 'user',
+    });
+    const mockedGetDocReturn: ReturnType<GetDoc<unknown>> = Promise.resolve({
+      tag: 'right',
+      value: {
+        id: 'user0',
+        data: {
+          displayName: { type: 'string', value: 'Kira Masumoto' },
+          bio: { type: 'string', value: 'dorokatsu' },
+          age: { type: 'number', value: 19 },
+        },
+      },
+    });
+    const mockedGetDoc = jest.fn().mockReturnValueOnce(mockedGetDocReturn);
+    const actionResult = await onCreateTrigger?.['article']?.({
+      getDoc: mockedGetDoc,
+      snapshot: {
+        id: 'article0',
+        data: {
+          ownerUser: {
+            type: 'ref',
+            value: { id: 'user0' },
+          },
+        },
+      },
+    });
+
+    expect(Object.keys(onCreateTrigger ?? {})).toStrictEqual(['article']);
+    expect(mockedGetDoc).toHaveBeenCalledTimes(1);
+    expect(mockedGetDoc).toHaveBeenCalledWith({ col: 'user', id: 'user0' });
+    expect(actionResult).toStrictEqual({
+      tag: 'right',
+      value: {
+        article: {
+          article0: {
+            ownerUser: {
+              type: 'ref',
+              value: {
+                displayName: { type: 'string', value: 'Kira Masumoto' },
+                bio: { type: 'string', value: 'dorokatsu' },
+              },
+            },
+          },
+        },
+      },
+    });
+  });
 });
 
 describe('ref field action maker', () => {
@@ -458,6 +514,62 @@ describe('ref field action maker', () => {
     expect(mockedGetDoc).toHaveBeenCalledTimes(1);
     expect(mockedGetDoc).toHaveBeenCalledWith({ col: 'article', id: 'article0' });
     expect(actionResult).toStrictEqual({ tag: 'right', value: {} });
+  });
+
+  it('copy ref doc field', async () => {
+    const onCreateTrigger = makeOnCreateRefFieldTrigger({
+      colName: 'articleReply',
+      fieldName: 'repliedArticle',
+      field: {
+        type: 'ref',
+        refCol: 'article',
+        syncFields: { title: true, category: true },
+      },
+    });
+    const mockedGetDocReturn: ReturnType<GetDoc<unknown>> = Promise.resolve({
+      tag: 'right',
+      value: {
+        id: 'aricle0',
+        data: {
+          title: { type: 'string', value: 'Article Zero Title' },
+          category: { type: 'string', value: 'Animal' },
+          publishedMedia: { type: 'string', value: 'book' },
+        },
+      },
+    });
+    const mockedGetDoc = jest.fn().mockReturnValueOnce(mockedGetDocReturn);
+    const actionResult = await onCreateTrigger?.['articleReply']?.({
+      getDoc: mockedGetDoc,
+      snapshot: {
+        id: 'articleReply0',
+        data: {
+          repliedArticle: {
+            type: 'ref',
+            value: { id: 'article0' },
+          },
+        },
+      },
+    });
+
+    expect(Object.keys(onCreateTrigger ?? {})).toStrictEqual(['articleReply']);
+    expect(mockedGetDoc).toHaveBeenCalledTimes(1);
+    expect(mockedGetDoc).toHaveBeenCalledWith({ col: 'article', id: 'article0' });
+    expect(actionResult).toStrictEqual({
+      tag: 'right',
+      value: {
+        articleReply: {
+          articleReply0: {
+            repliedArticle: {
+              type: 'ref',
+              value: {
+                title: { type: 'string', value: 'Article Zero Title' },
+                category: { type: 'string', value: 'Animal' },
+              },
+            },
+          },
+        },
+      },
+    });
   });
 });
 
