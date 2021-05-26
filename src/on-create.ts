@@ -1,7 +1,6 @@
 import {
   CountField,
   CreationTimeField,
-  Dictionary,
   ImageField,
   OwnerField,
   RefField,
@@ -10,49 +9,6 @@ import {
 
 import { MakeTriggerContext_1, MakeTriggerContext_2, Trigger } from './type';
 import { readToWriteField } from './util';
-
-function copyRefField<GDE>({
-  syncFields,
-  refCol,
-  colName,
-  fieldName,
-}: {
-  readonly refCol: string;
-  readonly syncFields?: Dictionary<true>;
-  readonly colName: string;
-  readonly fieldName: string;
-}): Trigger<'onCreate', GDE> {
-  return {
-    [colName]: async ({ getDoc, snapshot: doc }) => {
-      const refField = doc.data?.[fieldName];
-      if (refField?.type !== 'ref') {
-        return { tag: 'left', error: { errorType: 'invalid_data_type' } };
-      }
-      const refDoc = await getDoc({ col: refCol, id: refField.value.id });
-
-      if (refDoc.tag === 'left') return refDoc;
-
-      const syncFieldNames = Object.keys(syncFields ?? {});
-      return {
-        tag: 'right',
-        value: {
-          [colName]: {
-            [doc.id]: {
-              [fieldName]: {
-                type: 'ref',
-                value: Object.fromEntries(
-                  Object.entries(refDoc.value.data ?? {})
-                    .filter(([fieldName]) => syncFieldNames.includes(fieldName))
-                    .map(readToWriteField)
-                ),
-              },
-            },
-          },
-        },
-      };
-    },
-  };
-}
 
 export function makeOnCreateCountFieldTrigger<GDE>({
   colName,
@@ -122,7 +78,36 @@ export function makeOnCreateOwnerFieldTrigger<GDE>({
   userColName,
   fieldName,
 }: MakeTriggerContext_1<OwnerField>): Trigger<'onCreate', GDE> | undefined {
-  return copyRefField({ refCol: userColName, fieldName, colName, syncFields });
+  return {
+    [colName]: async ({ getDoc, snapshot: doc }) => {
+      const refField = doc.data?.[fieldName];
+      if (refField?.type !== 'ref') {
+        return { tag: 'left', error: { errorType: 'invalid_data_type' } };
+      }
+      const refDoc = await getDoc({ col: userColName, id: refField.value.id });
+
+      if (refDoc.tag === 'left') return refDoc;
+
+      const syncFieldNames = Object.keys(syncFields ?? {});
+      return {
+        tag: 'right',
+        value: {
+          [colName]: {
+            [doc.id]: {
+              [fieldName]: {
+                type: 'ref',
+                value: Object.fromEntries(
+                  Object.entries(refDoc.value.data ?? {})
+                    .filter(([fieldName]) => syncFieldNames.includes(fieldName))
+                    .map(readToWriteField)
+                ),
+              },
+            },
+          },
+        },
+      };
+    },
+  };
 }
 
 export function makeOnCreateRefFieldTrigger<GDE>({
@@ -130,7 +115,36 @@ export function makeOnCreateRefFieldTrigger<GDE>({
   field: { refCol, syncFields },
   fieldName,
 }: MakeTriggerContext_2<RefField>): Trigger<'onCreate', GDE> | undefined {
-  return copyRefField({ refCol, fieldName, colName, syncFields });
+  return {
+    [colName]: async ({ getDoc, snapshot: doc }) => {
+      const refField = doc.data?.[fieldName];
+      if (refField?.type !== 'ref') {
+        return { tag: 'left', error: { errorType: 'invalid_data_type' } };
+      }
+      const refDoc = await getDoc({ col: refCol, id: refField.value.id });
+
+      if (refDoc.tag === 'left') return refDoc;
+
+      const syncFieldNames = Object.keys(syncFields ?? {});
+      return {
+        tag: 'right',
+        value: {
+          [colName]: {
+            [doc.id]: {
+              [fieldName]: {
+                type: 'ref',
+                value: Object.fromEntries(
+                  Object.entries(refDoc.value.data ?? {})
+                    .filter(([fieldName]) => syncFieldNames.includes(fieldName))
+                    .map(readToWriteField)
+                ),
+              },
+            },
+          },
+        },
+      };
+    },
+  };
 }
 
 export function makeOnCreateStringFieldTrigger<GDE>(
