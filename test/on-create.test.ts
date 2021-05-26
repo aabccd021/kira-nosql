@@ -230,10 +230,31 @@ describe('owner field action maker', () => {
 
     expect(articleActionGetDoc).toHaveBeenCalledTimes(1);
     expect(articleActionGetDoc).toHaveBeenCalledWith({ col: 'user', id: 'user0' });
-    expect(articleActionResult).toStrictEqual({
-      tag: 'left',
-      error: 'error1',
+    expect(articleActionResult).toStrictEqual({ tag: 'left', error: 'error1' });
+  });
+
+  it('return empty trigger if refDoc.value.data is undefined', async () => {
+    const mockedGetDocReturn: ReturnType<GetDoc<unknown>> = Promise.resolve({
+      tag: 'right',
+      value: { id: 'user0' },
     });
+    const articleActionGetDoc = jest.fn().mockReturnValueOnce(mockedGetDocReturn);
+    const articleActionResult = await onCreateArticleTrigger?.({
+      getDoc: articleActionGetDoc,
+      snapshot: {
+        id: 'article0',
+        data: {
+          owner: {
+            type: 'ref',
+            value: { id: 'user0' },
+          },
+        },
+      },
+    });
+
+    expect(articleActionGetDoc).toHaveBeenCalledTimes(1);
+    expect(articleActionGetDoc).toHaveBeenCalledWith({ col: 'user', id: 'user0' });
+    expect(articleActionResult).toStrictEqual({ tag: 'right', value: {} });
   });
 });
 
@@ -312,6 +333,30 @@ describe('ref field action maker', () => {
       tag: 'left',
       error: 'error1',
     });
+  });
+
+  it('return empty trigger if refDoc.value.data is undefined', async () => {
+    const mockedGetDocReturn: ReturnType<GetDoc<unknown>> = Promise.resolve({
+      tag: 'right',
+      value: { id: 'aricle0' },
+    });
+    const articleActionGetDoc = jest.fn().mockReturnValueOnce(mockedGetDocReturn);
+    const articleActionResult = await onCreateArticleReplyTrigger?.({
+      getDoc: articleActionGetDoc,
+      snapshot: {
+        id: 'articleReply0',
+        data: {
+          repliedArticle: {
+            type: 'ref',
+            value: { id: 'article0' },
+          },
+        },
+      },
+    });
+
+    expect(articleActionGetDoc).toHaveBeenCalledTimes(1);
+    expect(articleActionGetDoc).toHaveBeenCalledWith({ col: 'article', id: 'article0' });
+    expect(articleActionResult).toStrictEqual({ tag: 'right', value: {} });
   });
 });
 
