@@ -19,15 +19,15 @@ describe('count field action maker', () => {
         groupByRef: 'bookmarkedarticle',
       },
     });
-    const articleActionGetDoc: GetDoc<unknown> = jest.fn();
-    const articleActionResult = await onCreateTrigger?.['article']?.({
-      getDoc: articleActionGetDoc,
+    const mockedGetDoc: GetDoc<unknown> = jest.fn();
+    const actionResult = await onCreateTrigger?.['article']?.({
+      getDoc: mockedGetDoc,
       snapshot: { id: 'article0', data: {} },
     });
 
     expect(Object.keys(onCreateTrigger ?? {})).toStrictEqual(['article', 'bookmark']);
-    expect(articleActionGetDoc).not.toHaveBeenCalled();
-    expect(articleActionResult).toStrictEqual({
+    expect(mockedGetDoc).not.toHaveBeenCalled();
+    expect(actionResult).toStrictEqual({
       tag: 'right',
       value: {
         article: {
@@ -52,9 +52,9 @@ describe('count field action maker', () => {
         groupByRef: 'bookmarkedarticle',
       },
     });
-    const bookmarkActionGetDoc: GetDoc<unknown> = jest.fn();
-    const bookmarkActionResult = await onCreateTrigger?.['bookmark']?.({
-      getDoc: bookmarkActionGetDoc,
+    const mockedGetDoc: GetDoc<unknown> = jest.fn();
+    const actionResult = await onCreateTrigger?.['bookmark']?.({
+      getDoc: mockedGetDoc,
       snapshot: {
         id: 'bookmark0',
         data: {
@@ -64,8 +64,8 @@ describe('count field action maker', () => {
     });
 
     expect(Object.keys(onCreateTrigger ?? {})).toStrictEqual(['article', 'bookmark']);
-    expect(bookmarkActionGetDoc).not.toHaveBeenCalled();
-    expect(bookmarkActionResult).toStrictEqual({
+    expect(mockedGetDoc).not.toHaveBeenCalled();
+    expect(actionResult).toStrictEqual({
       tag: 'right',
       value: {
         article: {
@@ -87,9 +87,9 @@ describe('count field action maker', () => {
         groupByRef: 'bookmarkedarticle',
       },
     });
-    const bookmarkActionGetDoc: GetDoc<unknown> = jest.fn();
-    const bookmarkActionResult = await onCreateTrigger?.['bookmark']?.({
-      getDoc: bookmarkActionGetDoc,
+    const mockedGetDoc: GetDoc<unknown> = jest.fn();
+    const actionResult = await onCreateTrigger?.['bookmark']?.({
+      getDoc: mockedGetDoc,
       snapshot: {
         id: 'bookmark0',
         data: {
@@ -99,8 +99,8 @@ describe('count field action maker', () => {
     });
 
     expect(Object.keys(onCreateTrigger ?? {})).toStrictEqual(['article', 'bookmark']);
-    expect(bookmarkActionGetDoc).not.toHaveBeenCalled();
-    expect(bookmarkActionResult).toStrictEqual({
+    expect(mockedGetDoc).not.toHaveBeenCalled();
+    expect(actionResult).toStrictEqual({
       tag: 'left',
       error: { errorType: 'invalid_data_type' },
     });
@@ -116,15 +116,15 @@ describe('count field action maker', () => {
         groupByRef: 'bookmarkedarticle',
       },
     });
-    const bookmarkActionGetDoc: GetDoc<unknown> = jest.fn();
-    const bookmarkActionResult = await onCreateTrigger?.['bookmark']?.({
-      getDoc: bookmarkActionGetDoc,
+    const mockedGetDoc: GetDoc<unknown> = jest.fn();
+    const actionResult = await onCreateTrigger?.['bookmark']?.({
+      getDoc: mockedGetDoc,
       snapshot: { id: 'bookmark0' },
     });
 
     expect(Object.keys(onCreateTrigger ?? {})).toStrictEqual(['article', 'bookmark']);
-    expect(bookmarkActionGetDoc).not.toHaveBeenCalled();
-    expect(bookmarkActionResult).toStrictEqual({
+    expect(mockedGetDoc).not.toHaveBeenCalled();
+    expect(actionResult).toStrictEqual({
       tag: 'left',
       error: { errorType: 'invalid_data_type' },
     });
@@ -138,16 +138,16 @@ describe('creationTime field action maker', () => {
       fieldName: 'creationTime',
       field: { type: 'creationTime' },
     });
-    const articleActionGetDoc: GetDoc<unknown> = jest.fn();
+    const mockedGetDoc: GetDoc<unknown> = jest.fn();
 
-    const articleActionResult = await onCreateTrigger?.['article']?.({
-      getDoc: articleActionGetDoc,
+    const actionResult = await onCreateTrigger?.['article']?.({
+      getDoc: mockedGetDoc,
       snapshot: { id: 'article0', data: {} },
     });
 
     expect(Object.keys(onCreateTrigger ?? {})).toStrictEqual(['article']);
-    expect(articleActionGetDoc).not.toHaveBeenCalled();
-    expect(articleActionResult).toStrictEqual({
+    expect(mockedGetDoc).not.toHaveBeenCalled();
+    expect(actionResult).toStrictEqual({
       tag: 'right',
       value: {
         article: {
@@ -179,15 +179,15 @@ describe('owner field action maker', () => {
       field: { type: 'owner' },
       userColName: 'user',
     });
-    const articleActionGetDoc = jest.fn();
-    const articleActionResult = await onCreateTrigger?.['article']?.({
-      getDoc: articleActionGetDoc,
+    const mockedGetDoc = jest.fn();
+    const actionResult = await onCreateTrigger?.['article']?.({
+      getDoc: mockedGetDoc,
       snapshot: { id: 'article0' },
     });
 
     expect(Object.keys(onCreateTrigger ?? {})).toStrictEqual(['article']);
-    expect(articleActionGetDoc).not.toHaveBeenCalled();
-    expect(articleActionResult).toStrictEqual({
+    expect(mockedGetDoc).not.toHaveBeenCalled();
+    expect(actionResult).toStrictEqual({
       tag: 'left',
       error: { errorType: 'invalid_data_type' },
     });
@@ -200,23 +200,20 @@ describe('owner field action maker', () => {
       field: { type: 'owner' },
       userColName: 'user',
     });
-    const articleActionGetDoc = jest.fn();
-    const articleActionResult = await onCreateTrigger?.['article']?.({
-      getDoc: articleActionGetDoc,
+    const mockedGetDoc = jest.fn();
+    const actionResult = await onCreateTrigger?.['article']?.({
+      getDoc: mockedGetDoc,
       snapshot: {
         id: 'article0',
         data: {
-          ownerUser: {
-            type: 'string',
-            value: 'somerandomstring',
-          },
+          ownerUser: { type: 'string', value: 'somerandomstring' },
         },
       },
     });
 
     expect(Object.keys(onCreateTrigger ?? {})).toStrictEqual(['article']);
-    expect(articleActionGetDoc).not.toHaveBeenCalled();
-    expect(articleActionResult).toStrictEqual({
+    expect(mockedGetDoc).not.toHaveBeenCalled();
+    expect(actionResult).toStrictEqual({
       tag: 'left',
       error: { errorType: 'invalid_data_type' },
     });
@@ -233,9 +230,9 @@ describe('owner field action maker', () => {
       tag: 'left',
       error: 'error1',
     });
-    const articleActionGetDoc = jest.fn().mockReturnValueOnce(mockedGetDocReturn);
-    const articleActionResult = await onCreateTrigger?.['article']?.({
-      getDoc: articleActionGetDoc,
+    const mockedGetDoc = jest.fn().mockReturnValueOnce(mockedGetDocReturn);
+    const actionResult = await onCreateTrigger?.['article']?.({
+      getDoc: mockedGetDoc,
       snapshot: {
         id: 'article0',
         data: {
@@ -248,9 +245,9 @@ describe('owner field action maker', () => {
     });
 
     expect(Object.keys(onCreateTrigger ?? {})).toStrictEqual(['article']);
-    expect(articleActionGetDoc).toHaveBeenCalledTimes(1);
-    expect(articleActionGetDoc).toHaveBeenCalledWith({ col: 'user', id: 'user0' });
-    expect(articleActionResult).toStrictEqual({ tag: 'left', error: 'error1' });
+    expect(mockedGetDoc).toHaveBeenCalledTimes(1);
+    expect(mockedGetDoc).toHaveBeenCalledWith({ col: 'user', id: 'user0' });
+    expect(actionResult).toStrictEqual({ tag: 'left', error: 'error1' });
   });
 
   it('return empty trigger if refDoc.value.data is undefined', async () => {
@@ -264,9 +261,9 @@ describe('owner field action maker', () => {
       tag: 'right',
       value: { id: 'user0' },
     });
-    const articleActionGetDoc = jest.fn().mockReturnValueOnce(mockedGetDocReturn);
-    const articleActionResult = await onCreateTrigger?.['article']?.({
-      getDoc: articleActionGetDoc,
+    const mockedGetDoc = jest.fn().mockReturnValueOnce(mockedGetDocReturn);
+    const actionResult = await onCreateTrigger?.['article']?.({
+      getDoc: mockedGetDoc,
       snapshot: {
         id: 'article0',
         data: {
@@ -279,9 +276,9 @@ describe('owner field action maker', () => {
     });
 
     expect(Object.keys(onCreateTrigger ?? {})).toStrictEqual(['article']);
-    expect(articleActionGetDoc).toHaveBeenCalledTimes(1);
-    expect(articleActionGetDoc).toHaveBeenCalledWith({ col: 'user', id: 'user0' });
-    expect(articleActionResult).toStrictEqual({ tag: 'right', value: {} });
+    expect(mockedGetDoc).toHaveBeenCalledTimes(1);
+    expect(mockedGetDoc).toHaveBeenCalledWith({ col: 'user', id: 'user0' });
+    expect(actionResult).toStrictEqual({ tag: 'right', value: {} });
   });
 
   it('return empty trigger syncFields is undefined', async () => {
@@ -300,9 +297,9 @@ describe('owner field action maker', () => {
         },
       },
     });
-    const articleActionGetDoc = jest.fn().mockReturnValueOnce(mockedGetDocReturn);
-    const articleActionResult = await onCreateTrigger?.['article']?.({
-      getDoc: articleActionGetDoc,
+    const mockedGetDoc = jest.fn().mockReturnValueOnce(mockedGetDocReturn);
+    const actionResult = await onCreateTrigger?.['article']?.({
+      getDoc: mockedGetDoc,
       snapshot: {
         id: 'article0',
         data: {
@@ -315,9 +312,9 @@ describe('owner field action maker', () => {
     });
 
     expect(Object.keys(onCreateTrigger ?? {})).toStrictEqual(['article']);
-    expect(articleActionGetDoc).toHaveBeenCalledTimes(1);
-    expect(articleActionGetDoc).toHaveBeenCalledWith({ col: 'user', id: 'user0' });
-    expect(articleActionResult).toStrictEqual({ tag: 'right', value: {} });
+    expect(mockedGetDoc).toHaveBeenCalledTimes(1);
+    expect(mockedGetDoc).toHaveBeenCalledWith({ col: 'user', id: 'user0' });
+    expect(actionResult).toStrictEqual({ tag: 'right', value: {} });
   });
 });
 
@@ -329,15 +326,15 @@ describe('ref field action maker', () => {
       field: { type: 'ref', refCol: 'article' },
     });
 
-    const articleReplyActionGetDoc = jest.fn();
-    const articleReplyActionResult = await onCreateTrigger?.['articleReply']?.({
-      getDoc: articleReplyActionGetDoc,
+    const mockedGetDoc = jest.fn();
+    const actionResult = await onCreateTrigger?.['articleReply']?.({
+      getDoc: mockedGetDoc,
       snapshot: { id: 'articleReply0' },
     });
 
     expect(Object.keys(onCreateTrigger ?? {})).toStrictEqual(['articleReply']);
-    expect(articleReplyActionGetDoc).not.toHaveBeenCalled();
-    expect(articleReplyActionResult).toStrictEqual({
+    expect(mockedGetDoc).not.toHaveBeenCalled();
+    expect(actionResult).toStrictEqual({
       tag: 'left',
       error: { errorType: 'invalid_data_type' },
     });
@@ -349,23 +346,20 @@ describe('ref field action maker', () => {
       fieldName: 'repliedArticle',
       field: { type: 'ref', refCol: 'article' },
     });
-    const articleReplyActionGetDoc = jest.fn();
-    const articleReplyActionResult = await onCreateTrigger?.['articleReply']?.({
-      getDoc: articleReplyActionGetDoc,
+    const mockedGetDoc = jest.fn();
+    const actionResult = await onCreateTrigger?.['articleReply']?.({
+      getDoc: mockedGetDoc,
       snapshot: {
         id: 'articleReply0',
         data: {
-          ownerUser: {
-            type: 'string',
-            value: 'somerandomstring',
-          },
+          ownerUser: { type: 'string', value: 'somerandomstring' },
         },
       },
     });
 
     expect(Object.keys(onCreateTrigger ?? {})).toStrictEqual(['articleReply']);
-    expect(articleReplyActionGetDoc).not.toHaveBeenCalled();
-    expect(articleReplyActionResult).toStrictEqual({
+    expect(mockedGetDoc).not.toHaveBeenCalled();
+    expect(actionResult).toStrictEqual({
       tag: 'left',
       error: { errorType: 'invalid_data_type' },
     });
@@ -381,9 +375,9 @@ describe('ref field action maker', () => {
       tag: 'left',
       error: 'error1',
     });
-    const articleReplyActionGetDoc = jest.fn().mockReturnValueOnce(mockedGetDocReturn);
-    const articleReplyActionResult = await onCreateTrigger?.['articleReply']?.({
-      getDoc: articleReplyActionGetDoc,
+    const mockedGetDoc = jest.fn().mockReturnValueOnce(mockedGetDocReturn);
+    const actionResult = await onCreateTrigger?.['articleReply']?.({
+      getDoc: mockedGetDoc,
       snapshot: {
         id: 'articleReply0',
         data: {
@@ -396,12 +390,9 @@ describe('ref field action maker', () => {
     });
 
     expect(Object.keys(onCreateTrigger ?? {})).toStrictEqual(['articleReply']);
-    expect(articleReplyActionGetDoc).toHaveBeenCalledTimes(1);
-    expect(articleReplyActionGetDoc).toHaveBeenCalledWith({ col: 'article', id: 'article0' });
-    expect(articleReplyActionResult).toStrictEqual({
-      tag: 'left',
-      error: 'error1',
-    });
+    expect(mockedGetDoc).toHaveBeenCalledTimes(1);
+    expect(mockedGetDoc).toHaveBeenCalledWith({ col: 'article', id: 'article0' });
+    expect(actionResult).toStrictEqual({ tag: 'left', error: 'error1' });
   });
 
   it('return empty trigger if refDoc.value.data is undefined', async () => {
@@ -414,9 +405,9 @@ describe('ref field action maker', () => {
       tag: 'right',
       value: { id: 'aricle0' },
     });
-    const articleActionGetDoc = jest.fn().mockReturnValueOnce(mockedGetDocReturn);
-    const articleActionResult = await onCreateTrigger?.['articleReply']?.({
-      getDoc: articleActionGetDoc,
+    const mockedGetDoc = jest.fn().mockReturnValueOnce(mockedGetDocReturn);
+    const actionResult = await onCreateTrigger?.['articleReply']?.({
+      getDoc: mockedGetDoc,
       snapshot: {
         id: 'articleReply0',
         data: {
@@ -429,9 +420,9 @@ describe('ref field action maker', () => {
     });
 
     expect(Object.keys(onCreateTrigger ?? {})).toStrictEqual(['articleReply']);
-    expect(articleActionGetDoc).toHaveBeenCalledTimes(1);
-    expect(articleActionGetDoc).toHaveBeenCalledWith({ col: 'article', id: 'article0' });
-    expect(articleActionResult).toStrictEqual({ tag: 'right', value: {} });
+    expect(mockedGetDoc).toHaveBeenCalledTimes(1);
+    expect(mockedGetDoc).toHaveBeenCalledWith({ col: 'article', id: 'article0' });
+    expect(actionResult).toStrictEqual({ tag: 'right', value: {} });
   });
 
   it('return empty trigger syncFields is undefined', async () => {
@@ -449,9 +440,9 @@ describe('ref field action maker', () => {
         },
       },
     });
-    const articleActionGetDoc = jest.fn().mockReturnValueOnce(mockedGetDocReturn);
-    const articleActionResult = await onCreateTrigger?.['articleReply']?.({
-      getDoc: articleActionGetDoc,
+    const mockedGetDoc = jest.fn().mockReturnValueOnce(mockedGetDocReturn);
+    const actionResult = await onCreateTrigger?.['articleReply']?.({
+      getDoc: mockedGetDoc,
       snapshot: {
         id: 'articleReply0',
         data: {
@@ -464,9 +455,9 @@ describe('ref field action maker', () => {
     });
 
     expect(Object.keys(onCreateTrigger ?? {})).toStrictEqual(['articleReply']);
-    expect(articleActionGetDoc).toHaveBeenCalledTimes(1);
-    expect(articleActionGetDoc).toHaveBeenCalledWith({ col: 'article', id: 'article0' });
-    expect(articleActionResult).toStrictEqual({ tag: 'right', value: {} });
+    expect(mockedGetDoc).toHaveBeenCalledTimes(1);
+    expect(mockedGetDoc).toHaveBeenCalledWith({ col: 'article', id: 'article0' });
+    expect(actionResult).toStrictEqual({ tag: 'right', value: {} });
   });
 });
 
