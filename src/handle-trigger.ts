@@ -2,11 +2,13 @@ import {
   Action,
   ActionError,
   ActionResult,
+  DeleteDoc,
+  DocOp,
   Either,
   GetDoc,
+  MergeDoc,
   SnapshotOfTriggerType,
   TriggerType,
-  WriteDoc,
 } from './type';
 
 function mergeActionResult(a1: ActionResult, a2: ActionResult): ActionResult {
@@ -20,10 +22,29 @@ function mergeActionResult(a1: ActionResult, a2: ActionResult): ActionResult {
           {
             ...col2,
             ...Object.fromEntries(
-              Object.entries(col).map(([docId, docData]) => {
-                const docData2 = col2[docId] ?? {};
-                // NOTE: merge doc data, assuming there are no overlapping fields
-                return [docId, { ...docData2, ...docData }];
+              /**
+               * Merge doc operations.
+               * Operation priority is delete > merge.
+               */
+              Object.entries(col).map<readonly [string, DocOp]>(([docId, docOp]) => {
+                const docOp2 = col2[docId];
+                if (docOp.op === 'delete' || docOp2?.op === 'delete') {
+                  return [docId, { op: 'delete' }];
+                }
+                if (!docOp2) {
+                  return [docId, docOp];
+                }
+                /**
+                 * If both a1 and a2 provide merge value for the same field, value from a2 will be
+                 * used
+                 */
+                return [
+                  docId,
+                  {
+                    op: 'merge',
+                    data: { ...docOp.data, ...docOp2.data },
+                  },
+                ];
               })
             ),
           },
@@ -37,12 +58,14 @@ export async function handleTrigger<T extends TriggerType, WR, GDE>({
   snapshot,
   actions,
   getDoc,
-  writeDoc,
+  mergeDoc,
+  deleteDoc,
 }: {
   readonly actions: readonly Action<T, GDE>[];
   readonly snapshot: SnapshotOfTriggerType<T>;
   readonly getDoc: GetDoc<GDE>;
-  readonly writeDoc: WriteDoc<WR>;
+  readonly mergeDoc: MergeDoc<WR>;
+  readonly deleteDoc: DeleteDoc<WR>;
 }): Promise<Either<Promise<readonly PromiseSettledResult<WR>[]>, ActionError | GDE>> {
   return Promise.all(actions.map((action) => action({ getDoc, snapshot }))).then((updates) => {
     const actionResult = updates.reduce<Either<ActionResult, ActionError | GDE>>(
@@ -58,9 +81,10 @@ export async function handleTrigger<T extends TriggerType, WR, GDE>({
       tag: 'right',
       value: Promise.allSettled(
         Object.entries(actionResult.value).flatMap(([colName, col]) =>
-          Object.entries(col).map(([docId, docData]) =>
-            writeDoc({ col: colName, id: docId }, docData)
-          )
+          Object.entries(col).map(([docId, docOp]) => {
+            const key = { col: colName, id: docId };
+            return docOp.op === 'merge' ? mergeDoc(key, docOp.data) : deleteDoc(key);
+          })
         )
       ),
     };

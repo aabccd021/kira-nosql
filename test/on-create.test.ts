@@ -32,9 +32,12 @@ describe('count field action maker', () => {
       value: {
         article: {
           article0: {
-            bookmarkCount: {
-              type: 'number',
-              value: 0,
+            op: 'merge',
+            data: {
+              bookmarkCount: {
+                type: 'number',
+                value: 0,
+              },
             },
           },
         },
@@ -70,7 +73,10 @@ describe('count field action maker', () => {
       value: {
         article: {
           article0: {
-            bookmarkCount: { type: 'increment', incrementValue: 1 },
+            op: 'merge',
+            data: {
+              bookmarkCount: { type: 'increment', incrementValue: 1 },
+            },
           },
         },
       },
@@ -152,7 +158,10 @@ describe('creationTime field action maker', () => {
       value: {
         article: {
           article0: {
-            creationTime: { type: 'creationTime' },
+            op: 'merge',
+            data: {
+              creationTime: { type: 'creationTime' },
+            },
           },
         },
       },
@@ -177,7 +186,7 @@ describe('owner field action maker', () => {
       colName: 'article',
       fieldName: 'ownerUser',
       field: { type: 'owner' },
-      userColName: 'user',
+      userCol: 'user',
     });
     const mockedGetDoc = jest.fn();
     const actionResult = await onCreateTrigger?.['article']?.({
@@ -198,7 +207,7 @@ describe('owner field action maker', () => {
       colName: 'article',
       fieldName: 'ownerUser',
       field: { type: 'owner' },
-      userColName: 'user',
+      userCol: 'user',
     });
     const mockedGetDoc = jest.fn();
     const actionResult = await onCreateTrigger?.['article']?.({
@@ -224,7 +233,7 @@ describe('owner field action maker', () => {
       colName: 'article',
       fieldName: 'ownerUser',
       field: { type: 'owner' },
-      userColName: 'user',
+      userCol: 'user',
     });
     const mockedGetDocReturn: ReturnType<GetDoc<unknown>> = Promise.resolve({
       tag: 'left',
@@ -255,7 +264,7 @@ describe('owner field action maker', () => {
       colName: 'article',
       fieldName: 'ownerUser',
       field: { type: 'owner' },
-      userColName: 'user',
+      userCol: 'user',
     });
     const mockedGetDocReturn: ReturnType<GetDoc<unknown>> = Promise.resolve({
       tag: 'right',
@@ -286,7 +295,7 @@ describe('owner field action maker', () => {
       colName: 'article',
       fieldName: 'ownerUser',
       field: { type: 'owner' },
-      userColName: 'user',
+      userCol: 'user',
     });
     const mockedGetDocReturn: ReturnType<GetDoc<unknown>> = Promise.resolve({
       tag: 'right',
@@ -325,7 +334,7 @@ describe('owner field action maker', () => {
         type: 'owner',
         syncFields: { displayName: true, bio: true },
       },
-      userColName: 'user',
+      userCol: 'user',
     });
     const mockedGetDocReturn: ReturnType<GetDoc<unknown>> = Promise.resolve({
       tag: 'right',
@@ -360,11 +369,14 @@ describe('owner field action maker', () => {
       value: {
         article: {
           article0: {
-            ownerUser: {
-              type: 'ref',
-              value: {
-                displayName: { type: 'string', value: 'Kira Masumoto' },
-                bio: { type: 'string', value: 'dorokatsu' },
+            op: 'merge',
+            data: {
+              ownerUser: {
+                type: 'ref',
+                value: {
+                  displayName: { type: 'string', value: 'Kira Masumoto' },
+                  bio: { type: 'string', value: 'dorokatsu' },
+                },
               },
             },
           },
@@ -559,11 +571,14 @@ describe('ref field action maker', () => {
       value: {
         articleReply: {
           articleReply0: {
-            repliedArticle: {
-              type: 'ref',
-              value: {
-                title: { type: 'string', value: 'Article Zero Title' },
-                category: { type: 'string', value: 'Animal' },
+            op: 'merge',
+            data: {
+              repliedArticle: {
+                type: 'ref',
+                value: {
+                  title: { type: 'string', value: 'Article Zero Title' },
+                  category: { type: 'string', value: 'Animal' },
+                },
               },
             },
           },

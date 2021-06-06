@@ -21,7 +21,10 @@ export function makeOnCreateCountFieldTrigger<GDE>({
       value: {
         [colName]: {
           [doc.id]: {
-            [fieldName]: { type: 'number', value: 0 },
+            op: 'merge',
+            data: {
+              [fieldName]: { type: 'number', value: 0 },
+            },
           },
         },
       },
@@ -39,7 +42,10 @@ export function makeOnCreateCountFieldTrigger<GDE>({
         value: {
           [colName]: {
             [counterDoc.value.id]: {
-              [fieldName]: { type: 'increment', incrementValue: 1 },
+              op: 'merge',
+              data: {
+                [fieldName]: { type: 'increment', incrementValue: 1 },
+              },
             },
           },
         },
@@ -58,7 +64,10 @@ export function makeOnCreateCreationTimeFieldTrigger<GDE>({
       value: {
         [colName]: {
           [doc.id]: {
-            [fieldName]: { type: 'creationTime' },
+            op: 'merge',
+            data: {
+              [fieldName]: { type: 'creationTime' },
+            },
           },
         },
       },
@@ -75,7 +84,7 @@ export function makeOnCreateImageFieldTrigger<GDE>(
 export function makeOnCreateOwnerFieldTrigger<GDE>({
   colName,
   field: { syncFields },
-  userColName,
+  userCol: userColName,
   fieldName,
 }: MakeTriggerContext_1<OwnerField>): Trigger<'onCreate', GDE> | undefined {
   return {
@@ -98,13 +107,16 @@ export function makeOnCreateOwnerFieldTrigger<GDE>({
         value: {
           [colName]: {
             [doc.id]: {
-              [fieldName]: {
-                type: 'ref',
-                value: Object.fromEntries(
-                  Object.entries(refDocValueData)
-                    .filter(([fieldName]) => syncFieldNames.includes(fieldName))
-                    .map(readToWriteField)
-                ),
+              op: 'merge',
+              data: {
+                [fieldName]: {
+                  type: 'ref',
+                  value: Object.fromEntries(
+                    Object.entries(refDocValueData)
+                      .filter(([fieldName]) => syncFieldNames.includes(fieldName))
+                      .map(readToWriteField)
+                  ),
+                },
               },
             },
           },
@@ -139,13 +151,16 @@ export function makeOnCreateRefFieldTrigger<GDE>({
         value: {
           [colName]: {
             [doc.id]: {
-              [fieldName]: {
-                type: 'ref',
-                value: Object.fromEntries(
-                  Object.entries(refDocValueData)
-                    .filter(([fieldName]) => syncFieldNames.includes(fieldName))
-                    .map(readToWriteField)
-                ),
+              op: 'merge',
+              data: {
+                [fieldName]: {
+                  type: 'ref',
+                  value: Object.fromEntries(
+                    Object.entries(refDocValueData)
+                      .filter(([fieldName]) => syncFieldNames.includes(fieldName))
+                      .map(readToWriteField)
+                  ),
+                },
               },
             },
           },

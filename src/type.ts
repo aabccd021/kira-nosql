@@ -16,7 +16,8 @@ export type DocKey = { readonly col: string; readonly id: string };
 
 // Db
 export type GetDoc<E> = (key: DocKey) => Promise<Either<ReadDocSnapshot, E>>;
-export type WriteDoc<WR> = (key: DocKey, docData: WriteDocData) => Promise<WR>;
+export type MergeDoc<WR> = (key: DocKey, docData: WriteDocData) => Promise<WR>;
+export type DeleteDoc<WR> = (key: DocKey) => Promise<WR>;
 
 export type Query<T extends string = string> = {
   readonly col: T;
@@ -46,7 +47,11 @@ export type SnapshotOfTriggerType<T extends TriggerType> = T extends 'onCreate'
   ? ReadDocChange
   : never;
 
-export type ActionResult = Dictionary<Dictionary<WriteDocData>>;
+export type DocOp =
+  | { readonly op: 'merge'; readonly data: WriteDocData }
+  | { readonly op: 'delete' };
+
+export type ActionResult = Dictionary<Dictionary<DocOp>>;
 
 export type Action<T extends TriggerType, GDE> = (
   context: ActionContext<T, GDE>
@@ -58,7 +63,7 @@ export type Trigger<T extends TriggerType, GDE> = Dictionary<Action<T, GDE>>;
 
 // Schema_1
 export type MakeTriggerContext_1<F extends Field_1> = {
-  readonly userColName: string;
+  readonly userCol: string;
   readonly colName: string;
   readonly field: F;
   readonly fieldName: string;
