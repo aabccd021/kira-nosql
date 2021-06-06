@@ -188,7 +188,7 @@ describe('owner field action maker', () => {
       field: { type: 'owner' },
       userCol: 'user',
     });
-    const mockedGetDoc = jest.fn();
+    const mockedGetDoc: GetDoc<unknown> = jest.fn();
     const actionResult = await onCreateTrigger?.['article']?.({
       getDoc: mockedGetDoc,
       snapshot: { id: 'article0' },
@@ -209,7 +209,7 @@ describe('owner field action maker', () => {
       field: { type: 'owner' },
       userCol: 'user',
     });
-    const mockedGetDoc = jest.fn();
+    const mockedGetDoc: GetDoc<unknown> = jest.fn();
     const actionResult = await onCreateTrigger?.['article']?.({
       getDoc: mockedGetDoc,
       snapshot: {
@@ -239,7 +239,7 @@ describe('owner field action maker', () => {
       tag: 'left',
       error: 'error1',
     });
-    const mockedGetDoc = jest.fn().mockReturnValueOnce(mockedGetDocReturn);
+    const mockedGetDoc: GetDoc<unknown> = jest.fn().mockReturnValueOnce(mockedGetDocReturn);
     const actionResult = await onCreateTrigger?.['article']?.({
       getDoc: mockedGetDoc,
       snapshot: {
@@ -270,7 +270,7 @@ describe('owner field action maker', () => {
       tag: 'right',
       value: { id: 'user0' },
     });
-    const mockedGetDoc = jest.fn().mockReturnValueOnce(mockedGetDocReturn);
+    const mockedGetDoc: GetDoc<unknown> = jest.fn().mockReturnValueOnce(mockedGetDocReturn);
     const actionResult = await onCreateTrigger?.['article']?.({
       getDoc: mockedGetDoc,
       snapshot: {
@@ -306,7 +306,7 @@ describe('owner field action maker', () => {
         },
       },
     });
-    const mockedGetDoc = jest.fn().mockReturnValueOnce(mockedGetDocReturn);
+    const mockedGetDoc: GetDoc<unknown> = jest.fn().mockReturnValueOnce(mockedGetDocReturn);
     const actionResult = await onCreateTrigger?.['article']?.({
       getDoc: mockedGetDoc,
       snapshot: {
@@ -347,7 +347,7 @@ describe('owner field action maker', () => {
         },
       },
     });
-    const mockedGetDoc = jest.fn().mockReturnValueOnce(mockedGetDocReturn);
+    const mockedGetDoc: GetDoc<unknown> = jest.fn().mockReturnValueOnce(mockedGetDocReturn);
     const actionResult = await onCreateTrigger?.['article']?.({
       getDoc: mockedGetDoc,
       snapshot: {
@@ -394,7 +394,7 @@ describe('ref field action maker', () => {
       field: { type: 'ref', refCol: 'article' },
     });
 
-    const mockedGetDoc = jest.fn();
+    const mockedGetDoc: GetDoc<unknown> = jest.fn();
     const actionResult = await onCreateTrigger?.['articleReply']?.({
       getDoc: mockedGetDoc,
       snapshot: { id: 'articleReply0' },
@@ -414,7 +414,7 @@ describe('ref field action maker', () => {
       fieldName: 'repliedArticle',
       field: { type: 'ref', refCol: 'article' },
     });
-    const mockedGetDoc = jest.fn();
+    const mockedGetDoc: GetDoc<unknown> = jest.fn();
     const actionResult = await onCreateTrigger?.['articleReply']?.({
       getDoc: mockedGetDoc,
       snapshot: {
@@ -443,7 +443,7 @@ describe('ref field action maker', () => {
       tag: 'left',
       error: 'error1',
     });
-    const mockedGetDoc = jest.fn().mockReturnValueOnce(mockedGetDocReturn);
+    const mockedGetDoc: GetDoc<unknown> = jest.fn().mockReturnValueOnce(mockedGetDocReturn);
     const actionResult = await onCreateTrigger?.['articleReply']?.({
       getDoc: mockedGetDoc,
       snapshot: {
@@ -473,7 +473,7 @@ describe('ref field action maker', () => {
       tag: 'right',
       value: { id: 'aricle0' },
     });
-    const mockedGetDoc = jest.fn().mockReturnValueOnce(mockedGetDocReturn);
+    const mockedGetDoc: GetDoc<unknown> = jest.fn().mockReturnValueOnce(mockedGetDocReturn);
     const actionResult = await onCreateTrigger?.['articleReply']?.({
       getDoc: mockedGetDoc,
       snapshot: {
@@ -508,7 +508,7 @@ describe('ref field action maker', () => {
         },
       },
     });
-    const mockedGetDoc = jest.fn().mockReturnValueOnce(mockedGetDocReturn);
+    const mockedGetDoc: GetDoc<unknown> = jest.fn().mockReturnValueOnce(mockedGetDocReturn);
     const actionResult = await onCreateTrigger?.['articleReply']?.({
       getDoc: mockedGetDoc,
       snapshot: {
@@ -549,7 +549,7 @@ describe('ref field action maker', () => {
         },
       },
     });
-    const mockedGetDoc = jest.fn().mockReturnValueOnce(mockedGetDocReturn);
+    const mockedGetDoc: GetDoc<unknown> = jest.fn().mockReturnValueOnce(mockedGetDocReturn);
     const actionResult = await onCreateTrigger?.['articleReply']?.({
       getDoc: mockedGetDoc,
       snapshot: {
