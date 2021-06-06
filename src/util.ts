@@ -1,7 +1,7 @@
 import assertNever from 'assert-never';
 import { Dictionary, FieldOf, Schema } from 'kira-core';
 
-import { ReadField, WriteDocData, WriteField } from './doc-data';
+import { ReadDocData, ReadField, WriteField } from './doc-data';
 import { Action, Actions, FieldToTrigger, TriggerType } from './type';
 
 function isDefined<T>(t: T | undefined): t is T {
@@ -39,12 +39,13 @@ export function schemaToTriggerActions<S extends Schema, GDE, QE>({
   readonly schema: S;
   readonly fieldToTrigger: {
     readonly onCreate: FieldToTrigger<S, 'onCreate', GDE, QE>;
+    readonly onUpdate: FieldToTrigger<S, 'onUpdate', GDE, QE>;
     readonly onDelete: FieldToTrigger<S, 'onDelete', GDE, QE>;
   };
 }): Actions<GDE, QE> {
   return {
     onCreate: _schemaToActions(schema, fieldToTrigger.onCreate),
-    onUpdate: {},
+    onUpdate: _schemaToActions(schema, fieldToTrigger.onUpdate),
     onDelete: _schemaToActions(schema, fieldToTrigger.onDelete),
   };
 }
@@ -58,34 +59,58 @@ export function readToWriteField([fieldName, inField]: readonly [string, ReadFie
       fieldName,
       {
         type: 'ref',
-        value: Object.fromEntries(Object.entries(inField.value.data ?? []).map(readToWriteField)),
+        value: Object.fromEntries(Object.entries(inField.value.data).map(readToWriteField)),
       },
     ];
   }
   return [fieldName, inField];
 }
 
-export function writeDocDataIsEqual(d1: WriteDocData, d2: WriteDocData): boolean {
-  return Object.entries(d1).every(([fieldName, f1]) => {
-    const f2 = d2[fieldName];
-    if (f1.type === 'creationTime') {
-      return f2?.type === 'creationTime';
-    }
-    if (f1.type === 'date') {
-      return f2?.type === 'date' && f1.value.getTime() === f2.value.getTime();
-    }
-    if (f1.type === 'increment') {
-      return f2?.type === 'increment' && f1.incrementValue === f2.incrementValue;
-    }
-    if (f1.type === 'number') {
-      return f2?.type === 'number' && f1.value === f2.value;
-    }
-    if (f1.type === 'string') {
-      return f2?.type === 'string' && f1.value === f2.value;
-    }
-    if (f1.type === 'ref') {
-      return f2?.type === 'ref' && writeDocDataIsEqual(f1.value, f2.value);
-    }
-    assertNever(f1);
-  });
+export function getReadDocDataDiff({
+  before,
+  after,
+}: {
+  readonly before: ReadDocData;
+  readonly after: ReadDocData;
+}): ReadDocData {
+  return Object.fromEntries(
+    Object.entries(after).filter(
+      ([fieldName, afterField]) =>
+        !isEqualReadDocField({ afterField, beforeField: before[fieldName] })
+    )
+  );
+}
+
+function isEqualReadDocField({
+  beforeField,
+  afterField,
+}: {
+  readonly beforeField?: ReadField;
+  readonly afterField: ReadField;
+}): boolean {
+  if (afterField.type === 'date') {
+    return (
+      beforeField?.type === 'date' && afterField.value.getTime() === beforeField.value.getTime()
+    );
+  }
+  if (afterField.type === 'number') {
+    return beforeField?.type === 'number' && afterField.value === beforeField.value;
+  }
+  if (afterField.type === 'string') {
+    return beforeField?.type === 'string' && afterField.value === beforeField.value;
+  }
+  if (afterField.type === 'ref') {
+    return (
+      beforeField?.type === 'ref' &&
+      Object.entries(afterField.value.data).every(
+        ([fieldName, aff]) =>
+          afterField.value.id === beforeField.value.id &&
+          isEqualReadDocField({
+            afterField: aff,
+            beforeField: beforeField.value.data[fieldName],
+          })
+      )
+    );
+  }
+  assertNever(afterField);
 }

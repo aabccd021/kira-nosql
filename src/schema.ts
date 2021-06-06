@@ -17,6 +17,14 @@ import {
   makeOnDeleteRefFieldTrigger,
   makeOnDeleteStringFieldTrigger,
 } from './on-delete';
+import {
+  makeOnUpdateCountFieldTrigger,
+  makeOnUpdateCreationTimeFieldTrigger,
+  makeOnUpdateImageFieldTrigger,
+  makeOnUpdateOwnerFieldTrigger,
+  makeOnUpdateRefFieldTrigger,
+  makeOnUpdateStringFieldTrigger,
+} from './on-update';
 import { Actions } from './type';
 import { schemaToTriggerActions } from './util';
 
@@ -37,6 +45,21 @@ export function schemaToActions_1<GDE, QE>(schema: Schema_1): Actions<GDE, QE> {
           return makeOnCreateRefFieldTrigger({ ...schema, ...context, field });
         if (field.type === 'string')
           return makeOnCreateStringFieldTrigger({ ...schema, ...context, field });
+        assertNever(field);
+      },
+      onUpdate: ({ schema, field, ...context }) => {
+        if (field.type === 'count')
+          return makeOnUpdateCountFieldTrigger({ ...schema, ...context, field });
+        if (field.type === 'creationTime')
+          return makeOnUpdateCreationTimeFieldTrigger({ ...schema, ...context, field });
+        if (field.type === 'image')
+          return makeOnUpdateImageFieldTrigger({ ...schema, ...context, field });
+        if (field.type === 'owner')
+          return makeOnUpdateOwnerFieldTrigger({ ...schema, ...context, field });
+        if (field.type === 'ref')
+          return makeOnUpdateRefFieldTrigger({ ...schema, ...context, field });
+        if (field.type === 'string')
+          return makeOnUpdateStringFieldTrigger({ ...schema, ...context, field });
         assertNever(field);
       },
       onDelete: ({ schema, field, ...context }) => {
@@ -73,6 +96,19 @@ export function schemaToActions_2<GDE, QE>(schema: Schema_2): Actions<GDE, QE> {
           return makeOnCreateRefFieldTrigger({ ...schema, ...context, field });
         if (field.type === 'string')
           return makeOnCreateStringFieldTrigger({ ...schema, ...context, field });
+        assertNever(field);
+      },
+      onUpdate: ({ schema, field, ...context }) => {
+        if (field.type === 'count')
+          return makeOnUpdateCountFieldTrigger({ ...schema, ...context, field });
+        if (field.type === 'creationTime')
+          return makeOnUpdateCreationTimeFieldTrigger({ ...schema, ...context, field });
+        if (field.type === 'image')
+          return makeOnUpdateImageFieldTrigger({ ...schema, ...context, field });
+        if (field.type === 'ref')
+          return makeOnUpdateRefFieldTrigger({ ...schema, ...context, field });
+        if (field.type === 'string')
+          return makeOnUpdateStringFieldTrigger({ ...schema, ...context, field });
         assertNever(field);
       },
       onDelete: ({ schema, field, ...context }) => {

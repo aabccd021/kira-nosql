@@ -7,11 +7,10 @@ import {
   StringField,
 } from 'kira-core';
 
-import { MakeTriggerContext_1, MakeTriggerContext_2, Trigger } from '.';
-import { DocOp } from './type';
-import { readToWriteField, writeDocDataIsEqual } from './util';
+import { DocOp, MakeTriggerContext_1, MakeTriggerContext_2, Trigger } from './type';
+import { getReadDocDataDiff, readToWriteField } from './util';
 
-export function makeOnCreateCountFieldTrigger<GDE, QE>(
+export function makeOnUpdateCountFieldTrigger<GDE, QE>(
   _: MakeTriggerContext_2<CountField>
 ): Trigger<'onUpdate', GDE, QE> | undefined {
   return undefined;
@@ -41,21 +40,25 @@ export function makeOnUpdateOwnerFieldTrigger<GDE, QE>({
         return { tag: 'right', value: {} };
       }
 
+      const syncFieldNames = Object.keys(syncFields);
+
       const syncedDataBefore = Object.fromEntries(
-        Object.entries(refDoc.before ?? {})
-          .filter(([fieldName]) => syncFieldNames.includes(fieldName))
-          .map(readToWriteField)
+        Object.entries(refDoc.before).filter(([fieldName]) => syncFieldNames.includes(fieldName))
       );
 
       const syncedDataAfter = Object.fromEntries(
-        Object.entries(refDoc.before ?? {})
-          .filter(([fieldName]) => syncFieldNames.includes(fieldName))
-          .map(readToWriteField)
+        Object.entries(refDoc.after).filter(([fieldName]) => syncFieldNames.includes(fieldName))
       );
 
-      if (writeDocDataIsEqual(syncedDataBefore, syncedDataAfter)) {
+      const syncedDataDiff = getReadDocDataDiff({
+        before: syncedDataBefore,
+        after: syncedDataAfter,
+      });
+
+      if (Object.keys(syncedDataDiff).length === 0) {
         return { tag: 'right', value: {} };
       }
+
       const refererDoc = await queryDoc({
         col: colName,
         where: {
@@ -69,7 +72,6 @@ export function makeOnUpdateOwnerFieldTrigger<GDE, QE>({
         return refererDoc;
       }
 
-      const syncFieldNames = Object.keys(syncFields);
       return {
         tag: 'right',
         value: {
@@ -82,7 +84,7 @@ export function makeOnUpdateOwnerFieldTrigger<GDE, QE>({
                 data: {
                   [fieldName]: {
                     type: 'ref',
-                    value: syncedDataAfter,
+                    value: Object.fromEntries(Object.entries(syncedDataDiff).map(readToWriteField)),
                   },
                 },
               },
@@ -105,19 +107,22 @@ export function makeOnUpdateRefFieldTrigger<GDE, QE>({
         return { tag: 'right', value: {} };
       }
 
+      const syncFieldNames = Object.keys(syncFields);
+
       const syncedDataBefore = Object.fromEntries(
-        Object.entries(refDoc.before ?? {})
-          .filter(([fieldName]) => syncFieldNames.includes(fieldName))
-          .map(readToWriteField)
+        Object.entries(refDoc.before).filter(([fieldName]) => syncFieldNames.includes(fieldName))
       );
 
       const syncedDataAfter = Object.fromEntries(
-        Object.entries(refDoc.before ?? {})
-          .filter(([fieldName]) => syncFieldNames.includes(fieldName))
-          .map(readToWriteField)
+        Object.entries(refDoc.after).filter(([fieldName]) => syncFieldNames.includes(fieldName))
       );
 
-      if (writeDocDataIsEqual(syncedDataBefore, syncedDataAfter)) {
+      const syncedDataDiff = getReadDocDataDiff({
+        before: syncedDataBefore,
+        after: syncedDataAfter,
+      });
+
+      if (Object.keys(syncedDataDiff).length === 0) {
         return { tag: 'right', value: {} };
       }
 
@@ -134,7 +139,6 @@ export function makeOnUpdateRefFieldTrigger<GDE, QE>({
         return refererDoc;
       }
 
-      const syncFieldNames = Object.keys(syncFields);
       return {
         tag: 'right',
         value: {
@@ -147,7 +151,7 @@ export function makeOnUpdateRefFieldTrigger<GDE, QE>({
                 data: {
                   [fieldName]: {
                     type: 'ref',
-                    value: syncedDataAfter,
+                    value: Object.fromEntries(Object.entries(syncedDataDiff).map(readToWriteField)),
                   },
                 },
               },
@@ -159,8 +163,8 @@ export function makeOnUpdateRefFieldTrigger<GDE, QE>({
   };
 }
 
-export function makeOnCreateStringFieldTrigger<GDE, QE>(
+export function makeOnUpdateStringFieldTrigger<GDE, QE>(
   _: MakeTriggerContext_2<StringField>
-): Trigger<'onCreate', GDE, QE> | undefined {
+): Trigger<'onUpdate', GDE, QE> | undefined {
   return undefined;
 }

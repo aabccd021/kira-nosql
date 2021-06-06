@@ -1,6 +1,6 @@
 export type ReadDocSnapshot = {
   readonly id: string;
-  readonly data?: ReadDocData;
+  readonly data: ReadDocData;
 };
 
 /**

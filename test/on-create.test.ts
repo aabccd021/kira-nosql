@@ -1,4 +1,4 @@
-import { GetDoc, QueryDoc } from '../src';
+import { GetDoc } from '../src';
 import {
   makeOnCreateCountFieldTrigger,
   makeOnCreateCreationTimeFieldTrigger,
@@ -7,11 +7,7 @@ import {
   makeOnCreateRefFieldTrigger,
   makeOnCreateStringFieldTrigger,
 } from '../src/on-create';
-
-type QueryReturn = ReturnType<QueryDoc<string>>;
-type QueryParam = Parameters<QueryDoc<string>>;
-type GetDocReturn = ReturnType<GetDoc<string>>;
-type GetDocParam = Parameters<GetDoc<string>>;
+import { GetDocParam, GetDocReturn, QueryParam, QueryReturn } from './util';
 
 describe('count field action maker', () => {
   it('set bookmarkCount to 0 when article created', async () => {
@@ -71,7 +67,10 @@ describe('count field action maker', () => {
       snapshot: {
         id: 'bookmark0',
         data: {
-          bookmarkedarticle: { type: 'ref', value: { id: 'article0' } },
+          bookmarkedarticle: {
+            type: 'ref',
+            value: { id: 'article0', data: {} },
+          },
         },
       },
     });
@@ -141,7 +140,7 @@ describe('count field action maker', () => {
     const actionResult = await onCreateTrigger?.['bookmark']?.({
       getDoc: mockedGetDoc,
       queryDoc: mockedQueryDoc,
-      snapshot: { id: 'bookmark0' },
+      snapshot: { id: 'bookmark0', data: {} },
     });
 
     expect(Object.keys(onCreateTrigger ?? {})).toStrictEqual(['article', 'bookmark']);
@@ -213,7 +212,7 @@ describe('owner field action maker', () => {
     const actionResult = await onCreateTrigger?.['article']?.({
       getDoc: mockedGetDoc,
       queryDoc: mockedQueryDoc,
-      snapshot: { id: 'article0' },
+      snapshot: { id: 'article0', data: {} },
     });
 
     expect(Object.keys(onCreateTrigger ?? {})).toStrictEqual(['article']);
@@ -276,7 +275,7 @@ describe('owner field action maker', () => {
         data: {
           ownerUser: {
             type: 'ref',
-            value: { id: 'user0' },
+            value: { id: 'user0', data: {} },
           },
         },
       },
@@ -299,7 +298,7 @@ describe('owner field action maker', () => {
     const mockedGetDoc = jest.fn<GetDocReturn, GetDocParam>().mockReturnValueOnce(
       Promise.resolve({
         tag: 'right',
-        value: { id: 'user0' },
+        value: { id: 'user0', data: {} },
       })
     );
     const mockedQueryDoc = jest.fn<QueryReturn, QueryParam>();
@@ -311,7 +310,7 @@ describe('owner field action maker', () => {
         data: {
           ownerUser: {
             type: 'ref',
-            value: { id: 'user0' },
+            value: { id: 'user0', data: {} },
           },
         },
       },
@@ -351,7 +350,7 @@ describe('owner field action maker', () => {
         data: {
           ownerUser: {
             type: 'ref',
-            value: { id: 'user0' },
+            value: { id: 'user0', data: {} },
           },
         },
       },
@@ -396,7 +395,7 @@ describe('owner field action maker', () => {
         data: {
           ownerUser: {
             type: 'ref',
-            value: { id: 'user0' },
+            value: { id: 'user0', data: {} },
           },
         },
       },
@@ -431,20 +430,20 @@ describe('owner field action maker', () => {
 describe('ref field action maker', () => {
   it('return error if refField is empty', async () => {
     const onCreateTrigger = makeOnCreateRefFieldTrigger({
-      colName: 'articleReply',
-      fieldName: 'repliedArticle',
+      colName: 'comment',
+      fieldName: 'commentedArticle',
       field: { type: 'ref', refCol: 'article' },
     });
 
     const mockedGetDoc = jest.fn<GetDocReturn, GetDocParam>();
     const mockedQueryDoc = jest.fn<QueryReturn, QueryParam>();
-    const actionResult = await onCreateTrigger?.['articleReply']?.({
+    const actionResult = await onCreateTrigger?.['comment']?.({
       getDoc: mockedGetDoc,
       queryDoc: mockedQueryDoc,
-      snapshot: { id: 'articleReply0' },
+      snapshot: { id: 'comment0', data: {} },
     });
 
-    expect(Object.keys(onCreateTrigger ?? {})).toStrictEqual(['articleReply']);
+    expect(Object.keys(onCreateTrigger ?? {})).toStrictEqual(['comment']);
     expect(mockedGetDoc).not.toHaveBeenCalled();
     expect(mockedQueryDoc).not.toHaveBeenCalled();
     expect(actionResult).toStrictEqual({
@@ -455,24 +454,24 @@ describe('ref field action maker', () => {
 
   it('return error if refField is not type of ref field', async () => {
     const onCreateTrigger = makeOnCreateRefFieldTrigger({
-      colName: 'articleReply',
-      fieldName: 'repliedArticle',
+      colName: 'comment',
+      fieldName: 'commentedArticle',
       field: { type: 'ref', refCol: 'article' },
     });
     const mockedGetDoc = jest.fn<GetDocReturn, GetDocParam>();
     const mockedQueryDoc = jest.fn<QueryReturn, QueryParam>();
-    const actionResult = await onCreateTrigger?.['articleReply']?.({
+    const actionResult = await onCreateTrigger?.['comment']?.({
       getDoc: mockedGetDoc,
       queryDoc: mockedQueryDoc,
       snapshot: {
-        id: 'articleReply0',
+        id: 'comment0',
         data: {
           ownerUser: { type: 'string', value: 'somerandomstring' },
         },
       },
     });
 
-    expect(Object.keys(onCreateTrigger ?? {})).toStrictEqual(['articleReply']);
+    expect(Object.keys(onCreateTrigger ?? {})).toStrictEqual(['comment']);
     expect(mockedGetDoc).not.toHaveBeenCalled();
     expect(mockedQueryDoc).not.toHaveBeenCalled();
     expect(actionResult).toStrictEqual({
@@ -483,8 +482,8 @@ describe('ref field action maker', () => {
 
   it('return error if get doc is error', async () => {
     const onCreateTrigger = makeOnCreateRefFieldTrigger({
-      colName: 'articleReply',
-      fieldName: 'repliedArticle',
+      colName: 'comment',
+      fieldName: 'commentedArticle',
       field: { type: 'ref', refCol: 'article' },
     });
     const mockedGetDoc = jest.fn<GetDocReturn, GetDocParam>().mockReturnValueOnce(
@@ -494,21 +493,21 @@ describe('ref field action maker', () => {
       })
     );
     const mockedQueryDoc = jest.fn<QueryReturn, QueryParam>();
-    const actionResult = await onCreateTrigger?.['articleReply']?.({
+    const actionResult = await onCreateTrigger?.['comment']?.({
       getDoc: mockedGetDoc,
       queryDoc: mockedQueryDoc,
       snapshot: {
-        id: 'articleReply0',
+        id: 'comment0',
         data: {
-          repliedArticle: {
+          commentedArticle: {
             type: 'ref',
-            value: { id: 'article0' },
+            value: { id: 'article0', data: {} },
           },
         },
       },
     });
 
-    expect(Object.keys(onCreateTrigger ?? {})).toStrictEqual(['articleReply']);
+    expect(Object.keys(onCreateTrigger ?? {})).toStrictEqual(['comment']);
     expect(mockedGetDoc).toHaveBeenCalledTimes(1);
     expect(mockedGetDoc).toHaveBeenCalledWith({ col: 'article', id: 'article0' });
     expect(mockedQueryDoc).not.toHaveBeenCalled();
@@ -517,33 +516,33 @@ describe('ref field action maker', () => {
 
   it('return empty trigger if refDoc.value.data is undefined', async () => {
     const onCreateTrigger = makeOnCreateRefFieldTrigger({
-      colName: 'articleReply',
-      fieldName: 'repliedArticle',
+      colName: 'comment',
+      fieldName: 'commentedArticle',
       field: { type: 'ref', refCol: 'article' },
     });
     const mockedGetDocReturn: ReturnType<GetDoc<string>> = Promise.resolve({
       tag: 'right',
-      value: { id: 'aricle0' },
+      value: { id: 'aricle0', data: {} },
     });
     const mockedGetDoc = jest
       .fn<GetDocReturn, GetDocParam>()
       .mockReturnValueOnce(mockedGetDocReturn);
     const mockedQueryDoc = jest.fn<QueryReturn, QueryParam>();
-    const actionResult = await onCreateTrigger?.['articleReply']?.({
+    const actionResult = await onCreateTrigger?.['comment']?.({
       getDoc: mockedGetDoc,
       queryDoc: mockedQueryDoc,
       snapshot: {
-        id: 'articleReply0',
+        id: 'comment0',
         data: {
-          repliedArticle: {
+          commentedArticle: {
             type: 'ref',
-            value: { id: 'article0' },
+            value: { id: 'article0', data: {} },
           },
         },
       },
     });
 
-    expect(Object.keys(onCreateTrigger ?? {})).toStrictEqual(['articleReply']);
+    expect(Object.keys(onCreateTrigger ?? {})).toStrictEqual(['comment']);
     expect(mockedGetDoc).toHaveBeenCalledTimes(1);
     expect(mockedGetDoc).toHaveBeenCalledWith({ col: 'article', id: 'article0' });
     expect(mockedQueryDoc).not.toHaveBeenCalled();
@@ -552,8 +551,8 @@ describe('ref field action maker', () => {
 
   it('return empty trigger syncFields is undefined', async () => {
     const onCreateTrigger = makeOnCreateRefFieldTrigger({
-      colName: 'articleReply',
-      fieldName: 'repliedArticle',
+      colName: 'comment',
+      fieldName: 'commentedArticle',
       field: { type: 'ref', refCol: 'article' },
     });
     const mockedGetDoc = jest.fn<GetDocReturn, GetDocParam>().mockReturnValueOnce(
@@ -568,21 +567,21 @@ describe('ref field action maker', () => {
       })
     );
     const mockedQueryDoc = jest.fn<QueryReturn, QueryParam>();
-    const actionResult = await onCreateTrigger?.['articleReply']?.({
+    const actionResult = await onCreateTrigger?.['comment']?.({
       getDoc: mockedGetDoc,
       queryDoc: mockedQueryDoc,
       snapshot: {
-        id: 'articleReply0',
+        id: 'comment0',
         data: {
-          repliedArticle: {
+          commentedArticle: {
             type: 'ref',
-            value: { id: 'article0' },
+            value: { id: 'article0', data: {} },
           },
         },
       },
     });
 
-    expect(Object.keys(onCreateTrigger ?? {})).toStrictEqual(['articleReply']);
+    expect(Object.keys(onCreateTrigger ?? {})).toStrictEqual(['comment']);
     expect(mockedGetDoc).toHaveBeenCalledTimes(1);
     expect(mockedGetDoc).toHaveBeenCalledWith({ col: 'article', id: 'article0' });
     expect(mockedQueryDoc).not.toHaveBeenCalled();
@@ -591,8 +590,8 @@ describe('ref field action maker', () => {
 
   it('copy ref doc field', async () => {
     const onCreateTrigger = makeOnCreateRefFieldTrigger({
-      colName: 'articleReply',
-      fieldName: 'repliedArticle',
+      colName: 'comment',
+      fieldName: 'commentedArticle',
       field: {
         type: 'ref',
         refCol: 'article',
@@ -613,32 +612,32 @@ describe('ref field action maker', () => {
       })
     );
     const mockedQueryDoc = jest.fn<QueryReturn, QueryParam>();
-    const actionResult = await onCreateTrigger?.['articleReply']?.({
+    const actionResult = await onCreateTrigger?.['comment']?.({
       getDoc: mockedGetDoc,
       queryDoc: mockedQueryDoc,
       snapshot: {
-        id: 'articleReply0',
+        id: 'comment0',
         data: {
-          repliedArticle: {
+          commentedArticle: {
             type: 'ref',
-            value: { id: 'article0' },
+            value: { id: 'article0', data: {} },
           },
         },
       },
     });
 
-    expect(Object.keys(onCreateTrigger ?? {})).toStrictEqual(['articleReply']);
+    expect(Object.keys(onCreateTrigger ?? {})).toStrictEqual(['comment']);
     expect(mockedGetDoc).toHaveBeenCalledTimes(1);
     expect(mockedGetDoc).toHaveBeenCalledWith({ col: 'article', id: 'article0' });
     expect(mockedQueryDoc).not.toHaveBeenCalled();
     expect(actionResult).toStrictEqual({
       tag: 'right',
       value: {
-        articleReply: {
-          articleReply0: {
+        comment: {
+          comment0: {
             op: 'merge',
             data: {
-              repliedArticle: {
+              commentedArticle: {
                 type: 'ref',
                 value: {
                   title: { type: 'string', value: 'Article Zero Title' },

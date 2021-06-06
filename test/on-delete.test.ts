@@ -1,4 +1,3 @@
-import { GetDoc, QueryDoc } from '../src';
 import {
   makeOnDeleteCountFieldTrigger,
   makeOnDeleteCreationTimeFieldTrigger,
@@ -7,15 +6,11 @@ import {
   makeOnDeleteRefFieldTrigger,
   makeOnDeleteStringFieldTrigger,
 } from '../src/on-delete';
-
-type QueryReturn = ReturnType<QueryDoc<string>>;
-type QueryParam = Parameters<QueryDoc<string>>;
-type GetDocReturn = ReturnType<GetDoc<string>>;
-type GetDocParam = Parameters<GetDoc<string>>;
+import { GetDocParam, GetDocReturn, QueryParam, QueryReturn } from './util';
 
 describe('count field action maker', () => {
   it('decrease bookmarkCount by 1 if new bookmark added', async () => {
-    const OnDeleteTrigger = makeOnDeleteCountFieldTrigger({
+    const onDeleteTrigger = makeOnDeleteCountFieldTrigger({
       colName: 'article',
       fieldName: 'bookmarkCount',
       field: {
@@ -26,18 +21,21 @@ describe('count field action maker', () => {
     });
     const mockedGetDoc = jest.fn<GetDocReturn, GetDocParam>();
     const mockedQueryDoc = jest.fn<QueryReturn, QueryParam>();
-    const actionResult = await OnDeleteTrigger?.['bookmark']?.({
+    const actionResult = await onDeleteTrigger?.['bookmark']?.({
       getDoc: mockedGetDoc,
       queryDoc: mockedQueryDoc,
       snapshot: {
         id: 'bookmark0',
         data: {
-          bookmarkedarticle: { type: 'ref', value: { id: 'article0' } },
+          bookmarkedarticle: {
+            type: 'ref',
+            value: { id: 'article0', data: {} },
+          },
         },
       },
     });
 
-    expect(Object.keys(OnDeleteTrigger ?? {})).toStrictEqual(['bookmark']);
+    expect(Object.keys(onDeleteTrigger ?? {})).toStrictEqual(['bookmark']);
     expect(mockedGetDoc).not.toHaveBeenCalled();
     expect(mockedQueryDoc).not.toHaveBeenCalled();
     expect(actionResult).toStrictEqual({
@@ -56,7 +54,7 @@ describe('count field action maker', () => {
   });
 
   it('returns error if counterDoc is not ref field', async () => {
-    const OnDeleteTrigger = makeOnDeleteCountFieldTrigger({
+    const onDeleteTrigger = makeOnDeleteCountFieldTrigger({
       colName: 'article',
       fieldName: 'bookmarkCount',
       field: {
@@ -67,7 +65,7 @@ describe('count field action maker', () => {
     });
     const mockedGetDoc = jest.fn<GetDocReturn, GetDocParam>();
     const mockedQueryDoc = jest.fn<QueryReturn, QueryParam>();
-    const actionResult = await OnDeleteTrigger?.['bookmark']?.({
+    const actionResult = await onDeleteTrigger?.['bookmark']?.({
       getDoc: mockedGetDoc,
       queryDoc: mockedQueryDoc,
       snapshot: {
@@ -78,7 +76,7 @@ describe('count field action maker', () => {
       },
     });
 
-    expect(Object.keys(OnDeleteTrigger ?? {})).toStrictEqual(['bookmark']);
+    expect(Object.keys(onDeleteTrigger ?? {})).toStrictEqual(['bookmark']);
     expect(mockedGetDoc).not.toHaveBeenCalled();
     expect(mockedQueryDoc).not.toHaveBeenCalled();
     expect(actionResult).toStrictEqual({
@@ -102,7 +100,7 @@ describe('count field action maker', () => {
     const actionResult = await onDeleteTrigger?.['bookmark']?.({
       getDoc: mockedGetDoc,
       queryDoc: mockedQueryDoc,
-      snapshot: { id: 'bookmark0' },
+      snapshot: { id: 'bookmark0', data: {} },
     });
 
     expect(Object.keys(onDeleteTrigger ?? {})).toStrictEqual(['bookmark']);
@@ -117,23 +115,23 @@ describe('count field action maker', () => {
 
 describe('creationTtime field action maker', () => {
   it('does not return action', () => {
-    const OnDeleteTrigger = makeOnDeleteCreationTimeFieldTrigger({
+    const onDeleteTrigger = makeOnDeleteCreationTimeFieldTrigger({
       colName: 'article',
       fieldName: 'creationTime',
       field: { type: 'creationTime' },
     });
-    expect(OnDeleteTrigger).toBeUndefined();
+    expect(onDeleteTrigger).toBeUndefined();
   });
 });
 
 describe('image field action maker', () => {
   it('does not return action', () => {
-    const OnDeleteTrigger = makeOnDeleteImageFieldTrigger({
+    const onDeleteTrigger = makeOnDeleteImageFieldTrigger({
       colName: 'article',
       fieldName: 'articleImage',
       field: { type: 'image' },
     });
-    expect(OnDeleteTrigger).toBeUndefined();
+    expect(onDeleteTrigger).toBeUndefined();
   });
 });
 
@@ -155,7 +153,7 @@ describe('owner field action maker', () => {
     const actionResult = await onDeleteTrigger?.['user']?.({
       getDoc: mockedGetDoc,
       queryDoc: mockedQueryDoc,
-      snapshot: { id: 'user0' },
+      snapshot: { id: 'user0', data: {} },
     });
 
     expect(Object.keys(onDeleteTrigger ?? {})).toStrictEqual(['user']);
@@ -172,7 +170,7 @@ describe('owner field action maker', () => {
     expect(actionResult).toStrictEqual({ tag: 'left', error: 'error1' });
   });
 
-  it('delete referencer articleReply doc', async () => {
+  it('delete referencer comment doc', async () => {
     const onDeleteTrigger = makeOnDeleteOwnerFieldTrigger({
       colName: 'article',
       fieldName: 'ownerUser',
@@ -186,13 +184,16 @@ describe('owner field action maker', () => {
     const mockedQueryDoc = jest.fn<QueryReturn, QueryParam>().mockReturnValueOnce(
       Promise.resolve({
         tag: 'right',
-        value: [{ id: 'article0' }, { id: 'article21' }],
+        value: [
+          { id: 'article0', data: {} },
+          { id: 'article21', data: {} },
+        ],
       })
     );
     const actionResult = await onDeleteTrigger?.['user']?.({
       getDoc: mockedGetDoc,
       queryDoc: mockedQueryDoc,
-      snapshot: { id: 'user0' },
+      snapshot: { id: 'user0', data: {} },
     });
 
     expect(Object.keys(onDeleteTrigger ?? {})).toStrictEqual(['user']);
@@ -221,8 +222,8 @@ describe('owner field action maker', () => {
 describe('ref field action maker', () => {
   it('return error if queryDoc is error', async () => {
     const onDeleteTrigger = makeOnDeleteRefFieldTrigger({
-      colName: 'articleReply',
-      fieldName: 'repliedArticle',
+      colName: 'comment',
+      fieldName: 'commentedArticle',
       field: { type: 'ref', refCol: 'article' },
     });
     const mockedGetDoc = jest.fn<GetDocReturn, GetDocParam>();
@@ -233,12 +234,9 @@ describe('ref field action maker', () => {
       getDoc: mockedGetDoc,
       queryDoc: mockedQueryDoc,
       snapshot: {
-        id: 'articleReply0',
+        id: 'article0',
         data: {
-          repliedArticle: {
-            type: 'ref',
-            value: { id: 'article0' },
-          },
+          title: { type: 'string', value: 'ARTICLE ZERO TITLE' },
         },
       },
     });
@@ -247,39 +245,39 @@ describe('ref field action maker', () => {
     expect(mockedGetDoc).not.toHaveBeenCalled();
     expect(mockedQueryDoc).toHaveBeenCalledTimes(1);
     expect(mockedQueryDoc).toHaveBeenCalledWith({
-      col: 'articleReply',
+      col: 'comment',
       where: {
-        field: ['repliedArticle', 'id'],
+        field: ['commentedArticle', 'id'],
         op: '==',
-        value: 'articleReply0',
+        value: 'article0',
       },
     });
     expect(actionResult).toStrictEqual({ tag: 'left', error: 'error1' });
   });
 
-  it('delete referencer articleReply doc', async () => {
+  it('delete referencer comment doc', async () => {
     const onDeleteTrigger = makeOnDeleteRefFieldTrigger({
-      colName: 'articleReply',
-      fieldName: 'repliedArticle',
+      colName: 'comment',
+      fieldName: 'commentedArticle',
       field: { type: 'ref', refCol: 'article' },
     });
     const mockedGetDoc = jest.fn<GetDocReturn, GetDocParam>();
     const mockedQueryDoc = jest.fn<QueryReturn, QueryParam>().mockReturnValueOnce(
       Promise.resolve({
         tag: 'right',
-        value: [{ id: 'articleReply0' }, { id: 'articleReply46' }],
+        value: [
+          { id: 'comment0', data: {} },
+          { id: 'comment46', data: {} },
+        ],
       })
     );
     const actionResult = await onDeleteTrigger?.['article']?.({
       getDoc: mockedGetDoc,
       queryDoc: mockedQueryDoc,
       snapshot: {
-        id: 'articleReply0',
+        id: 'article0',
         data: {
-          repliedArticle: {
-            type: 'ref',
-            value: { id: 'article0' },
-          },
+          title: { type: 'string', value: 'ARTICLE ZERO TITLE' },
         },
       },
     });
@@ -288,19 +286,19 @@ describe('ref field action maker', () => {
     expect(mockedGetDoc).not.toHaveBeenCalled();
     expect(mockedQueryDoc).toHaveBeenCalledTimes(1);
     expect(mockedQueryDoc).toHaveBeenCalledWith({
-      col: 'articleReply',
+      col: 'comment',
       where: {
-        field: ['repliedArticle', 'id'],
+        field: ['commentedArticle', 'id'],
         op: '==',
-        value: 'articleReply0',
+        value: 'article0',
       },
     });
     expect(actionResult).toStrictEqual({
       tag: 'right',
       value: {
-        articleReply: {
-          articleReply0: { op: 'delete' },
-          articleReply46: { op: 'delete' },
+        comment: {
+          comment0: { op: 'delete' },
+          comment46: { op: 'delete' },
         },
       },
     });
@@ -309,11 +307,11 @@ describe('ref field action maker', () => {
 
 describe('string field action maker', () => {
   it('does not return action', () => {
-    const OnDeleteTrigger = makeOnDeleteStringFieldTrigger({
+    const onDeleteTrigger = makeOnDeleteStringFieldTrigger({
       colName: 'article',
       fieldName: 'text',
       field: { type: 'string' },
     });
-    expect(OnDeleteTrigger).toBeUndefined();
+    expect(onDeleteTrigger).toBeUndefined();
   });
 });

@@ -36,8 +36,8 @@ export type QueryDoc<E> = (query: Query) => Promise<Either<readonly ReadDocSnaps
 // Trigger
 export type ReadDocChange = {
   readonly id: string;
-  readonly before?: ReadDocData;
-  readonly after?: ReadDocData;
+  readonly before: ReadDocData;
+  readonly after: ReadDocData;
 };
 
 export type ActionContext<T extends TriggerType, GDE, QE> = {
