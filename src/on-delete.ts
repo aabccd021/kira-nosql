@@ -13,7 +13,7 @@ export function makeOnDeleteCountFieldTrigger<GDE, QE>({
   colName,
   field: { countedCol, groupByRef },
   fieldName,
-}: MakeTriggerContext_2<CountField>): Trigger<'onCreate', GDE, QE> | undefined {
+}: MakeTriggerContext_2<CountField>): Trigger<'onDelete', GDE, QE> | undefined {
   return {
     [countedCol]: async ({ snapshot: document }) => {
       const counterDoc = document.data?.[groupByRef];
@@ -42,13 +42,13 @@ export function makeOnDeleteCountFieldTrigger<GDE, QE>({
 
 export function makeOnDeleteCreationTimeFieldTrigger<GDE, QE>(
   _: MakeTriggerContext_2<CreationTimeField>
-): Trigger<'onCreate', GDE, QE> | undefined {
+): Trigger<'onDelete', GDE, QE> | undefined {
   return undefined;
 }
 
 export function makeOnDeleteImageFieldTrigger<GDE, QE>(
   _: MakeTriggerContext_2<ImageField>
-): Trigger<'onCreate', GDE, QE> | undefined {
+): Trigger<'onDelete', GDE, QE> | undefined {
   return undefined;
 }
 
@@ -56,7 +56,7 @@ export function makeOnDeleteOwnerFieldTrigger<GDE, QE>({
   colName,
   fieldName,
   userCol,
-}: MakeTriggerContext_1<OwnerField>): Trigger<'onCreate', GDE, QE> | undefined {
+}: MakeTriggerContext_1<OwnerField>): Trigger<'onDelete', GDE, QE> | undefined {
   return {
     [userCol]: async ({ queryDoc, snapshot: refDoc }) => {
       const refererDoc = await queryDoc({
@@ -88,7 +88,7 @@ export function makeOnDeleteRefFieldTrigger<GDE, QE>({
   colName,
   fieldName,
   field: { refCol },
-}: MakeTriggerContext_2<RefField>): Trigger<'onCreate', GDE, QE> | undefined {
+}: MakeTriggerContext_2<RefField>): Trigger<'onDelete', GDE, QE> | undefined {
   return {
     [refCol]: async ({ queryDoc, snapshot: refDoc }) => {
       const refererDoc = await queryDoc({
@@ -118,6 +118,6 @@ export function makeOnDeleteRefFieldTrigger<GDE, QE>({
 
 export function makeOnDeleteStringFieldTrigger<GDE, QE>(
   _: MakeTriggerContext_2<StringField>
-): Trigger<'onCreate', GDE, QE> | undefined {
+): Trigger<'onDelete', GDE, QE> | undefined {
   return undefined;
 }

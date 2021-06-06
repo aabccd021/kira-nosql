@@ -1,6 +1,6 @@
 import { Dictionary, Field_1, Field_2, FieldOf, Schema } from 'kira-core';
 
-import { ReadDocSnapshot, WriteDocData } from './doc-data';
+import { ReadDocData, ReadDocSnapshot, WriteDocData } from './doc-data';
 
 // utils
 export type Either<T, E> =
@@ -35,8 +35,9 @@ export type QueryDoc<E> = (query: Query) => Promise<Either<readonly ReadDocSnaps
 
 // Trigger
 export type ReadDocChange = {
-  readonly before: ReadDocSnapshot;
-  readonly after: ReadDocSnapshot;
+  readonly id: string;
+  readonly before?: ReadDocData;
+  readonly after?: ReadDocData;
 };
 
 export type ActionContext<T extends TriggerType, GDE, QE> = {
@@ -54,7 +55,11 @@ export type SnapshotOfTriggerType<T extends TriggerType> = T extends 'onCreate'
   : never;
 
 export type DocOp =
-  | { readonly op: 'merge'; readonly data: WriteDocData }
+  | {
+      readonly op: 'merge';
+      readonly runTrigger?: true;
+      readonly data: WriteDocData;
+    }
   | { readonly op: 'delete' };
 
 export type ActionResult = Dictionary<Dictionary<DocOp>>;

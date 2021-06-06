@@ -96,8 +96,8 @@ export function makeOnCreateOwnerFieldTrigger<GDE, QE>({
       const refDoc = await getDoc({ col: userColName, id: refField.value.id });
       if (refDoc.tag === 'left') return refDoc;
 
-      const refDocValueData = refDoc.value.data;
-      if (refDocValueData === undefined || syncFields === undefined) {
+      const refDocData = refDoc.value.data;
+      if (refDocData === undefined || syncFields === undefined) {
         return { tag: 'right', value: {} };
       }
 
@@ -112,7 +112,7 @@ export function makeOnCreateOwnerFieldTrigger<GDE, QE>({
                 [fieldName]: {
                   type: 'ref',
                   value: Object.fromEntries(
-                    Object.entries(refDocValueData)
+                    Object.entries(refDocData)
                       .filter(([fieldName]) => syncFieldNames.includes(fieldName))
                       .map(readToWriteField)
                   ),

@@ -20,7 +20,7 @@ export type ReadField = PrimitiveField | RefReadField;
 export type WriteField =
   | PrimitiveField
   | CreationTimeWriteField
-  | ReadcrementWriteField
+  | IncrementWriteField
   | RefWriteField;
 
 /**
@@ -61,7 +61,7 @@ export type CreationTimeWriteField = {
   readonly type: 'creationTime';
 };
 
-export type ReadcrementWriteField = {
+export type IncrementWriteField = {
   readonly type: 'increment';
   readonly incrementValue: number;
 };
