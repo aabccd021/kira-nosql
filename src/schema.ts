@@ -12,7 +12,7 @@ import {
 import { Actions } from './type';
 import { schemaToTriggerActions } from './util';
 
-export function schemaToActions_1<GDE>(schema: Schema_1): Actions<GDE> {
+export function schemaToActions_1<GDE, QE>(schema: Schema_1): Actions<GDE, QE> {
   return schemaToTriggerActions({
     schema,
     fieldToTrigger: {
@@ -35,7 +35,7 @@ export function schemaToActions_1<GDE>(schema: Schema_1): Actions<GDE> {
   });
 }
 
-export function schemaToActions_2<GDE>(schema: Schema_2): Actions<GDE> {
+export function schemaToActions_2<GDE, QE>(schema: Schema_2): Actions<GDE, QE> {
   return schemaToTriggerActions({
     schema,
     fieldToTrigger: {

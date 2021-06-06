@@ -9,11 +9,11 @@ import {
 
 import { MakeTriggerContext_1, MakeTriggerContext_2, Trigger } from './type';
 
-export function makeOnDeleteCountFieldTrigger<GDE>({
+export function makeOnDeleteCountFieldTrigger<GDE, QE>({
   colName,
   field: { countedCol, groupByRef },
   fieldName,
-}: MakeTriggerContext_2<CountField>): Trigger<'onCreate', GDE> | undefined {
+}: MakeTriggerContext_2<CountField>): Trigger<'onCreate', GDE, QE> | undefined {
   return {
     [countedCol]: async ({ snapshot: document }) => {
       const counterDoc = document.data?.[groupByRef];
@@ -40,32 +40,76 @@ export function makeOnDeleteCountFieldTrigger<GDE>({
   };
 }
 
-export function makeOnDeleteCreationTimeFieldTrigger<GDE>(
+export function makeOnDeleteCreationTimeFieldTrigger<GDE, QE>(
   _: MakeTriggerContext_2<CreationTimeField>
-): Trigger<'onCreate', GDE> | undefined {
+): Trigger<'onCreate', GDE, QE> | undefined {
   return undefined;
 }
 
-export function makeOnDeleteImageFieldTrigger<GDE>(
+export function makeOnDeleteImageFieldTrigger<GDE, QE>(
   _: MakeTriggerContext_2<ImageField>
-): Trigger<'onCreate', GDE> | undefined {
+): Trigger<'onCreate', GDE, QE> | undefined {
   return undefined;
 }
 
-export function makeOnDeleteOwnerFieldTrigger<GDE>(
-  _: MakeTriggerContext_1<OwnerField>
-): Trigger<'onCreate', GDE> | undefined {
-  return undefined;
+export function makeOnDeleteOwnerFieldTrigger<GDE, QE>({
+  colName,
+  fieldName,
+  userCol,
+}: MakeTriggerContext_1<OwnerField>): Trigger<'onCreate', GDE, QE> | undefined {
+  return {
+    [userCol]: async ({ queryDoc, snapshot: refDoc }) => {
+      const refingDoc = await queryDoc({
+        col: colName,
+        where: { field: [fieldName, 'id'], op: '==', value: refDoc.id },
+      });
+
+      if (refingDoc.tag === 'left') {
+        return refingDoc;
+      }
+
+      return {
+        tag: 'right',
+        value: {
+          [colName]: Object.fromEntries(
+            refingDoc.value.map((refingDoc) => [refingDoc.id, { op: 'delete' }])
+          ),
+        },
+      };
+    },
+  };
 }
 
-export function makeOnDeleteRefFieldTrigger<GDE>(
-  _: MakeTriggerContext_2<RefField>
-): Trigger<'onCreate', GDE> | undefined {
-  return undefined;
+export function makeOnDeleteRefFieldTrigger<GDE, QE>({
+  colName,
+  fieldName,
+  field: { refCol },
+}: MakeTriggerContext_2<RefField>): Trigger<'onCreate', GDE, QE> | undefined {
+  return {
+    [refCol]: async ({ queryDoc, snapshot: refDoc }) => {
+      const refingDoc = await queryDoc({
+        col: colName,
+        where: { field: [fieldName, 'id'], op: '==', value: refDoc.id },
+      });
+
+      if (refingDoc.tag === 'left') {
+        return refingDoc;
+      }
+
+      return {
+        tag: 'right',
+        value: {
+          [colName]: Object.fromEntries(
+            refingDoc.value.map((refingDoc) => [refingDoc.id, { op: 'delete' }])
+          ),
+        },
+      };
+    },
+  };
 }
 
-export function makeOnDeleteStringFieldTrigger<GDE>(
+export function makeOnDeleteStringFieldTrigger<GDE, QE>(
   _: MakeTriggerContext_2<StringField>
-): Trigger<'onCreate', GDE> | undefined {
+): Trigger<'onCreate', GDE, QE> | undefined {
   return undefined;
 }

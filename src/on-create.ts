@@ -10,11 +10,11 @@ import {
 import { MakeTriggerContext_1, MakeTriggerContext_2, Trigger } from './type';
 import { readToWriteField } from './util';
 
-export function makeOnCreateCountFieldTrigger<GDE>({
+export function makeOnCreateCountFieldTrigger<GDE, QE>({
   colName,
   field: { countedCol, groupByRef },
   fieldName,
-}: MakeTriggerContext_2<CountField>): Trigger<'onCreate', GDE> | undefined {
+}: MakeTriggerContext_2<CountField>): Trigger<'onCreate', GDE, QE> | undefined {
   return {
     [colName]: async ({ snapshot: doc }) => ({
       tag: 'right',
@@ -54,10 +54,10 @@ export function makeOnCreateCountFieldTrigger<GDE>({
   };
 }
 
-export function makeOnCreateCreationTimeFieldTrigger<GDE>({
+export function makeOnCreateCreationTimeFieldTrigger<GDE, QE>({
   colName,
   fieldName,
-}: MakeTriggerContext_2<CreationTimeField>): Trigger<'onCreate', GDE> | undefined {
+}: MakeTriggerContext_2<CreationTimeField>): Trigger<'onCreate', GDE, QE> | undefined {
   return {
     [colName]: async ({ snapshot: doc }) => ({
       tag: 'right',
@@ -75,18 +75,18 @@ export function makeOnCreateCreationTimeFieldTrigger<GDE>({
   };
 }
 
-export function makeOnCreateImageFieldTrigger<GDE>(
+export function makeOnCreateImageFieldTrigger<GDE, QE>(
   _: MakeTriggerContext_2<ImageField>
-): Trigger<'onCreate', GDE> | undefined {
+): Trigger<'onCreate', GDE, QE> | undefined {
   return undefined;
 }
 
-export function makeOnCreateOwnerFieldTrigger<GDE>({
+export function makeOnCreateOwnerFieldTrigger<GDE, QE>({
   colName,
   field: { syncFields },
   userCol: userColName,
   fieldName,
-}: MakeTriggerContext_1<OwnerField>): Trigger<'onCreate', GDE> | undefined {
+}: MakeTriggerContext_1<OwnerField>): Trigger<'onCreate', GDE, QE> | undefined {
   return {
     [colName]: async ({ getDoc, snapshot: doc }) => {
       const refField = doc.data?.[fieldName];
@@ -126,11 +126,11 @@ export function makeOnCreateOwnerFieldTrigger<GDE>({
   };
 }
 
-export function makeOnCreateRefFieldTrigger<GDE>({
+export function makeOnCreateRefFieldTrigger<GDE, QE>({
   colName,
   field: { refCol, syncFields },
   fieldName,
-}: MakeTriggerContext_2<RefField>): Trigger<'onCreate', GDE> | undefined {
+}: MakeTriggerContext_2<RefField>): Trigger<'onCreate', GDE, QE> | undefined {
   return {
     [colName]: async ({ getDoc, snapshot: doc }) => {
       const refField = doc.data?.[fieldName];
@@ -140,8 +140,8 @@ export function makeOnCreateRefFieldTrigger<GDE>({
       const refDoc = await getDoc({ col: refCol, id: refField.value.id });
       if (refDoc.tag === 'left') return refDoc;
 
-      const refDocValueData = refDoc.value.data;
-      if (refDocValueData === undefined || syncFields === undefined) {
+      const refDocData = refDoc.value.data;
+      if (refDocData === undefined || syncFields === undefined) {
         return { tag: 'right', value: {} };
       }
 
@@ -156,7 +156,7 @@ export function makeOnCreateRefFieldTrigger<GDE>({
                 [fieldName]: {
                   type: 'ref',
                   value: Object.fromEntries(
-                    Object.entries(refDocValueData)
+                    Object.entries(refDocData)
                       .filter(([fieldName]) => syncFieldNames.includes(fieldName))
                       .map(readToWriteField)
                   ),
@@ -170,8 +170,8 @@ export function makeOnCreateRefFieldTrigger<GDE>({
   };
 }
 
-export function makeOnCreateStringFieldTrigger<GDE>(
+export function makeOnCreateStringFieldTrigger<GDE, QE>(
   _: MakeTriggerContext_2<StringField>
-): Trigger<'onCreate', GDE> | undefined {
+): Trigger<'onCreate', GDE, QE> | undefined {
   return undefined;
 }

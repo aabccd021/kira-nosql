@@ -22,11 +22,16 @@ export type DeleteDoc<WR> = (key: DocKey) => Promise<WR>;
 export type Query<T extends string = string> = {
   readonly col: T;
   readonly limit?: number;
+  readonly where?: {
+    readonly field: readonly string[];
+    readonly op: '==';
+    readonly value: string;
+  };
   readonly orderByField?: string;
   readonly orderDirection?: 'asc' | 'desc';
 };
 
-export type QueryDoc = (query: Query) => Promise<readonly ReadDocSnapshot[]>;
+export type QueryDoc<E> = (query: Query) => Promise<Either<readonly ReadDocSnapshot[], E>>;
 
 // Trigger
 export type ReadDocChange = {
@@ -34,8 +39,9 @@ export type ReadDocChange = {
   readonly after: ReadDocSnapshot;
 };
 
-export type ActionContext<T extends TriggerType, GDE> = {
+export type ActionContext<T extends TriggerType, GDE, QE> = {
   readonly getDoc: GetDoc<GDE>;
+  readonly queryDoc: QueryDoc<QE>;
   readonly snapshot: SnapshotOfTriggerType<T>;
 };
 
@@ -53,13 +59,13 @@ export type DocOp =
 
 export type ActionResult = Dictionary<Dictionary<DocOp>>;
 
-export type Action<T extends TriggerType, GDE> = (
-  context: ActionContext<T, GDE>
-) => Promise<Either<ActionResult, ActionError | GDE>>;
+export type Action<T extends TriggerType, GDE, QE> = (
+  context: ActionContext<T, GDE, QE>
+) => Promise<Either<ActionResult, ActionError | GDE | QE>>;
 
 export type TriggerType = 'onCreate' | 'onUpdate' | 'onDelete';
 
-export type Trigger<T extends TriggerType, GDE> = Dictionary<Action<T, GDE>>;
+export type Trigger<T extends TriggerType, GDE, QE> = Dictionary<Action<T, GDE, QE>>;
 
 // Schema_1
 export type MakeTriggerContext_1<F extends Field_1> = {
@@ -77,15 +83,15 @@ export type MakeTriggerContext_2<F extends Field_2> = {
 };
 
 // blackmagics
-export type FieldToTrigger<S extends Schema, T extends TriggerType, GDE> = (args: {
+export type FieldToTrigger<S extends Schema, T extends TriggerType, GDE, QE> = (args: {
   readonly schema: S;
   readonly fieldName: string;
   readonly field: FieldOf<S>;
   readonly colName: string;
-}) => Trigger<T, GDE> | undefined;
+}) => Trigger<T, GDE, QE> | undefined;
 
-export type Actions<GDE> = {
-  readonly onCreate: Dictionary<readonly Action<'onCreate', GDE>[]>;
-  readonly onUpdate: Dictionary<readonly Action<'onUpdate', GDE>[]>;
-  readonly onDelete: Dictionary<readonly Action<'onDelete', GDE>[]>;
+export type Actions<GDE, QE> = {
+  readonly onCreate: Dictionary<readonly Action<'onCreate', GDE, QE>[]>;
+  readonly onUpdate: Dictionary<readonly Action<'onUpdate', GDE, QE>[]>;
+  readonly onDelete: Dictionary<readonly Action<'onDelete', GDE, QE>[]>;
 };
