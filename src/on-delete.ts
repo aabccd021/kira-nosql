@@ -52,7 +52,6 @@ export function makeOnDeleteImageFieldTrigger<GDE, QE>(
   return undefined;
 }
 
-// TODO: onDeleteCascade, defaults to false
 export function makeOnDeleteOwnerFieldTrigger<GDE, QE>({
   colName,
   fieldName,
