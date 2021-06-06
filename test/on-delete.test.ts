@@ -172,7 +172,7 @@ describe('owner field action maker', () => {
     expect(actionResult).toStrictEqual({ tag: 'left', error: 'error1' });
   });
 
-  it('delete referencing articleReply doc', async () => {
+  it('delete referencer articleReply doc', async () => {
     const onDeleteTrigger = makeOnDeleteOwnerFieldTrigger({
       colName: 'article',
       fieldName: 'ownerUser',
@@ -257,7 +257,7 @@ describe('ref field action maker', () => {
     expect(actionResult).toStrictEqual({ tag: 'left', error: 'error1' });
   });
 
-  it('delete referencing articleReply doc', async () => {
+  it('delete referencer articleReply doc', async () => {
     const onDeleteTrigger = makeOnDeleteRefFieldTrigger({
       colName: 'articleReply',
       fieldName: 'repliedArticle',

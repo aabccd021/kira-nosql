@@ -59,20 +59,24 @@ export function makeOnDeleteOwnerFieldTrigger<GDE, QE>({
 }: MakeTriggerContext_1<OwnerField>): Trigger<'onCreate', GDE, QE> | undefined {
   return {
     [userCol]: async ({ queryDoc, snapshot: refDoc }) => {
-      const refingDoc = await queryDoc({
+      const refererDoc = await queryDoc({
         col: colName,
-        where: { field: [fieldName, 'id'], op: '==', value: refDoc.id },
+        where: {
+          field: [fieldName, 'id'],
+          op: '==',
+          value: refDoc.id,
+        },
       });
 
-      if (refingDoc.tag === 'left') {
-        return refingDoc;
+      if (refererDoc.tag === 'left') {
+        return refererDoc;
       }
 
       return {
         tag: 'right',
         value: {
           [colName]: Object.fromEntries(
-            refingDoc.value.map((refingDoc) => [refingDoc.id, { op: 'delete' }])
+            refererDoc.value.map((refererDoc) => [refererDoc.id, { op: 'delete' }])
           ),
         },
       };
@@ -87,20 +91,24 @@ export function makeOnDeleteRefFieldTrigger<GDE, QE>({
 }: MakeTriggerContext_2<RefField>): Trigger<'onCreate', GDE, QE> | undefined {
   return {
     [refCol]: async ({ queryDoc, snapshot: refDoc }) => {
-      const refingDoc = await queryDoc({
+      const refererDoc = await queryDoc({
         col: colName,
-        where: { field: [fieldName, 'id'], op: '==', value: refDoc.id },
+        where: {
+          field: [fieldName, 'id'],
+          op: '==',
+          value: refDoc.id,
+        },
       });
 
-      if (refingDoc.tag === 'left') {
-        return refingDoc;
+      if (refererDoc.tag === 'left') {
+        return refererDoc;
       }
 
       return {
         tag: 'right',
         value: {
           [colName]: Object.fromEntries(
-            refingDoc.value.map((refingDoc) => [refingDoc.id, { op: 'delete' }])
+            refererDoc.value.map((refererDoc) => [refererDoc.id, { op: 'delete' }])
           ),
         },
       };
