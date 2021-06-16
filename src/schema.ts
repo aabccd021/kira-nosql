@@ -25,10 +25,10 @@ import {
   makeOnUpdateRefFieldTrigger,
   makeOnUpdateStringFieldTrigger,
 } from './on-update';
-import { Actions } from './type';
+import { AllOpTrigger } from './type';
 import { schemaToTriggerActions } from './util';
 
-export function schemaToActions_1<GDE, QE>(schema: Schema_1): Actions<GDE, QE> {
+export function schemaToActions_1<GDE>(schema: Schema_1): AllOpTrigger<GDE> {
   return schemaToTriggerActions({
     schema,
     fieldToTrigger: {
@@ -81,7 +81,7 @@ export function schemaToActions_1<GDE, QE>(schema: Schema_1): Actions<GDE, QE> {
   });
 }
 
-export function schemaToActions_2<GDE, QE>(schema: Schema_2): Actions<GDE, QE> {
+export function schemaToActions_2<GDE>(schema: Schema_2): AllOpTrigger<GDE> {
   return schemaToTriggerActions({
     schema,
     fieldToTrigger: {

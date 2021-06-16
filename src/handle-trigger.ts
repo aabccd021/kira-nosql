@@ -1,13 +1,13 @@
 import {
-  Action,
-  ActionError,
   ActionResult,
+  AllOpTrigger,
+  DataTypeError,
   DeleteDoc,
-  DocOp,
+  DocCommit,
+  DocKey,
   Either,
   GetDoc,
   MergeDoc,
-  QueryDoc,
   SnapshotOfTriggerType,
   TriggerType,
 } from './type';
@@ -27,7 +27,7 @@ function mergeActionResult(a1: ActionResult, a2: ActionResult): ActionResult {
                * Merge doc operations.
                * Operation priority is delete > merge.
                */
-              Object.entries(col).map<readonly [string, DocOp]>(([docId, docOp]) => {
+              Object.entries(col).map<readonly [string, DocCommit]>(([docId, docOp]) => {
                 const docOp2 = col2[docId];
                 if (docOp.op === 'delete' || docOp2?.op === 'delete') {
                   return [docId, { op: 'delete' }];
@@ -61,37 +61,36 @@ export async function handleTrigger<T extends TriggerType, WR, GDE, QE>({
   getDoc,
   mergeDoc,
   deleteDoc,
-  queryDoc,
 }: {
-  readonly actions: readonly Action<T, GDE, QE>[];
+  readonly actions: readonly AllOpTrigger<T, GDE>[];
   readonly snapshot: SnapshotOfTriggerType<T>;
   readonly getDoc: GetDoc<GDE>;
   readonly mergeDoc: MergeDoc<WR>;
   readonly deleteDoc: DeleteDoc<WR>;
-  readonly queryDoc: QueryDoc<QE>;
-}): Promise<Either<Promise<readonly PromiseSettledResult<WR>[]>, ActionError | GDE | QE>> {
-  return Promise.all(actions.map((action) => action({ getDoc, snapshot, queryDoc }))).then(
-    (updates) => {
-      const actionResult = updates.reduce<Either<ActionResult, ActionError | GDE | QE>>(
-        (prev, current) => {
-          if (prev.tag === 'left') return prev;
-          if (current.tag === 'left') return current;
-          return { tag: 'right', value: mergeActionResult(prev.value, current.value) };
-        },
-        { tag: 'right', value: {} }
-      );
-      if (actionResult.tag === 'left') return actionResult;
-      return {
-        tag: 'right',
-        value: Promise.allSettled(
-          Object.entries(actionResult.value).flatMap(([colName, col]) =>
-            Object.entries(col).map(([docId, docOp]) => {
-              const key = { col: colName, id: docId };
-              return docOp.op === 'merge' ? mergeDoc(key, docOp.data) : deleteDoc(key);
-            })
-          )
-        ),
-      };
-    }
-  );
+}): Promise<Either<Promise<readonly PromiseSettledResult<WR>[]>, DataTypeError | GDE | QE>> {
+  return Promise.all(actions.map((action) => action({ getDoc, snapshot }))).then((updates) => {
+    const actionResult = updates.reduce<Either<ActionResult, DataTypeError | GDE | QE>>(
+      (prev, current) => {
+        if (prev.tag === 'left') return prev;
+        if (current.tag === 'left') return current;
+        return { tag: 'right', value: mergeActionResult(prev.value, current.value) };
+      },
+      { tag: 'right', value: {} }
+    );
+    if (actionResult.tag === 'left') return actionResult;
+    return {
+      tag: 'right',
+      value: Promise.allSettled(
+        Object.entries(actionResult.value).flatMap(([colName, col]) =>
+          Object.entries(col).map(([docId, docOp]) => {
+            const key: DocKey = {
+              col: { type: 'normal', name: colName },
+              id: docId,
+            };
+            return docOp.op === 'merge' ? mergeDoc(key, docOp.data) : deleteDoc(key);
+          })
+        )
+      ),
+    };
+  });
 }

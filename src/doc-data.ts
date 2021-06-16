@@ -13,12 +13,16 @@ export type WriteDocData = { readonly [key: string]: WriteField };
 /**
  * Field
  */
-export type PrimitiveField = StringPrimitiveField | NumberPrimitiveField | DatePrimitiveField;
+export type ReadWriteField =
+  | StringPrimitiveField
+  | NumberPrimitiveField
+  | DatePrimitiveField
+  | StringArrayReadField;
 
-export type ReadField = PrimitiveField | RefReadField;
+export type ReadField = ReadWriteField | RefReadField;
 
 export type WriteField =
-  | PrimitiveField
+  | ReadWriteField
   | CreationTimeWriteField
   | IncrementWriteField
   | RefWriteField;
@@ -47,6 +51,11 @@ export type DatePrimitiveField = {
 export type RefReadField = {
   readonly type: 'ref';
   readonly value: ReadDocSnapshot;
+};
+
+export type StringArrayReadField = {
+  readonly type: 'stringArray';
+  readonly value: readonly string[];
 };
 
 /**

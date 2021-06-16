@@ -2,16 +2,19 @@ import assertNever from 'assert-never';
 import { Dictionary, FieldOf, Schema } from 'kira-core';
 
 import { ReadDocData, ReadField, WriteField } from './doc-data';
-import { Action, Actions, FieldToTrigger, TriggerType } from './type';
+import { AllOpTrigger, AllOpTrigger, CONSISTENCY, Consistency, FieldToTrigger, TriggerType } from './type';
+
+export const DOC_IDS_FIELD_NAME = 'docIds';
 
 function isDefined<T>(t: T | undefined): t is T {
   return t !== undefined;
 }
 
-function _schemaToActions<S extends Schema, T extends TriggerType, GDE, QE>(
+function schemaToConsistency<S extends Schema, T extends TriggerType, GDE>(
   schema: S,
-  fieldToTrigger: FieldToTrigger<S, T, GDE, QE>
-): Dictionary<readonly Action<T, GDE, QE>[]> {
+  fieldToTrigger: FieldToTrigger<S, T, GDE>,
+  consistency: CONSISTENCY
+): Dictionary<readonly AllOpTrigger<T, GDE>[]> {
   return Object.entries(schema.cols)
     .flatMap(([colName, fieldDict]) =>
       Object.entries(fieldDict).map(([fieldName, field]) =>
@@ -19,9 +22,9 @@ function _schemaToActions<S extends Schema, T extends TriggerType, GDE, QE>(
       )
     )
     .filter(isDefined)
-    .reduce<Dictionary<readonly Action<T, GDE, QE>[]>>(
+    .reduce<Dictionary<readonly AllOpTrigger<T, GDE>[]>>(
       (prev, actionDict) =>
-        Object.entries(actionDict).reduce(
+        Object.entries(actionDict[consistency] ?? {}).reduce(
           (prev, [colName, action]) => ({
             ...prev,
             [colName]: [...(prev[colName] ?? []), action],
@@ -32,21 +35,31 @@ function _schemaToActions<S extends Schema, T extends TriggerType, GDE, QE>(
     );
 }
 
-export function schemaToTriggerActions<S extends Schema, GDE, QE>({
+function schemaToActions<S extends Schema, T extends TriggerType, GDE>(
+  schema: S,
+  fieldToTrigger: FieldToTrigger<S, T, GDE>
+): Consistency<Dictionary<readonly AllOpTrigger<T, GDE>[]>> {
+  return {
+    strict: schemaToConsistency(schema, fieldToTrigger, 'strict'),
+    mayFail: schemaToConsistency(schema, fieldToTrigger, 'mayFail'),
+  };
+}
+
+export function schemaToTriggerActions<S extends Schema, GDE>({
   schema,
   fieldToTrigger,
 }: {
   readonly schema: S;
   readonly fieldToTrigger: {
-    readonly onCreate: FieldToTrigger<S, 'onCreate', GDE, QE>;
-    readonly onUpdate: FieldToTrigger<S, 'onUpdate', GDE, QE>;
-    readonly onDelete: FieldToTrigger<S, 'onDelete', GDE, QE>;
+    readonly onCreate: FieldToTrigger<S, 'onCreate', GDE>;
+    readonly onUpdate: FieldToTrigger<S, 'onUpdate', GDE>;
+    readonly onDelete: FieldToTrigger<S, 'onDelete', GDE>;
   };
-}): Actions<GDE, QE> {
+}): AllOpTrigger<GDE> {
   return {
-    onCreate: _schemaToActions(schema, fieldToTrigger.onCreate),
-    onUpdate: _schemaToActions(schema, fieldToTrigger.onUpdate),
-    onDelete: _schemaToActions(schema, fieldToTrigger.onDelete),
+    onCreate: schemaToActions(schema, fieldToTrigger.onCreate),
+    onUpdate: schemaToActions(schema, fieldToTrigger.onUpdate),
+    onDelete: schemaToActions(schema, fieldToTrigger.onDelete),
   };
 }
 
@@ -98,6 +111,13 @@ function isEqualReadDocField({
   }
   if (afterField.type === 'string') {
     return beforeField?.type === 'string' && afterField.value === beforeField.value;
+  }
+  if (afterField.type === 'stringArray') {
+    return (
+      beforeField?.type === 'stringArray' &&
+      afterField.value.length === beforeField.value.length &&
+      afterField.value.every((val, idx) => val === beforeField.value[idx])
+    );
   }
   if (afterField.type === 'ref') {
     return (
