@@ -24,9 +24,12 @@ export type DocKey = {
 };
 
 // Db
-export type GetDoc<E> = (key: DocKey) => Promise<Either<ReadDocSnapshot, E>>;
-export type MergeDoc<WR> = (key: DocKey, docData: WriteDocData) => Promise<WR>;
-export type DeleteDoc<WR> = (key: DocKey) => Promise<WR>;
+export type GetDoc<E> = (param: { readonly key: DocKey }) => Promise<Either<ReadDocSnapshot, E>>;
+export type MergeDoc<WR> = (param: {
+  readonly key: DocKey;
+  readonly docData: WriteDocData;
+}) => Promise<WR>;
+export type DeleteDoc<WR> = (param: { readonly key: DocKey }) => Promise<WR>;
 
 // Trigger
 export type ReadDocChange = {
@@ -51,7 +54,7 @@ export type TriggerType = 'onCreate' | 'onUpdate' | 'onDelete';
 
 export type MakeTriggerContext<F extends Field> = {
   readonly colName: string;
-  readonly field: F;
+  readonly fieldSpec: F;
   readonly fieldName: string;
 };
 
@@ -63,9 +66,9 @@ export type FieldToTrigger<S extends Schema, T extends TriggerType, GDE, WR> = (
 }) => ColsAction<T, GDE, WR> | undefined;
 
 export type Trigger<GDE, WR> = {
-  readonly onCreate: ColsAction<'onCreate', GDE, WR>;
-  readonly onUpdate: ColsAction<'onUpdate', GDE, WR>;
-  readonly onDelete: ColsAction<'onDelete', GDE, WR>;
+  readonly onCreate?: ColsAction<'onCreate', GDE, WR>;
+  readonly onUpdate?: ColsAction<'onUpdate', GDE, WR>;
+  readonly onDelete?: ColsAction<'onDelete', GDE, WR>;
 };
 
 export type ColsAction<T extends TriggerType, GDE, WR> = Dictionary<{
