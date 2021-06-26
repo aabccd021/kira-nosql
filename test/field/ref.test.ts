@@ -1,5 +1,12 @@
 import { makeRefTrigger } from '../../src';
-import { GetDocParam, GetDocReturn } from '../util';
+import {
+  DeleteDocParam,
+  DeleteDocReturn,
+  GetDocParam,
+  GetDocReturn,
+  MergeDocParam,
+  MergeDocReturn,
+} from '../util';
 
 describe('makeRefTrigger', () => {
   describe('onCreate', () => {
@@ -73,12 +80,10 @@ describe('makeRefTrigger', () => {
           thisColRefers: [],
         },
       });
-      const mockedGetDoc = jest.fn<GetDocReturn, GetDocParam>().mockReturnValueOnce(
-        Promise.resolve({
-          tag: 'left',
-          error: 'error1',
-        })
-      );
+      const mockedGetDoc = jest.fn<GetDocReturn, GetDocParam>().mockResolvedValueOnce({
+        tag: 'left',
+        error: 'error1',
+      });
       const actionResult = await trigger.onCreate?.['comment']?.getTransactionCommit?.({
         getDoc: mockedGetDoc,
         snapshot: {
@@ -112,19 +117,17 @@ describe('makeRefTrigger', () => {
           thisColRefers: [],
         },
       });
-      const mockedGetDoc = jest.fn<GetDocReturn, GetDocParam>().mockReturnValueOnce(
-        Promise.resolve({
-          tag: 'right',
-          value: {
-            id: 'aricle0',
-            data: {
-              title: { type: 'string', value: 'Article Zero Title' },
-              category: { type: 'string', value: 'Animal' },
-              publishedMedia: { type: 'string', value: 'book' },
-            },
+      const mockedGetDoc = jest.fn<GetDocReturn, GetDocParam>().mockResolvedValueOnce({
+        tag: 'right',
+        value: {
+          id: 'aricle0',
+          data: {
+            title: { type: 'string', value: 'Article Zero Title' },
+            category: { type: 'string', value: 'Animal' },
+            publishedMedia: { type: 'string', value: 'book' },
           },
-        })
-      );
+        },
+      });
       const actionResult = await trigger.onCreate?.['comment']?.getTransactionCommit?.({
         getDoc: mockedGetDoc,
         snapshot: {
@@ -277,15 +280,29 @@ describe('makeRefTrigger', () => {
         fieldSpec: {
           type: 'ref',
           refedCol: 'article',
-
           syncFields: {},
           isOwner: false,
           thisColRefers: [],
         },
       });
-      const mockedGetDoc = jest.fn<GetDocReturn, GetDocParam>();
-      const actionResult = await trigger.onDelete?.['article']?.getTransactionCommit?.({
+      const mockedGetDoc = jest.fn<GetDocReturn, GetDocParam>().mockResolvedValueOnce({
+        tag: 'right',
+        value: {
+          id: 'comment-commentedArticle-article-article0',
+          data: {
+            docIds: {
+              type: 'stringArray',
+              value: ['comment0', 'comment46'],
+            },
+          },
+        },
+      });
+      const mockedDeleteDoc = jest.fn<DeleteDocReturn, DeleteDocParam>();
+      const mockedMergeDoc = jest.fn<MergeDocReturn, MergeDocParam>();
+      await trigger.onDelete?.['article']?.mayFailOp?.({
         getDoc: mockedGetDoc,
+        deleteDoc: mockedDeleteDoc,
+        mergeDoc: mockedMergeDoc,
         snapshot: {
           id: 'article0',
           data: {
@@ -295,14 +312,41 @@ describe('makeRefTrigger', () => {
       });
 
       expect(Object.keys(trigger.onDelete ?? {})).toStrictEqual(['article']);
-      expect(mockedGetDoc).not.toHaveBeenCalled();
-      expect(actionResult).toStrictEqual({
-        tag: 'right',
-        value: {
-          comment: {
-            comment0: { op: 'delete' },
-            comment46: { op: 'delete' },
+      expect(mockedMergeDoc).not.toHaveBeenCalled();
+      expect(mockedGetDoc).toHaveBeenCalledTimes(1);
+      expect(mockedGetDoc).toHaveBeenCalledWith({
+        key: {
+          id: 'article0',
+          col: {
+            type: 'rel',
+            referField: 'commentedArticle',
+            referCol: 'comment',
+            refedCol: 'article',
           },
+        },
+      });
+      expect(mockedDeleteDoc).toHaveBeenCalledTimes(3);
+      expect(mockedDeleteDoc).toHaveBeenNthCalledWith(1, {
+        key: {
+          id: 'article0',
+          col: {
+            type: 'rel',
+            referField: 'commentedArticle',
+            referCol: 'comment',
+            refedCol: 'article',
+          },
+        },
+      });
+      expect(mockedDeleteDoc).toHaveBeenNthCalledWith(2, {
+        key: {
+          id: 'comment0',
+          col: { type: 'normal', name: 'comment' },
+        },
+      });
+      expect(mockedDeleteDoc).toHaveBeenNthCalledWith(3, {
+        key: {
+          id: 'comment46',
+          col: { type: 'normal', name: 'comment' },
         },
       });
     });
