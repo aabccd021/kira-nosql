@@ -1,67 +1,38 @@
 import assertNever from 'assert-never';
-import { Dictionary, FieldOf, Schema } from 'kira-core';
+import { SyncFields } from 'kira-core';
 
 import { ReadDocData, ReadField, WriteField } from './doc-data';
-import { AllOpTrigger, AllOpTrigger, CONSISTENCY, Consistency, FieldToTrigger, TriggerType } from './type';
 
 export const DOC_IDS_FIELD_NAME = 'docIds';
 
-function isDefined<T>(t: T | undefined): t is T {
-  return t !== undefined;
-}
+// function isDefined<T>(t: T | undefined): t is T {
+// return t !== undefined;
+// }
 
-function schemaToConsistency<S extends Schema, T extends TriggerType, GDE>(
-  schema: S,
-  fieldToTrigger: FieldToTrigger<S, T, GDE>,
-  consistency: CONSISTENCY
-): Dictionary<readonly AllOpTrigger<T, GDE>[]> {
-  return Object.entries(schema.cols)
-    .flatMap(([colName, fieldDict]) =>
-      Object.entries(fieldDict).map(([fieldName, field]) =>
-        fieldToTrigger({ schema, fieldName, field: field as FieldOf<S>, colName })
-      )
-    )
-    .filter(isDefined)
-    .reduce<Dictionary<readonly AllOpTrigger<T, GDE>[]>>(
-      (prev, actionDict) =>
-        Object.entries(actionDict[consistency] ?? {}).reduce(
-          (prev, [colName, action]) => ({
-            ...prev,
-            [colName]: [...(prev[colName] ?? []), action],
-          }),
-          prev
-        ),
-      {}
-    );
-}
-
-function schemaToActions<S extends Schema, T extends TriggerType, GDE>(
-  schema: S,
-  fieldToTrigger: FieldToTrigger<S, T, GDE>
-): Consistency<Dictionary<readonly AllOpTrigger<T, GDE>[]>> {
-  return {
-    strict: schemaToConsistency(schema, fieldToTrigger, 'strict'),
-    mayFail: schemaToConsistency(schema, fieldToTrigger, 'mayFail'),
-  };
-}
-
-export function schemaToTriggerActions<S extends Schema, GDE>({
-  schema,
-  fieldToTrigger,
-}: {
-  readonly schema: S;
-  readonly fieldToTrigger: {
-    readonly onCreate: FieldToTrigger<S, 'onCreate', GDE>;
-    readonly onUpdate: FieldToTrigger<S, 'onUpdate', GDE>;
-    readonly onDelete: FieldToTrigger<S, 'onDelete', GDE>;
-  };
-}): AllOpTrigger<GDE> {
-  return {
-    onCreate: schemaToActions(schema, fieldToTrigger.onCreate),
-    onUpdate: schemaToActions(schema, fieldToTrigger.onUpdate),
-    onDelete: schemaToActions(schema, fieldToTrigger.onDelete),
-  };
-}
+// function schemaToConsistency<S extends Schema, T extends TriggerType, GDE>(
+//   schema: S,
+//   fieldToTrigger: FieldToTrigger<S, T, GDE>,
+//   consistency: CONSISTENCY
+// ): Dictionary<readonly AllOpTrigger<T, GDE>[]> {
+//   return Object.entries(schema.cols)
+//     .flatMap(([colName, fieldDict]) =>
+//       Object.entries(fieldDict).map(([fieldName, field]) =>
+//         fieldToTrigger({ schema, fieldName, field: field as FieldOf<S>, colName })
+//       )
+//     )
+//     .filter(isDefined)
+//     .reduce<Dictionary<readonly AllOpTrigger<T, GDE>[]>>(
+//       (prev, actionDict) =>
+//         Object.entries(actionDict[consistency] ?? {}).reduce(
+//           (prev, [colName, action]) => ({
+//             ...prev,
+//             [colName]: [...(prev[colName] ?? []), action],
+//           }),
+//           prev
+//         ),
+//       {}
+//     );
+// }
 
 export function readToWriteField([fieldName, inField]: readonly [string, ReadField]): readonly [
   string,
@@ -79,22 +50,37 @@ export function readToWriteField([fieldName, inField]: readonly [string, ReadFie
   return [fieldName, inField];
 }
 
-export function getReadDocDataDiff({
-  before,
-  after,
+export function filterSyncFields({
+  data,
+  syncFields,
 }: {
-  readonly before: ReadDocData;
-  readonly after: ReadDocData;
-}): ReadDocData {
-  return Object.fromEntries(
-    Object.entries(after).filter(
-      ([fieldName, afterField]) =>
-        !isEqualReadDocField({ afterField, beforeField: before[fieldName] })
-    )
-  );
+  readonly data: ReadDocData;
+  readonly syncFields: SyncFields;
+}): ReadDocData | undefined {
+  return Object.entries(syncFields).reduce<ReadDocData | undefined>((prev, [fieldName, field]) => {
+    const diffField = data[fieldName];
+    if (diffField !== undefined) {
+      if (field === true) {
+        return { ...prev, [fieldName]: diffField };
+      }
+      if (diffField.type === 'ref') {
+        const data = filterSyncFields({ data: diffField.value.data, syncFields: field });
+        if (data !== undefined) {
+          return {
+            ...prev,
+            [fieldName]: {
+              type: 'ref',
+              value: { id: diffField.value.id, data },
+            },
+          };
+        }
+      }
+    }
+    return prev;
+  }, undefined);
 }
 
-function isEqualReadDocField({
+export function isEqualReadDocField({
   beforeField,
   afterField,
 }: {

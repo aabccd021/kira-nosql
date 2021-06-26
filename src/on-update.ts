@@ -1,85 +1,69 @@
 import {
   CountField,
   CreationTimeField,
-  Dictionary,
-  Field_1,
   ImageField,
-  OwnerField,
   RefField,
   StringField,
+  SyncFields,
+  ThisColRefer,
 } from 'kira-core';
 
+import { ColsAction, DocKey, GetDoc, MakeTriggerContext, MergeDoc, ReadDocChange } from './type';
 import {
-  ColsAction,
-  DataTypeError,
-  DocKey,
-  Either,
-  GetDoc,
-  MakeTriggerContext_1,
-  MakeTriggerContext_2,
-  MergeDoc,
-  ReadDocChange,
-} from './type';
-import { DOC_IDS_FIELD_NAME, getReadDocDataDiff, readToWriteField } from './util';
+  DOC_IDS_FIELD_NAME,
+  filterSyncFields,
+  isEqualReadDocField,
+  readToWriteField,
+} from './util';
 
 export function makeOnUpdateCountFieldTrigger<GDE, WR>(
-  _: MakeTriggerContext_2<CountField>
+  _: MakeTriggerContext<CountField>
 ): ColsAction<'onUpdate', GDE, WR> {
   return {};
 }
 
 export function makeOnUpdateCreationTimeFieldTrigger<GDE, WR>(
-  _: MakeTriggerContext_2<CreationTimeField>
+  _: MakeTriggerContext<CreationTimeField>
 ): ColsAction<'onUpdate', GDE, WR> {
   return {};
 }
 
 export function makeOnUpdateImageFieldTrigger<GDE, WR>(
-  _: MakeTriggerContext_2<ImageField>
+  _: MakeTriggerContext<ImageField>
 ): ColsAction<'onUpdate', GDE, WR> {
   return {};
 }
 
-async function recursiveUpdateReferDoc<GDE, WR, F extends Field_1>({
-  cols,
-  mergeDoc,
+async function propagateRefUpdate<GDE, WR>({
   getDoc,
-  refedCol,
+  mergeDoc,
   refedDoc,
-  referCol,
   referField,
-  syncFields,
+  referCol,
+  field: { syncFields, refedCol, thisColRefers },
 }: {
-  readonly cols: Dictionary<Dictionary<F>>;
-  readonly mergeDoc: MergeDoc<WR>;
   readonly getDoc: GetDoc<GDE>;
-  readonly refedCol: string;
+  readonly mergeDoc: MergeDoc<WR>;
   readonly refedDoc: ReadDocChange;
-  readonly referCol: string;
   readonly referField: string;
-  readonly syncFields: Dictionary<true>;
-}): Promise<Either<unknown, GDE | DataTypeError>> {
-  if (syncFields === undefined) {
-    return { tag: 'right', value: {} };
-  }
-
-  const syncFieldNames = Object.keys(syncFields);
-
-  const syncedDataBefore = Object.fromEntries(
-    Object.entries(refedDoc.before).filter(([fieldName]) => syncFieldNames.includes(fieldName))
+  readonly referCol: string;
+  readonly field: {
+    readonly refedCol: string;
+    readonly syncFields: SyncFields;
+    readonly thisColRefers: readonly ThisColRefer[];
+  };
+}): Promise<void> {
+  const updateDiff = Object.fromEntries(
+    Object.entries(refedDoc.after).filter(
+      ([fieldName, afterField]) =>
+        !isEqualReadDocField({ afterField, beforeField: refedDoc.before[fieldName] })
+    )
   );
 
-  const syncedDataAfter = Object.fromEntries(
-    Object.entries(refedDoc.after).filter(([fieldName]) => syncFieldNames.includes(fieldName))
-  );
+  const syncData = filterSyncFields({ data: updateDiff, syncFields });
 
-  const syncedDataDiff = getReadDocDataDiff({
-    before: syncedDataBefore,
-    after: syncedDataAfter,
-  });
-
-  if (Object.keys(syncedDataDiff).length === 0) {
-    return { tag: 'right', value: {} };
+  if (syncData === undefined) {
+    return;
   }
 
   const relDoc = await getDoc({
@@ -93,109 +77,76 @@ async function recursiveUpdateReferDoc<GDE, WR, F extends Field_1>({
   });
 
   if (relDoc.tag === 'left') {
-    return relDoc;
+    return;
   }
 
   const referDocIds = relDoc.value.data[DOC_IDS_FIELD_NAME];
   if (referDocIds?.type !== 'stringArray') {
-    return {
-      tag: 'left',
-      error: { errorType: 'invalid_data_type' },
-    };
+    return;
   }
 
-  return {
-    tag: 'right',
-    value: Promise.all(
-      referDocIds.value.map(async (referDocId) => {
-        const referDocKey: DocKey = { col: { type: 'normal', name: referCol }, id: referDocId };
-        await mergeDoc(referDocKey, {
-          [referField]: {
-            type: 'ref',
-            value: Object.fromEntries(Object.entries(syncedDataDiff).map(readToWriteField)),
+  referDocIds.value.forEach((referDocId) => {
+    const referDocKey: DocKey = {
+      col: { type: 'normal', name: referCol },
+      id: referDocId,
+    };
+    mergeDoc(referDocKey, {
+      [referField]: {
+        type: 'ref',
+        value: Object.fromEntries(Object.entries(syncData).map(readToWriteField)),
+      },
+    });
+    thisColRefers.forEach((thisColRefer) => {
+      thisColRefer.fields.forEach((thisColReferField) => {
+        propagateRefUpdate({
+          getDoc,
+          mergeDoc,
+          field: {
+            refedCol: referCol,
+            syncFields: thisColReferField.syncFields,
+            thisColRefers: thisColRefer.thisColRefers,
+          },
+          referCol: thisColRefer.colName,
+          referField: thisColReferField.name,
+          refedDoc: {
+            id: referDocId,
+            before: {},
+            after: {
+              [referField]: {
+                type: 'ref',
+                value: { id: refedDoc.id, data: syncData },
+              },
+            },
           },
         });
-        await Promise.all(
-          Object.entries(cols)
-            // Filter self column name (to avoid self infinite loop, just in case), and refed col
-            // name (to avoid 2 collections circular infinite loop). This won't prevent 3
-            // collections circular infinite loop.
-            .filter(([colName]) => colName !== referCol && colName !== refedCol)
-            .map(async ([colName, col]) =>
-              Object.entries(col).map(async ([fieldName, fieldDef]) => {
-                if (fieldDef.type === 'ref' && fieldDef.refCol === referCol) {
-                  await recursiveUpdateReferDoc({
-                    cols,
-                    getDoc,
-                    mergeDoc,
-                    refedDoc: {
-                      id: referDocId,
-                      before: {},
-                      after: syncedDataDiff,
-                    },
-                    refedCol: referCol,
-                    referCol: colName,
-                    referField: fieldName,
-                    syncFields: fieldDef.syncFields ?? {},
-                  });
-                }
-              })
-            )
-        );
-      })
-    ),
-  };
-}
-
-export function makeOnUpdateOwnerFieldTrigger<GDE, WR>({
-  cols,
-  colName,
-  field: { syncFields },
-  userCol,
-  fieldName,
-}: MakeTriggerContext_1<OwnerField>): ColsAction<'onUpdate', GDE, WR> {
-  return {
-    [userCol]: {
-      mayFailOp: async ({ getDoc, mergeDoc, snapshot: refedDoc }) =>
-        recursiveUpdateReferDoc({
-          cols,
-          mergeDoc,
-          getDoc,
-          refedCol: userCol,
-          refedDoc: refedDoc,
-          referCol: colName,
-          referField: fieldName,
-          syncFields: syncFields ?? {},
-        }),
-    },
-  };
+      });
+    });
+  });
 }
 
 export function makeOnUpdateRefFieldTrigger<GDE, WR>({
-  cols,
   colName,
-  field: { syncFields, refCol: refedCol },
+  field,
   fieldName,
-}: MakeTriggerContext_2<RefField>): ColsAction<'onUpdate', GDE, WR> {
+}: MakeTriggerContext<RefField>): ColsAction<'onUpdate', GDE, WR> {
   return {
-    [refedCol]: {
-      mayFailOp: async ({ getDoc, mergeDoc, snapshot: refedDoc }) =>
-        recursiveUpdateReferDoc({
-          cols,
-          mergeDoc,
+    [field.refedCol]: {
+      mayFailOp: async ({ getDoc, mergeDoc, snapshot }) => {
+        propagateRefUpdate({
           getDoc,
-          refedCol: refedCol,
-          refedDoc: refedDoc,
+          mergeDoc,
+          field,
+          refedDoc: snapshot,
           referCol: colName,
           referField: fieldName,
-          syncFields: syncFields ?? {},
-        }),
+        });
+      },
     },
   };
 }
 
 export function makeOnUpdateStringFieldTrigger<GDE, WR>(
-  _: MakeTriggerContext_2<StringField>
+  _: MakeTriggerContext<StringField>
 ): ColsAction<'onUpdate', GDE, WR> {
   return {};
 }

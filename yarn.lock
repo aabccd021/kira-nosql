@@ -3057,9 +3057,9 @@ kind-of@^6.0.0, kind-of@^6.0.2:
   integrity sha512-dcS1ul+9tmeD95T+x28/ehLgd9mENa3LsvDTtzm3vyBEO7RPptvAD+t44WVXaUjTBRcrpFeFlC8WCruUR456hw==
 
 kira-core@^0.3.8:
-  version "0.3.8"
-  resolved "https://registry.yarnpkg.com/kira-core/-/kira-core-0.3.8.tgz#421140f62a2a1b9fb49a53c7a8f79340ed77c489"
-  integrity sha512-IQFvbit0enc98ZYvhacFZemj38V1UgehK8tKyhkcxE+1p16ehD6woz+mLw3kDPOQl0LP+BT+lIp4/7l0DAxw4A==
+  version "0.3.13"
+  resolved "https://registry.yarnpkg.com/kira-core/-/kira-core-0.3.13.tgz#4c713acd6bd447225f5438d1323404e84ea541ae"
+  integrity sha512-5zIniBttwYsr2Hqi996X9bD0BYZf0X0nY8E7vXdwcUK58arXbnJ1niuvswz6w3pweHPywH5fS73l6Ov6xLEOGQ==
 
 kleur@^3.0.3:
   version "3.0.3"
