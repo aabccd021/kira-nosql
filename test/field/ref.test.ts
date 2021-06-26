@@ -168,109 +168,109 @@ describe('makeRefTrigger', () => {
     });
   });
 
-  describe('onUpdate', () => {
-    it('return empty trigger if no comment data changed', async () => {
-      const trigger = makeRefTrigger({
-        colName: 'comment',
-        fieldName: 'commentedArticle',
-        fieldSpec: {
-          type: 'ref',
-          refedCol: 'article',
-          syncFields: { title: true, readMinute: true },
-          isOwner: false,
-          thisColRefers: [],
-        },
-      });
-      const mockedGetDoc = jest.fn<GetDocReturn, GetDocParam>();
-      const actionResult = await trigger.onUpdate?.['article']?.getTransactionCommit?.({
-        getDoc: mockedGetDoc,
-        snapshot: {
-          id: 'article0',
-          before: {
-            title: { type: 'string', value: 'Keyakizaka renamed to Sakurazaka' },
-            publishTime: { type: 'date', value: new Date(2018, 9, 13, 0, 0, 0, 0) },
-            readMinute: { type: 'number', value: 10 },
-            content: { type: 'string', value: 'Its renamed' },
-          },
-          after: {
-            title: { type: 'string', value: 'Keyakizaka renamed to Sakurazaka' },
-            publishTime: { type: 'date', value: new Date(2018, 9, 13, 0, 0, 0, 0) },
-            readMinute: { type: 'number', value: 10 },
-            content: { type: 'string', value: 'Its renamed' },
-          },
-        },
-      });
-      expect(Object.keys(trigger.onUpdate ?? {})).toStrictEqual(['article']);
-      expect(mockedGetDoc).not.toHaveBeenCalled();
-      expect(actionResult).toStrictEqual({ tag: 'right', value: {} });
-    });
+  // describe('onUpdate', () => {
+  //   it('return empty trigger if no comment data changed', async () => {
+  //     const trigger = makeRefTrigger({
+  //       colName: 'comment',
+  //       fieldName: 'commentedArticle',
+  //       fieldSpec: {
+  //         type: 'ref',
+  //         refedCol: 'article',
+  //         syncFields: { title: true, readMinute: true },
+  //         isOwner: false,
+  //         thisColRefers: [],
+  //       },
+  //     });
+  //     const mockedGetDoc = jest.fn<GetDocReturn, GetDocParam>();
+  //     const actionResult = await trigger.onUpdate?.['article']?.getTransactionCommit?.({
+  //       getDoc: mockedGetDoc,
+  //       snapshot: {
+  //         id: 'article0',
+  //         before: {
+  //           title: { type: 'string', value: 'Keyakizaka renamed to Sakurazaka' },
+  //           publishTime: { type: 'date', value: new Date(2018, 9, 13, 0, 0, 0, 0) },
+  //           readMinute: { type: 'number', value: 10 },
+  //           content: { type: 'string', value: 'Its renamed' },
+  //         },
+  //         after: {
+  //           title: { type: 'string', value: 'Keyakizaka renamed to Sakurazaka' },
+  //           publishTime: { type: 'date', value: new Date(2018, 9, 13, 0, 0, 0, 0) },
+  //           readMinute: { type: 'number', value: 10 },
+  //           content: { type: 'string', value: 'Its renamed' },
+  //         },
+  //       },
+  //     });
+  //     expect(Object.keys(trigger.onUpdate ?? {})).toStrictEqual(['article']);
+  //     expect(mockedGetDoc).not.toHaveBeenCalled();
+  //     expect(actionResult).toStrictEqual({ tag: 'right', value: {} });
+  //   });
 
-    it('copy article field', async () => {
-      const trigger = makeRefTrigger({
-        colName: 'comment',
-        fieldName: 'commentedArticle',
-        fieldSpec: {
-          type: 'ref',
-          refedCol: 'article',
-          syncFields: { title: true, readMinute: true },
-          isOwner: false,
-          thisColRefers: [],
-        },
-      });
-      const mockedGetDoc = jest.fn<GetDocReturn, GetDocParam>();
-      const actionResult = await trigger.onUpdate?.['article']?.getTransactionCommit?.({
-        getDoc: mockedGetDoc,
-        snapshot: {
-          id: 'article0',
-          before: {
-            title: { type: 'string', value: 'Keyakizaka renamed to Sakurazaka' },
-            publishTime: { type: 'date', value: new Date(2018, 9, 13, 0, 0, 0, 0) },
-            readMinute: { type: 'number', value: 10 },
-            content: { type: 'string', value: 'Its renamed' },
-          },
-          after: {
-            title: { type: 'string', value: 'Keyakizaka46 renamed to Sakurazaka46' },
-            publishTime: { type: 'date', value: new Date(2018, 9, 13, 0, 0, 0, 0) },
-            readMinute: { type: 'number', value: 10 },
-            content: { type: 'string', value: 'Its renamed sir' },
-          },
-        },
-      });
-      expect(Object.keys(trigger.onUpdate ?? {})).toStrictEqual(['article']);
-      expect(mockedGetDoc).not.toHaveBeenCalled();
-      expect(actionResult).toStrictEqual({
-        tag: 'right',
-        value: {
-          comment: {
-            comment46: {
-              op: 'merge',
-              runTrigger: true,
-              data: {
-                commentedArticle: {
-                  type: 'ref',
-                  value: {
-                    title: { type: 'string', value: 'Keyakizaka46 renamed to Sakurazaka46' },
-                  },
-                },
-              },
-            },
-            comment21: {
-              op: 'merge',
-              runTrigger: true,
-              data: {
-                commentedArticle: {
-                  type: 'ref',
-                  value: {
-                    title: { type: 'string', value: 'Keyakizaka46 renamed to Sakurazaka46' },
-                  },
-                },
-              },
-            },
-          },
-        },
-      });
-    });
-  });
+  //   it('copy article field', async () => {
+  //     const trigger = makeRefTrigger({
+  //       colName: 'comment',
+  //       fieldName: 'commentedArticle',
+  //       fieldSpec: {
+  //         type: 'ref',
+  //         refedCol: 'article',
+  //         syncFields: { title: true, readMinute: true },
+  //         isOwner: false,
+  //         thisColRefers: [],
+  //       },
+  //     });
+  //     const mockedGetDoc = jest.fn<GetDocReturn, GetDocParam>();
+  //     const actionResult = await trigger.onUpdate?.['article']?.getTransactionCommit?.({
+  //       getDoc: mockedGetDoc,
+  //       snapshot: {
+  //         id: 'article0',
+  //         before: {
+  //           title: { type: 'string', value: 'Keyakizaka renamed to Sakurazaka' },
+  //           publishTime: { type: 'date', value: new Date(2018, 9, 13, 0, 0, 0, 0) },
+  //           readMinute: { type: 'number', value: 10 },
+  //           content: { type: 'string', value: 'Its renamed' },
+  //         },
+  //         after: {
+  //           title: { type: 'string', value: 'Keyakizaka46 renamed to Sakurazaka46' },
+  //           publishTime: { type: 'date', value: new Date(2018, 9, 13, 0, 0, 0, 0) },
+  //           readMinute: { type: 'number', value: 10 },
+  //           content: { type: 'string', value: 'Its renamed sir' },
+  //         },
+  //       },
+  //     });
+  //     expect(Object.keys(trigger.onUpdate ?? {})).toStrictEqual(['article']);
+  //     expect(mockedGetDoc).not.toHaveBeenCalled();
+  //     expect(actionResult).toStrictEqual({
+  //       tag: 'right',
+  //       value: {
+  //         comment: {
+  //           comment46: {
+  //             op: 'merge',
+  //             runTrigger: true,
+  //             data: {
+  //               commentedArticle: {
+  //                 type: 'ref',
+  //                 value: {
+  //                   title: { type: 'string', value: 'Keyakizaka46 renamed to Sakurazaka46' },
+  //                 },
+  //               },
+  //             },
+  //           },
+  //           comment21: {
+  //             op: 'merge',
+  //             runTrigger: true,
+  //             data: {
+  //               commentedArticle: {
+  //                 type: 'ref',
+  //                 value: {
+  //                   title: { type: 'string', value: 'Keyakizaka46 renamed to Sakurazaka46' },
+  //                 },
+  //               },
+  //             },
+  //           },
+  //         },
+  //       },
+  //     });
+  //   });
+  // });
 
   describe('onDelete', () => {
     it('delete referencer comment doc', async () => {
