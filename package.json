@@ -1,6 +1,6 @@
 {
   "name": "kira-nosql",
-  "version": "0.1.8",
+  "version": "0.1.9",
   "description": "NoSQL utils for Kira",
   "repository": "git@github.com:aabccd021/kira-nosql.git",
   "author": "aabccd021 <aabccd021@gmail.com>",
@@ -13,7 +13,7 @@
   "scripts": {
     "build": "tsc --build tsconfig.build.json",
     "lint": "eslint . --ext ts",
-    "test": "jest --coverage"
+    "test": "jest --coverage --verbose"
   },
   "dependencies": {
     "assert-never": "^1.2.1",
