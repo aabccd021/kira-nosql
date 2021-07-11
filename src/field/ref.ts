@@ -1,7 +1,7 @@
 import assertNever from 'assert-never';
 import { RefField, SyncFields, ThisColRefer } from 'kira-core';
 
-import { ReadDocData, ReadField, WriteField } from '..';
+import { ReadDocData, ReadField, WriteField } from '../doc-data';
 import { DocKey, GetDoc, MakeTriggerContext, MergeDoc, ReadDocChange, Trigger } from '../type';
 import { DOC_IDS_FIELD_NAME } from '../util';
 
@@ -191,9 +191,9 @@ export function makeRefTrigger<GDE, WR>({
   fieldSpec,
   fieldName,
 }: MakeTriggerContext<RefField>): Trigger<GDE, WR> {
-  const requireSync = Object.keys(fieldSpec.syncFields).length !== 0;
+  const needSync = Object.keys(fieldSpec.syncFields).length !== 0;
   return {
-    onCreate: !requireSync
+    onCreate: !needSync
       ? undefined
       : {
           [colName]: {
@@ -236,7 +236,7 @@ export function makeRefTrigger<GDE, WR>({
             },
           },
         },
-    onUpdate: !requireSync
+    onUpdate: !needSync
       ? undefined
       : {
           [fieldSpec.refedCol]: {
