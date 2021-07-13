@@ -196,7 +196,7 @@ async function propagateRefUpdate<GDE, WR>({
   });
 }
 
-export function makeRefTrigger<GDE, WR>({
+export function makeRefDraft<GDE, WR>({
   colName,
   fieldSpec,
   fieldName,

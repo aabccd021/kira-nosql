@@ -11,7 +11,7 @@ import {
   DocKey,
   Draft,
   Either,
-  MakeTrigger,
+  MakeDraft,
   SnapshotOfActionType,
 } from './type';
 
@@ -20,15 +20,15 @@ function isDefined<T>(t: T | undefined): t is T {
 }
 
 export function getActionDrafts<GDE, WR>({
-  triggers,
+  drafts,
   colName,
 }: {
-  readonly triggers: readonly Draft<GDE, WR>[];
+  readonly drafts: readonly Draft<GDE, WR>[];
   readonly colName: string;
 }): { readonly [A in ActionType]?: ColDrafts<A, GDE, WR> } {
   return Object.fromEntries(
     ACTION_TYPE.map((actionType) => {
-      const colDrafts = triggers.map((trigger) => trigger[actionType]?.[colName]);
+      const colDrafts = drafts.map((draft) => draft[actionType]?.[colName]);
       return [
         actionType,
         {
@@ -42,14 +42,14 @@ export function getActionDrafts<GDE, WR>({
 
 export function getDraft<F extends Field, GDE, WR>({
   cols,
-  makeTrigger,
+  makeDraft,
 }: {
   readonly cols: Dictionary<Dictionary<F>>;
-  readonly makeTrigger: MakeTrigger<F, GDE, WR>;
+  readonly makeDraft: MakeDraft<F, GDE, WR>;
 }): readonly Draft<GDE, WR>[] {
   return Object.entries(cols).flatMap(([colName, col]) =>
     Object.entries(col).map(([fieldName, fieldSpec]) =>
-      makeTrigger({ colName, fieldName, fieldSpec })
+      makeDraft({ colName, fieldName, fieldSpec })
     )
   );
 }

@@ -2,7 +2,7 @@ import { CreationTimeField } from 'kira-core';
 
 import { Draft, DraftMakerContext } from '../type';
 
-export function makeCreationTimeTrigger<GDE, WR>({
+export function makeCreationTimeDraft<GDE, WR>({
   colName,
   fieldName,
 }: DraftMakerContext<CreationTimeField>): Draft<GDE, WR> {

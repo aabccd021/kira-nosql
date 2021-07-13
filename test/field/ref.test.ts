@@ -1,4 +1,4 @@
-import { makeRefTrigger } from '../../src';
+import { makeRefDraft } from '../../src';
 import {
   DeleteDocParam,
   DeleteDocReturn,
@@ -11,7 +11,7 @@ import {
 describe('makeRefTrigger', () => {
   describe('onCreate', () => {
     it('return error if refField is empty', async () => {
-      const trigger = makeRefTrigger({
+      const draft = makeRefDraft({
         colName: 'comment',
         fieldName: 'commentedArticle',
         fieldSpec: {
@@ -24,12 +24,12 @@ describe('makeRefTrigger', () => {
       });
 
       const mockedGetDoc = jest.fn<GetDocReturn, GetDocParam>();
-      const actionResult = await trigger.onCreate?.['comment']?.getTransactionCommit?.({
+      const actionResult = await draft.onCreate?.['comment']?.getTransactionCommit?.({
         getDoc: mockedGetDoc,
         snapshot: { id: 'comment0', data: {} },
       });
 
-      expect(Object.keys(trigger.onCreate ?? {})).toStrictEqual(['comment']);
+      expect(Object.keys(draft.onCreate ?? {})).toStrictEqual(['comment']);
       expect(mockedGetDoc).not.toHaveBeenCalled();
       expect(actionResult).toStrictEqual({
         tag: 'left',
@@ -38,7 +38,7 @@ describe('makeRefTrigger', () => {
     });
 
     it('return error if refField is not type of ref field', async () => {
-      const trigger = makeRefTrigger({
+      const draft = makeRefDraft({
         colName: 'comment',
         fieldName: 'commentedArticle',
         fieldSpec: {
@@ -50,7 +50,7 @@ describe('makeRefTrigger', () => {
         },
       });
       const mockedGetDoc = jest.fn<GetDocReturn, GetDocParam>();
-      const actionResult = await trigger.onCreate?.['comment']?.getTransactionCommit?.({
+      const actionResult = await draft.onCreate?.['comment']?.getTransactionCommit?.({
         getDoc: mockedGetDoc,
         snapshot: {
           id: 'comment0',
@@ -60,7 +60,7 @@ describe('makeRefTrigger', () => {
         },
       });
 
-      expect(Object.keys(trigger.onCreate ?? {})).toStrictEqual(['comment']);
+      expect(Object.keys(draft.onCreate ?? {})).toStrictEqual(['comment']);
       expect(mockedGetDoc).not.toHaveBeenCalled();
       expect(actionResult).toStrictEqual({
         tag: 'left',
@@ -69,7 +69,7 @@ describe('makeRefTrigger', () => {
     });
 
     it('return error if get doc is error', async () => {
-      const trigger = makeRefTrigger({
+      const draft = makeRefDraft({
         colName: 'comment',
         fieldName: 'commentedArticle',
         fieldSpec: {
@@ -84,7 +84,7 @@ describe('makeRefTrigger', () => {
         tag: 'left',
         error: 'error1',
       });
-      const actionResult = await trigger.onCreate?.['comment']?.getTransactionCommit?.({
+      const actionResult = await draft.onCreate?.['comment']?.getTransactionCommit?.({
         getDoc: mockedGetDoc,
         snapshot: {
           id: 'comment0',
@@ -97,7 +97,7 @@ describe('makeRefTrigger', () => {
         },
       });
 
-      expect(Object.keys(trigger.onCreate ?? {})).toStrictEqual(['comment']);
+      expect(Object.keys(draft.onCreate ?? {})).toStrictEqual(['comment']);
       expect(mockedGetDoc).toHaveBeenCalledTimes(1);
       expect(mockedGetDoc).toHaveBeenCalledWith({
         key: { col: { type: 'normal', name: 'article' }, id: 'article0' },
@@ -106,7 +106,7 @@ describe('makeRefTrigger', () => {
     });
 
     it('copy ref doc field', async () => {
-      const trigger = makeRefTrigger({
+      const draft = makeRefDraft({
         colName: 'comment',
         fieldName: 'commentedArticle',
         fieldSpec: {
@@ -128,7 +128,7 @@ describe('makeRefTrigger', () => {
           },
         },
       });
-      const actionResult = await trigger.onCreate?.['comment']?.getTransactionCommit?.({
+      const actionResult = await draft.onCreate?.['comment']?.getTransactionCommit?.({
         getDoc: mockedGetDoc,
         snapshot: {
           id: 'comment0',
@@ -141,7 +141,7 @@ describe('makeRefTrigger', () => {
         },
       });
 
-      expect(Object.keys(trigger.onCreate ?? {})).toStrictEqual(['comment']);
+      expect(Object.keys(draft.onCreate ?? {})).toStrictEqual(['comment']);
       expect(mockedGetDoc).toHaveBeenCalledTimes(1);
       expect(mockedGetDoc).toHaveBeenCalledWith({
         key: { col: { type: 'normal', name: 'article' }, id: 'article0' },
@@ -170,7 +170,7 @@ describe('makeRefTrigger', () => {
 
   // describe('onUpdate', () => {
   //   it('return empty trigger if no comment data changed', async () => {
-  //     const trigger = makeRefTrigger({
+  //     const draft = makeRefDraft({
   //       colName: 'comment',
   //       fieldName: 'commentedArticle',
   //       fieldSpec: {
@@ -182,7 +182,7 @@ describe('makeRefTrigger', () => {
   //       },
   //     });
   //     const mockedGetDoc = jest.fn<GetDocReturn, GetDocParam>();
-  //     const actionResult = await trigger.onUpdate?.['article']?.getTransactionCommit?.({
+  //     const actionResult = await draft.onUpdate?.['article']?.getTransactionCommit?.({
   //       getDoc: mockedGetDoc,
   //       snapshot: {
   //         id: 'article0',
@@ -200,13 +200,13 @@ describe('makeRefTrigger', () => {
   //         },
   //       },
   //     });
-  //     expect(Object.keys(trigger.onUpdate ?? {})).toStrictEqual(['article']);
+  //     expect(Object.keys(draft.onUpdate ?? {})).toStrictEqual(['article']);
   //     expect(mockedGetDoc).not.toHaveBeenCalled();
   //     expect(actionResult).toStrictEqual({ tag: 'right', value: {} });
   //   });
 
   //   it('copy article field', async () => {
-  //     const trigger = makeRefTrigger({
+  //     const draft = makeRefDraft({
   //       colName: 'comment',
   //       fieldName: 'commentedArticle',
   //       fieldSpec: {
@@ -218,7 +218,7 @@ describe('makeRefTrigger', () => {
   //       },
   //     });
   //     const mockedGetDoc = jest.fn<GetDocReturn, GetDocParam>();
-  //     const actionResult = await trigger.onUpdate?.['article']?.getTransactionCommit?.({
+  //     const actionResult = await draft.onUpdate?.['article']?.getTransactionCommit?.({
   //       getDoc: mockedGetDoc,
   //       snapshot: {
   //         id: 'article0',
@@ -236,7 +236,7 @@ describe('makeRefTrigger', () => {
   //         },
   //       },
   //     });
-  //     expect(Object.keys(trigger.onUpdate ?? {})).toStrictEqual(['article']);
+  //     expect(Object.keys(draft.onUpdate ?? {})).toStrictEqual(['article']);
   //     expect(mockedGetDoc).not.toHaveBeenCalled();
   //     expect(actionResult).toStrictEqual({
   //       tag: 'right',
@@ -274,7 +274,7 @@ describe('makeRefTrigger', () => {
 
   describe('onDelete', () => {
     it('delete referencer comment doc', async () => {
-      const trigger = makeRefTrigger({
+      const draft = makeRefDraft({
         colName: 'comment',
         fieldName: 'commentedArticle',
         fieldSpec: {
@@ -299,7 +299,7 @@ describe('makeRefTrigger', () => {
       });
       const mockedDeleteDoc = jest.fn<DeleteDocReturn, DeleteDocParam>();
       const mockedMergeDoc = jest.fn<MergeDocReturn, MergeDocParam>();
-      await trigger.onDelete?.['article']?.mayFailOp?.({
+      await draft.onDelete?.['article']?.mayFailOp?.({
         getDoc: mockedGetDoc,
         deleteDoc: mockedDeleteDoc,
         mergeDoc: mockedMergeDoc,
@@ -311,7 +311,7 @@ describe('makeRefTrigger', () => {
         },
       });
 
-      expect(Object.keys(trigger.onDelete ?? {})).toStrictEqual(['article']);
+      expect(Object.keys(draft.onDelete ?? {})).toStrictEqual(['article']);
       expect(mockedMergeDoc).not.toHaveBeenCalled();
       expect(mockedGetDoc).toHaveBeenCalledTimes(1);
       expect(mockedGetDoc).toHaveBeenCalledWith({

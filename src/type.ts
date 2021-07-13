@@ -178,7 +178,7 @@ export type GetTransactionCommit<A extends ActionType, GDE> = (param: {
   readonly snapshot: SnapshotOfActionType<A>;
 }) => Promise<Either<TransactionCommit, DataTypeError | GDE>>;
 
-export type MakeTrigger<F extends Field, GDE, WR> = (param: {
+export type MakeDraft<F extends Field, GDE, WR> = (param: {
   readonly colName: string;
   readonly fieldName: string;
   readonly fieldSpec: F;

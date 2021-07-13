@@ -2,7 +2,7 @@ import { CountField } from 'kira-core';
 
 import { Draft, DraftMakerContext } from '../type';
 
-export function makeCountTrigger<GDE, WR>({
+export function makeCountDraft<GDE, WR>({
   colName,
   fieldSpec,
   fieldName,
