@@ -12,58 +12,39 @@ import {
   Either,
   SnapshotOfActionType,
 } from '.';
-import { ColDraft } from './type';
+import { ACTION_TYPE, MakeTrigger } from './type';
 
 function isDefined<T>(t: T | undefined): t is T {
   return t !== undefined;
 }
 
-function getTCAndMFO<A extends ActionType, GDE, WR>({
+export function getActionDrafts<GDE, WR>({
   triggers,
   colName,
-  actionType,
 }: {
   readonly triggers: readonly Draft<GDE, WR>[];
   readonly colName: string;
-  readonly actionType: A;
-}): ColDrafts<A, GDE, WR> {
-  const colDrafts = triggers.map(
-    (trigger) => trigger[actionType]?.[colName] as ColDraft<A, GDE, WR> | undefined
+}): { readonly [A in ActionType]?: ColDrafts<A, GDE, WR> } {
+  return Object.fromEntries(
+    ACTION_TYPE.map((actionType) => {
+      const colDrafts = triggers.map((trigger) => trigger[actionType]?.[colName]);
+      return [
+        actionType,
+        {
+          getTransactionCommits: colDrafts.map((x) => x?.getTransactionCommit).filter(isDefined),
+          mayFailOps: colDrafts.map((x) => x?.mayFailOp).filter(isDefined),
+        },
+      ];
+    })
   );
-  return {
-    getTransactionCommits: colDrafts.map((x) => x?.getTransactionCommit).filter(isDefined),
-    mayFailOps: colDrafts.map((x) => x?.mayFailOp).filter(isDefined),
-  };
 }
 
-export function getFoo<GDE, WR>({
-  triggers,
-  colName,
-}: {
-  readonly triggers: readonly Draft<GDE, WR>[];
-  readonly colName: string;
-}): {
-  readonly onCreate: ColDrafts<'onCreate', GDE, WR>;
-  readonly onUpdate: ColDrafts<'onUpdate', GDE, WR>;
-  readonly onDelete: ColDrafts<'onDelete', GDE, WR>;
-} {
-  return {
-    onCreate: getTCAndMFO({ triggers, colName, actionType: 'onCreate' }),
-    onUpdate: getTCAndMFO({ triggers, colName, actionType: 'onUpdate' }),
-    onDelete: getTCAndMFO({ triggers, colName, actionType: 'onDelete' }),
-  };
-}
-
-export function getTriggers<GDE, WR, F extends Field>({
+export function getDraft<F extends Field, GDE, WR>({
   cols,
   makeTrigger,
 }: {
   readonly cols: Dictionary<Dictionary<F>>;
-  readonly makeTrigger: (param: {
-    readonly colName: string;
-    readonly fieldName: string;
-    readonly fieldSpec: F;
-  }) => Draft<GDE, WR>;
+  readonly makeTrigger: MakeTrigger<F, GDE, WR>;
 }): readonly Draft<GDE, WR>[] {
   return Object.entries(cols).flatMap(([colName, col]) =>
     Object.entries(col).map(([fieldName, fieldSpec]) =>
@@ -81,21 +62,21 @@ export async function runTrigger<A extends ActionType, GDE, WR>({
   readonly snapshot: SnapshotOfActionType<A>;
   readonly db: DB<GDE, WR>;
 }): Promise<Either<readonly WR[], DataTypeError | GDE>> {
-  const tc = await Promise.all(
+  const transactionCommit = await Promise.all(
     action.getTransactionCommits.map((gtc) => gtc({ ...db, snapshot }))
-  ).then((eithers) =>
-    eithers.reduce(
-      (prev, e) => {
-        if (prev.tag === 'left') return prev;
-        if (e.tag === 'left') return e;
+  ).then((transactionCommits) =>
+    transactionCommits.reduce(
+      (prevTC, currentTC) => {
+        if (prevTC.tag === 'left') return prevTC;
+        if (currentTC.tag === 'left') return currentTC;
         return {
           tag: 'right',
           value: {
             // merge Transaction commit
-            ...e.value,
+            ...currentTC.value,
             ...Object.fromEntries(
-              Object.entries(prev.value).map(([colName, col]) => {
-                const col2 = e.value[colName] ?? {};
+              Object.entries(prevTC.value).map(([colName, col]) => {
+                const col2 = currentTC.value[colName] ?? {};
                 return [
                   colName,
                   {
@@ -133,11 +114,11 @@ export async function runTrigger<A extends ActionType, GDE, WR>({
       { tag: 'right', value: {} }
     )
   );
-  if (tc.tag === 'left') {
-    return tc;
+  if (transactionCommit.tag === 'left') {
+    return transactionCommit;
   }
   const result = await Promise.all(
-    Object.entries(tc.value).flatMap(([colName, docs]) =>
+    Object.entries(transactionCommit.value).flatMap(([colName, docs]) =>
       Object.entries(docs).map(([docId, doc]) => {
         const key: DocKey = { col: { type: 'normal', name: colName }, id: docId };
         if (doc.op === 'merge') return db.mergeDoc({ key, docData: doc.data });
@@ -146,12 +127,12 @@ export async function runTrigger<A extends ActionType, GDE, WR>({
       })
     )
   );
-  Promise.all(action.mayFailOps.map((mfo) => mfo({ ...db, snapshot })));
+  Promise.all(action.mayFailOps.map((mayFailOp) => mayFailOp({ ...db, snapshot })));
   return { tag: 'right', value: result };
 }
 
 export function isTriggerRequired<A extends ActionType, GDE, WR>(
-  action: ColDrafts<A, GDE, WR>
+  colDrafts: ColDrafts<A, GDE, WR>
 ): boolean {
-  return action.getTransactionCommits.length > 0 || action.mayFailOps.length > 0;
+  return colDrafts.getTransactionCommits.length > 0 || colDrafts.mayFailOps.length > 0;
 }

@@ -54,7 +54,8 @@ export type SnapshotOfActionType<A extends ActionType> = A extends 'onCreate'
   ? ReadDocChange
   : never;
 
-export type ActionType = 'onCreate' | 'onUpdate' | 'onDelete';
+export const ACTION_TYPE = ['onCreate', 'onUpdate', 'onDelete'] as const;
+export type ActionType = typeof ACTION_TYPE[number];
 
 export type DraftMakerContext<F extends Field> = {
   readonly colName: string;
@@ -101,3 +102,9 @@ export type GetTransactionCommit<A extends ActionType, GDE> = (param: {
   readonly getDoc: GetDoc<GDE>;
   readonly snapshot: SnapshotOfActionType<A>;
 }) => Promise<Either<TransactionCommit, DataTypeError | GDE>>;
+
+export type MakeTrigger<F extends Field, GDE, WR> = (param: {
+  readonly colName: string;
+  readonly fieldName: string;
+  readonly fieldSpec: F;
+}) => Draft<GDE, WR>;
