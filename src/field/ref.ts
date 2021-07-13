@@ -3,7 +3,8 @@ import { RefField, SyncFields, ThisColRefer } from 'kira-core';
 
 import { ReadDocData, ReadField, WriteField } from '../data';
 import { DocKey, Draft, DraftMakerContext, GetDoc, MergeDoc, ReadDocChange } from '../type';
-import { DOC_IDS_FIELD_NAME } from '../util';
+
+const DOC_IDS_FIELD_NAME = 'docIds';
 
 export function readToWriteField([fieldName, inField]: readonly [string, ReadField]): readonly [
   string,
