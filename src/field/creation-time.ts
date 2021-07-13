@@ -1,11 +1,11 @@
 import { CreationTimeField } from 'kira-core';
 
-import { MakeTriggerContext, Trigger } from '../type';
+import { Draft, DraftMakerContext } from '../type';
 
 export function makeCreationTimeTrigger<GDE, WR>({
   colName,
   fieldName,
-}: MakeTriggerContext<CreationTimeField>): Trigger<GDE, WR> {
+}: DraftMakerContext<CreationTimeField>): Draft<GDE, WR> {
   return {
     onCreate: {
       [colName]: {
