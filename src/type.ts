@@ -21,6 +21,11 @@ export type DocKey = {
   readonly id: string;
 };
 
+export type DbDocKey = {
+  readonly col: string;
+  readonly id: string;
+};
+
 export type ReadDocSnapshot = {
   readonly id: string;
   readonly data: ReadDocData;
@@ -98,13 +103,7 @@ export type IncrementWriteField = {
   readonly incrementValue: number;
 };
 
-// DB
-export type DB<GDE, WR> = {
-  readonly getDoc: GetDoc<GDE>;
-  readonly mergeDoc: MergeDoc<WR>;
-  readonly deleteDoc: DeleteDoc<WR>;
-};
-
+// Op
 export type GetDoc<E> = (param: { readonly key: DocKey }) => Promise<Either<ReadDocSnapshot, E>>;
 
 export type MergeDoc<WR> = (param: {
@@ -113,6 +112,30 @@ export type MergeDoc<WR> = (param: {
 }) => Promise<WR>;
 
 export type DeleteDoc<WR> = (param: { readonly key: DocKey }) => Promise<WR>;
+
+export type Op<GDE, WR> = {
+  readonly getDoc: GetDoc<GDE>;
+  readonly mergeDoc: MergeDoc<WR>;
+  readonly deleteDoc: DeleteDoc<WR>;
+};
+
+// DB
+export type DB<GDE, WR> = {
+  readonly getDoc: DbGetDoc<GDE>;
+  readonly mergeDoc: DbMergeDoc<WR>;
+  readonly deleteDoc: DbDeleteDoc<WR>;
+};
+
+export type DbGetDoc<E> = (param: {
+  readonly key: DbDocKey;
+}) => Promise<Either<ReadDocSnapshot, E>>;
+
+export type DbMergeDoc<WR> = (param: {
+  readonly key: DbDocKey;
+  readonly docData: WriteDocData;
+}) => Promise<WR>;
+
+export type DbDeleteDoc<WR> = (param: { readonly key: DbDocKey }) => Promise<WR>;
 
 // Trigger
 export type ReadDocChange = {

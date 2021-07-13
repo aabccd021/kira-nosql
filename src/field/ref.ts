@@ -203,9 +203,8 @@ export function makeRefDraft<GDE, WR>({
 }: DraftMakerContext<RefField>): Draft<GDE, WR> {
   const needSync = Object.keys(fieldSpec.syncFields).length !== 0;
   return {
-    onCreate: !needSync
-      ? undefined
-      : {
+    onCreate: needSync
+      ? {
           [colName]: {
             getTransactionCommit: async ({ getDoc, snapshot: doc }) => {
               const refField = doc.data?.[fieldName];
@@ -245,10 +244,10 @@ export function makeRefDraft<GDE, WR>({
               };
             },
           },
-        },
-    onUpdate: !needSync
-      ? undefined
-      : {
+        }
+      : undefined,
+    onUpdate: needSync
+      ? {
           [fieldSpec.refedCol]: {
             mayFailOp: async ({ getDoc, mergeDoc, snapshot }) => {
               propagateRefUpdate({
@@ -261,7 +260,8 @@ export function makeRefDraft<GDE, WR>({
               });
             },
           },
-        },
+        }
+      : undefined,
     onDelete: {
       [fieldSpec.refedCol]: {
         mayFailOp: async ({ getDoc, deleteDoc, snapshot: refedDoc }) => {
