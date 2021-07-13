@@ -1,8 +1,17 @@
 import assertNever from 'assert-never';
 import { RefField, SyncFields, ThisColRefer } from 'kira-core';
 
-import { ReadDocData, ReadField, WriteField } from '../data';
-import { DocKey, Draft, DraftMakerContext, GetDoc, MergeDoc, ReadDocChange } from '../type';
+import {
+  DocKey,
+  Draft,
+  DraftMakerContext,
+  GetDoc,
+  MergeDoc,
+  ReadDocChange,
+  ReadDocData,
+  ReadField,
+  WriteField,
+} from '../type';
 
 const DOC_IDS_FIELD_NAME = 'docIds';
 
