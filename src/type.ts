@@ -1,10 +1,8 @@
-import { Dictionary, Field, Schema } from 'kira-core';
-
-import { ReadDocData, ReadDocSnapshot, WriteDocData } from './doc-data';
+import { Dictionary, Field } from 'kira-core';
 
 // utils
-export type Either<T, E> =
-  | { readonly tag: 'right'; readonly value: T }
+export type Either<V, E> =
+  | { readonly tag: 'right'; readonly value: V }
   | { readonly tag: 'left'; readonly error: E };
 
 // Doc
@@ -23,12 +21,97 @@ export type DocKey = {
   readonly id: string;
 };
 
-// Db
+export type ReadDocSnapshot = {
+  readonly id: string;
+  readonly data: ReadDocData;
+};
+
+/**
+ * DocData
+ */
+export type ReadDocData = { readonly [key: string]: ReadField };
+
+export type WriteDocData = { readonly [key: string]: WriteField };
+
+/**
+ * Field
+ */
+export type ReadWriteField =
+  | StringPrimitiveField
+  | NumberPrimitiveField
+  | DatePrimitiveField
+  | StringArrayReadField;
+
+export type ReadField = ReadWriteField | RefReadField;
+
+export type WriteField =
+  | ReadWriteField
+  | CreationTimeWriteField
+  | IncrementWriteField
+  | RefWriteField;
+
+/**
+ * Primitive Fields
+ */
+export type StringPrimitiveField = {
+  readonly type: 'string';
+  readonly value: string;
+};
+
+export type NumberPrimitiveField = {
+  readonly type: 'number';
+  readonly value: number;
+};
+
+export type DatePrimitiveField = {
+  readonly type: 'date';
+  readonly value: Date;
+};
+
+/**
+ * ReadFields
+ */
+export type RefReadField = {
+  readonly type: 'ref';
+  readonly value: ReadDocSnapshot;
+};
+
+export type StringArrayReadField = {
+  readonly type: 'stringArray';
+  readonly value: readonly string[];
+};
+
+/**
+ * WriteFields
+ */
+export type RefWriteField = {
+  readonly type: 'ref';
+  readonly value: WriteDocData;
+};
+
+export type CreationTimeWriteField = {
+  readonly type: 'creationTime';
+};
+
+export type IncrementWriteField = {
+  readonly type: 'increment';
+  readonly incrementValue: number;
+};
+
+// DB
+export type DB<GDE, WR> = {
+  readonly getDoc: GetDoc<GDE>;
+  readonly mergeDoc: MergeDoc<WR>;
+  readonly deleteDoc: DeleteDoc<WR>;
+};
+
 export type GetDoc<E> = (param: { readonly key: DocKey }) => Promise<Either<ReadDocSnapshot, E>>;
+
 export type MergeDoc<WR> = (param: {
   readonly key: DocKey;
   readonly docData: WriteDocData;
 }) => Promise<WR>;
+
 export type DeleteDoc<WR> = (param: { readonly key: DocKey }) => Promise<WR>;
 
 // Trigger
@@ -38,58 +121,65 @@ export type ReadDocChange = {
   readonly after: ReadDocData;
 };
 
-export type SnapshotOfTriggerType<T extends TriggerType> = T extends 'onCreate'
+export type SnapshotOfActionType<A extends ActionType> = A extends 'onCreate'
   ? ReadDocSnapshot
-  : T extends 'onDelete'
+  : A extends 'onDelete'
   ? ReadDocSnapshot
-  : T extends 'onUpdate'
+  : A extends 'onUpdate'
   ? ReadDocChange
   : never;
 
-export type DocCommit =
-  | { readonly op: 'merge'; readonly data: WriteDocData }
-  | { readonly op: 'delete' };
+export const ACTION_TYPE = ['onCreate', 'onUpdate', 'onDelete'] as const;
+export type ActionType = typeof ACTION_TYPE[number];
 
-export type TriggerType = 'onCreate' | 'onUpdate' | 'onDelete';
-
-export type MakeTriggerContext<F extends Field> = {
+export type DraftMakerContext<F extends Field> = {
   readonly colName: string;
   readonly fieldSpec: F;
   readonly fieldName: string;
 };
 
-// blackmagics
-export type FieldToTrigger<S extends Schema, T extends TriggerType, GDE, WR> = (args: {
-  readonly schema: S;
-  readonly fieldName: string;
-  readonly colName: string;
-}) => ColsAction<T, GDE, WR> | undefined;
-
-export type Trigger<GDE, WR> = {
-  readonly onCreate?: ColsAction<'onCreate', GDE, WR>;
-  readonly onUpdate?: ColsAction<'onUpdate', GDE, WR>;
-  readonly onDelete?: ColsAction<'onDelete', GDE, WR>;
+export type Draft<GDE, WR> = {
+  readonly [A in ActionType]?: ActionDraft<A, GDE, WR>;
 };
 
-export type ColsAction<T extends TriggerType, GDE, WR> = Dictionary<{
-  readonly getTransactionCommit?: GetTransactionCommit<T, GDE>;
-  readonly mayFailOp?: MayFailOp<T, GDE, WR>;
-}>;
+export type ActionDraft<A extends ActionType, GDE, WR> = Dictionary<ColDraft<A, GDE, WR>>;
 
+export type ColDraft<A extends ActionType, GDE, WR> = {
+  readonly getTransactionCommit?: GetTransactionCommit<A, GDE>;
+  readonly mayFailOp?: MayFailOp<A, GDE, WR>;
+};
+
+export type ColDrafts<A extends ActionType, GDE, WR> = {
+  readonly getTransactionCommits: readonly GetTransactionCommit<A, GDE>[];
+  readonly mayFailOps: readonly MayFailOp<A, GDE, WR>[];
+};
+
+// Draft Content
+export type TransactionCommit = Dictionary<Dictionary<DocCommit>>;
+
+export type DocCommit =
+  | { readonly op: 'merge'; readonly data: WriteDocData }
+  | { readonly op: 'delete' };
+
+export type MayFailOp<A extends ActionType, GDE, WR> = (param: {
+  readonly getDoc: GetDoc<GDE>;
+  readonly mergeDoc: MergeDoc<WR>;
+  readonly deleteDoc: DeleteDoc<WR>;
+  readonly snapshot: SnapshotOfActionType<A>;
+}) => Promise<void>;
+
+// etc
 export type DataTypeError = {
   readonly errorType: 'invalid_data_type';
 };
 
-export type GetTransactionCommit<T extends TriggerType, GDE> = (param: {
+export type GetTransactionCommit<A extends ActionType, GDE> = (param: {
   readonly getDoc: GetDoc<GDE>;
-  readonly snapshot: SnapshotOfTriggerType<T>;
+  readonly snapshot: SnapshotOfActionType<A>;
 }) => Promise<Either<TransactionCommit, DataTypeError | GDE>>;
 
-export type TransactionCommit = Dictionary<Dictionary<DocCommit>>;
-
-export type MayFailOp<T extends TriggerType, GDE, WR> = (param: {
-  readonly getDoc: GetDoc<GDE>;
-  readonly mergeDoc: MergeDoc<WR>;
-  readonly deleteDoc: DeleteDoc<WR>;
-  readonly snapshot: SnapshotOfTriggerType<T>;
-}) => Promise<void>;
+export type MakeTrigger<F extends Field, GDE, WR> = (param: {
+  readonly colName: string;
+  readonly fieldName: string;
+  readonly fieldSpec: F;
+}) => Draft<GDE, WR>;

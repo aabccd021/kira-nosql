@@ -1,7 +1,7 @@
 import { ImageField } from 'kira-core';
 
-import { MakeTriggerContext, Trigger } from '../type';
+import { Draft, DraftMakerContext } from '../type';
 
-export function makeImageTrigger<GDE, WR>(_: MakeTriggerContext<ImageField>): Trigger<GDE, WR> {
+export function makeImageTrigger<GDE, WR>(_: DraftMakerContext<ImageField>): Draft<GDE, WR> {
   return {};
 }

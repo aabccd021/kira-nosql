@@ -1,7 +1,7 @@
 import { StringField } from 'kira-core';
 
-import { MakeTriggerContext, Trigger } from '../type';
+import { Draft, DraftMakerContext } from '../type';
 
-export function makeStringTrigger<GDE, WR>(_: MakeTriggerContext<StringField>): Trigger<GDE, WR> {
+export function makeStringTrigger<GDE, WR>(_: DraftMakerContext<StringField>): Draft<GDE, WR> {
   return {};
 }

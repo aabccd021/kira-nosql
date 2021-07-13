@@ -1,9 +1,19 @@
 import assertNever from 'assert-never';
 import { RefField, SyncFields, ThisColRefer } from 'kira-core';
 
-import { ReadDocData, ReadField, WriteField } from '../doc-data';
-import { DocKey, GetDoc, MakeTriggerContext, MergeDoc, ReadDocChange, Trigger } from '../type';
-import { DOC_IDS_FIELD_NAME } from '../util';
+import {
+  DocKey,
+  Draft,
+  DraftMakerContext,
+  GetDoc,
+  MergeDoc,
+  ReadDocChange,
+  ReadDocData,
+  ReadField,
+  WriteField,
+} from '../type';
+
+const DOC_IDS_FIELD_NAME = 'docIds';
 
 export function readToWriteField([fieldName, inField]: readonly [string, ReadField]): readonly [
   string,
@@ -190,7 +200,7 @@ export function makeRefTrigger<GDE, WR>({
   colName,
   fieldSpec,
   fieldName,
-}: MakeTriggerContext<RefField>): Trigger<GDE, WR> {
+}: DraftMakerContext<RefField>): Draft<GDE, WR> {
   const needSync = Object.keys(fieldSpec.syncFields).length !== 0;
   return {
     onCreate: !needSync

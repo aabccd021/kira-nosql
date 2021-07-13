@@ -1,12 +1,12 @@
 import { CountField } from 'kira-core';
 
-import { MakeTriggerContext, Trigger } from '../type';
+import { Draft, DraftMakerContext } from '../type';
 
 export function makeCountTrigger<GDE, WR>({
   colName,
   fieldSpec,
   fieldName,
-}: MakeTriggerContext<CountField>): Trigger<GDE, WR> {
+}: DraftMakerContext<CountField>): Draft<GDE, WR> {
   return {
     onCreate: {
       [colName]: {
