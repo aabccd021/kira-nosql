@@ -2,6 +2,7 @@ import assertNever from 'assert-never';
 import { Dictionary, Field } from 'kira-core';
 
 import {
+  ACTION_TYPE,
   ActionType,
   ColDrafts,
   DataTypeError,
@@ -10,9 +11,9 @@ import {
   DocKey,
   Draft,
   Either,
+  MakeTrigger,
   SnapshotOfActionType,
-} from '.';
-import { ACTION_TYPE, MakeTrigger } from './type';
+} from './type';
 
 function isDefined<T>(t: T | undefined): t is T {
   return t !== undefined;
