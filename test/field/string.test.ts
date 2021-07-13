@@ -1,36 +1,36 @@
-import { makeStringTrigger } from '../../src';
+import { makeStringDraft } from '../../src';
 
 describe('makeStringTrigger', () => {
   describe('onCreate', () => {
     it('does not return action', () => {
-      const trigger = makeStringTrigger({
+      const draft = makeStringDraft({
         colName: 'article',
         fieldName: 'text',
         fieldSpec: { type: 'string' },
       });
-      expect(trigger.onCreate).toBeUndefined();
+      expect(draft.onCreate).toBeUndefined();
     });
   });
 
   describe('onUpdate', () => {
     it('does not return action', () => {
-      const trigger = makeStringTrigger({
+      const draft = makeStringDraft({
         colName: 'article',
         fieldName: 'text',
         fieldSpec: { type: 'string' },
       });
-      expect(trigger.onUpdate).toBeUndefined();
+      expect(draft.onUpdate).toBeUndefined();
     });
   });
 
   describe('onDelete', () => {
     it('does not return action', () => {
-      const trigger = makeStringTrigger({
+      const draft = makeStringDraft({
         colName: 'article',
         fieldName: 'text',
         fieldSpec: { type: 'string' },
       });
-      expect(trigger.onDelete).toBeUndefined();
+      expect(draft.onDelete).toBeUndefined();
     });
   });
 });

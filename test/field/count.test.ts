@@ -1,10 +1,10 @@
-import { makeCountTrigger } from '../../src';
+import { makeCountDraft } from '../../src';
 import { GetDocParam, GetDocReturn } from '../util';
 
 describe('makeCountTrigger', () => {
   describe('onCreate', () => {
     it('set bookmarkCount to 0 when article created', async () => {
-      const trigger = makeCountTrigger({
+      const draft = makeCountDraft({
         colName: 'article',
         fieldName: 'bookmarkCount',
         fieldSpec: {
@@ -14,12 +14,12 @@ describe('makeCountTrigger', () => {
         },
       });
       const mockedGetDoc = jest.fn<GetDocReturn, GetDocParam>();
-      const actionResult = await trigger.onCreate?.['article']?.getTransactionCommit?.({
+      const actionResult = await draft.onCreate?.['article']?.getTransactionCommit?.({
         getDoc: mockedGetDoc,
         snapshot: { id: 'article0', data: {} },
       });
 
-      expect(Object.keys(trigger.onCreate ?? {})).toStrictEqual(['article', 'bookmark']);
+      expect(Object.keys(draft.onCreate ?? {})).toStrictEqual(['article', 'bookmark']);
       expect(mockedGetDoc).not.toHaveBeenCalled();
       expect(actionResult).toStrictEqual({
         tag: 'right',
@@ -40,7 +40,7 @@ describe('makeCountTrigger', () => {
     });
 
     it('increase bookmarkCount if new bookmark added', async () => {
-      const trigger = makeCountTrigger({
+      const draft = makeCountDraft({
         colName: 'article',
         fieldName: 'bookmarkCount',
         fieldSpec: {
@@ -50,7 +50,7 @@ describe('makeCountTrigger', () => {
         },
       });
       const mockedGetDoc = jest.fn<GetDocReturn, GetDocParam>();
-      const actionResult = await trigger.onCreate?.['bookmark']?.getTransactionCommit?.({
+      const actionResult = await draft.onCreate?.['bookmark']?.getTransactionCommit?.({
         getDoc: mockedGetDoc,
         snapshot: {
           id: 'bookmark0',
@@ -63,7 +63,7 @@ describe('makeCountTrigger', () => {
         },
       });
 
-      expect(Object.keys(trigger.onCreate ?? {})).toStrictEqual(['article', 'bookmark']);
+      expect(Object.keys(draft.onCreate ?? {})).toStrictEqual(['article', 'bookmark']);
       expect(mockedGetDoc).not.toHaveBeenCalled();
       expect(actionResult).toStrictEqual({
         tag: 'right',
@@ -81,7 +81,7 @@ describe('makeCountTrigger', () => {
     });
 
     it('returns error if counterDoc is not ref field', async () => {
-      const trigger = makeCountTrigger({
+      const draft = makeCountDraft({
         colName: 'article',
         fieldName: 'bookmarkCount',
         fieldSpec: {
@@ -91,7 +91,7 @@ describe('makeCountTrigger', () => {
         },
       });
       const mockedGetDoc = jest.fn<GetDocReturn, GetDocParam>();
-      const actionResult = await trigger.onCreate?.['bookmark']?.getTransactionCommit?.({
+      const actionResult = await draft.onCreate?.['bookmark']?.getTransactionCommit?.({
         getDoc: mockedGetDoc,
         snapshot: {
           id: 'bookmark0',
@@ -101,7 +101,7 @@ describe('makeCountTrigger', () => {
         },
       });
 
-      expect(Object.keys(trigger.onCreate ?? {})).toStrictEqual(['article', 'bookmark']);
+      expect(Object.keys(draft.onCreate ?? {})).toStrictEqual(['article', 'bookmark']);
       expect(mockedGetDoc).not.toHaveBeenCalled();
       expect(actionResult).toStrictEqual({
         tag: 'left',
@@ -110,7 +110,7 @@ describe('makeCountTrigger', () => {
     });
 
     it('returns error if counterDoc is empty', async () => {
-      const trigger = makeCountTrigger({
+      const draft = makeCountDraft({
         colName: 'article',
         fieldName: 'bookmarkCount',
         fieldSpec: {
@@ -120,12 +120,12 @@ describe('makeCountTrigger', () => {
         },
       });
       const mockedGetDoc = jest.fn<GetDocReturn, GetDocParam>();
-      const actionResult = await trigger.onCreate?.['bookmark']?.getTransactionCommit?.({
+      const actionResult = await draft.onCreate?.['bookmark']?.getTransactionCommit?.({
         getDoc: mockedGetDoc,
         snapshot: { id: 'bookmark0', data: {} },
       });
 
-      expect(Object.keys(trigger.onCreate ?? {})).toStrictEqual(['article', 'bookmark']);
+      expect(Object.keys(draft.onCreate ?? {})).toStrictEqual(['article', 'bookmark']);
       expect(mockedGetDoc).not.toHaveBeenCalled();
       expect(actionResult).toStrictEqual({
         tag: 'left',
@@ -136,7 +136,7 @@ describe('makeCountTrigger', () => {
 
   describe('onUpdate', () => {
     it('does not return action', () => {
-      const trigger = makeCountTrigger({
+      const draft = makeCountDraft({
         colName: 'article',
         fieldName: 'creationTime',
         fieldSpec: {
@@ -145,13 +145,13 @@ describe('makeCountTrigger', () => {
           groupByRef: 'bookmarkedarticle',
         },
       });
-      expect(trigger.onUpdate).toBeUndefined();
+      expect(draft.onUpdate).toBeUndefined();
     });
   });
 
   describe('onDelete', () => {
     it('decrease bookmarkCount by 1 if new bookmark added', async () => {
-      const trigger = makeCountTrigger({
+      const draft = makeCountDraft({
         colName: 'article',
         fieldName: 'bookmarkCount',
         fieldSpec: {
@@ -161,7 +161,7 @@ describe('makeCountTrigger', () => {
         },
       });
       const mockedGetDoc = jest.fn<GetDocReturn, GetDocParam>();
-      const actionResult = await trigger.onDelete?.['bookmark']?.getTransactionCommit?.({
+      const actionResult = await draft.onDelete?.['bookmark']?.getTransactionCommit?.({
         getDoc: mockedGetDoc,
         snapshot: {
           id: 'bookmark0',
@@ -174,7 +174,7 @@ describe('makeCountTrigger', () => {
         },
       });
 
-      expect(Object.keys(trigger.onDelete ?? {})).toStrictEqual(['bookmark']);
+      expect(Object.keys(draft.onDelete ?? {})).toStrictEqual(['bookmark']);
       expect(mockedGetDoc).not.toHaveBeenCalled();
       expect(actionResult).toStrictEqual({
         tag: 'right',
@@ -192,7 +192,7 @@ describe('makeCountTrigger', () => {
     });
 
     it('returns error if counterDoc is not ref field', async () => {
-      const trigger = makeCountTrigger({
+      const draft = makeCountDraft({
         colName: 'article',
         fieldName: 'bookmarkCount',
         fieldSpec: {
@@ -202,7 +202,7 @@ describe('makeCountTrigger', () => {
         },
       });
       const mockedGetDoc = jest.fn<GetDocReturn, GetDocParam>();
-      const actionResult = await trigger.onDelete?.['bookmark']?.getTransactionCommit?.({
+      const actionResult = await draft.onDelete?.['bookmark']?.getTransactionCommit?.({
         getDoc: mockedGetDoc,
         snapshot: {
           id: 'bookmark0',
@@ -212,7 +212,7 @@ describe('makeCountTrigger', () => {
         },
       });
 
-      expect(Object.keys(trigger.onDelete ?? {})).toStrictEqual(['bookmark']);
+      expect(Object.keys(draft.onDelete ?? {})).toStrictEqual(['bookmark']);
       expect(mockedGetDoc).not.toHaveBeenCalled();
       expect(actionResult).toStrictEqual({
         tag: 'left',
@@ -221,7 +221,7 @@ describe('makeCountTrigger', () => {
     });
 
     it('returns error if counterDoc is empty', async () => {
-      const trigger = makeCountTrigger({
+      const draft = makeCountDraft({
         colName: 'article',
         fieldName: 'bookmarkCount',
         fieldSpec: {
@@ -231,12 +231,12 @@ describe('makeCountTrigger', () => {
         },
       });
       const mockedGetDoc = jest.fn<GetDocReturn, GetDocParam>();
-      const actionResult = await trigger.onDelete?.['bookmark']?.getTransactionCommit?.({
+      const actionResult = await draft.onDelete?.['bookmark']?.getTransactionCommit?.({
         getDoc: mockedGetDoc,
         snapshot: { id: 'bookmark0', data: {} },
       });
 
-      expect(Object.keys(trigger.onDelete ?? {})).toStrictEqual(['bookmark']);
+      expect(Object.keys(draft.onDelete ?? {})).toStrictEqual(['bookmark']);
       expect(mockedGetDoc).not.toHaveBeenCalled();
       expect(actionResult).toStrictEqual({
         tag: 'left',
