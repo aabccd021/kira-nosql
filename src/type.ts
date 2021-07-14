@@ -5,19 +5,8 @@ export type Either<V, E> =
   | { readonly tag: 'right'; readonly value: V }
   | { readonly tag: 'left'; readonly error: E };
 
-// Doc
 export type DocKey = {
-  readonly col:
-    | {
-        readonly type: 'normal';
-        readonly name: string;
-      }
-    | {
-        readonly type: 'rel';
-        readonly refedCol: string;
-        readonly referCol: string;
-        readonly referField: string;
-      };
+  readonly col: string;
   readonly id: string;
 };
 
@@ -48,6 +37,7 @@ export type WriteField =
   | ReadWriteField
   | CreationTimeWriteField
   | IncrementWriteField
+  | StringArrayUnionWriteField
   | RefWriteField;
 
 /**
@@ -95,7 +85,12 @@ export type CreationTimeWriteField = {
 
 export type IncrementWriteField = {
   readonly type: 'increment';
-  readonly incrementValue: number;
+  readonly value: number;
+};
+
+export type StringArrayUnionWriteField = {
+  readonly type: 'stringArrayUnion';
+  readonly value: string;
 };
 
 // DB

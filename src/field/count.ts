@@ -40,7 +40,7 @@ export function makeCountDraft<GDE, WR>({
                 [counterDoc.value.id]: {
                   op: 'merge',
                   data: {
-                    [fieldName]: { type: 'increment', incrementValue: 1 },
+                    [fieldName]: { type: 'increment', value: 1 },
                   },
                 },
               },
@@ -66,7 +66,7 @@ export function makeCountDraft<GDE, WR>({
                 [counterDoc.value.id]: {
                   op: 'merge',
                   data: {
-                    [fieldName]: { type: 'increment', incrementValue: -1 },
+                    [fieldName]: { type: 'increment', value: -1 },
                   },
                 },
               },

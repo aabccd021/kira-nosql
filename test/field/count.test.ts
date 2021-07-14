@@ -72,7 +72,7 @@ describe('makeCountTrigger', () => {
             article0: {
               op: 'merge',
               data: {
-                bookmarkCount: { type: 'increment', incrementValue: 1 },
+                bookmarkCount: { type: 'increment', value: 1 },
               },
             },
           },
@@ -183,7 +183,7 @@ describe('makeCountTrigger', () => {
             article0: {
               op: 'merge',
               data: {
-                bookmarkCount: { type: 'increment', incrementValue: -1 },
+                bookmarkCount: { type: 'increment', value: -1 },
               },
             },
           },
