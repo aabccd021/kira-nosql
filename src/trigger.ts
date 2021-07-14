@@ -125,7 +125,7 @@ export async function runMayFailOps<A extends ActionType, GDE, WR>({
   readonly snapshot: SnapshotOfActionType<A>;
   readonly db: DB<GDE, WR>;
 }): Promise<void> {
-  Promise.all(draft.mayFailOps.map((mayFailOp) => mayFailOp({ ...db, snapshot })));
+  await Promise.all(draft.mayFailOps.map((mayFailOp) => mayFailOp({ ...db, snapshot })));
 }
 
 export function isTriggerRequired<A extends ActionType, GDE, WR>(
