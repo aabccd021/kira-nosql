@@ -2,9 +2,12 @@ import assertNever from 'assert-never';
 import { RefField, SyncFields, ThisColRefer } from 'kira-core';
 
 import {
+  DataTypeError,
+  DeleteDoc,
   DocKey,
   Draft,
   DraftMakerContext,
+  Either,
   GetDoc,
   MergeDoc,
   ReadDocChange,
@@ -15,7 +18,7 @@ import {
 
 const DOC_IDS_FIELD_NAME = 'docIds';
 
-export function readToWriteField([fieldName, inField]: readonly [string, ReadField]): readonly [
+function readToWriteField([fieldName, inField]: readonly [string, ReadField]): readonly [
   string,
   WriteField
 ] {
@@ -31,7 +34,7 @@ export function readToWriteField([fieldName, inField]: readonly [string, ReadFie
   return [fieldName, inField];
 }
 
-export function filterSyncFields({
+function filterSyncFields({
   data,
   syncFields,
 }: {
@@ -61,7 +64,7 @@ export function filterSyncFields({
   }, undefined);
 }
 
-export function isEqualReadDocField({
+function isEqualReadDocField({
   beforeField,
   afterField,
 }: {
@@ -102,6 +105,53 @@ export function isEqualReadDocField({
   assertNever(afterField);
 }
 
+type RelKey = {
+  readonly refedId: string;
+  readonly refedCol: string;
+  readonly referField: string;
+  readonly referCol: string;
+};
+
+function relToDocKey({ referCol, referField, refedCol, refedId }: RelKey): DocKey {
+  return { id: `${referCol}_${referField}_${refedCol}_${refedId}`, col: '_relation' };
+}
+
+async function deleteRel<WR>({
+  key,
+  deleteDoc,
+}: {
+  readonly key: RelKey;
+  readonly deleteDoc: DeleteDoc<WR>;
+}): Promise<WR> {
+  return deleteDoc({ key: relToDocKey(key) });
+}
+
+async function getRel<E>({
+  key,
+  getDoc,
+}: {
+  readonly key: RelKey;
+  readonly getDoc: GetDoc<E>;
+}): Promise<Either<readonly string[], E | DataTypeError>> {
+  const relDoc = await getDoc({ key: relToDocKey(key) });
+
+  if (relDoc.tag === 'left') {
+    return relDoc;
+  }
+
+  const referDocIds = relDoc.value.data[DOC_IDS_FIELD_NAME];
+  if (referDocIds?.type !== 'stringArray') {
+    return {
+      tag: 'left',
+      error: {
+        errorType: 'invalid_data_type',
+      },
+    };
+  }
+
+  return { tag: 'right', value: referDocIds.value };
+}
+
 async function propagateRefUpdate<GDE, WR>({
   getDoc,
   mergeDoc,
@@ -134,31 +184,24 @@ async function propagateRefUpdate<GDE, WR>({
     return;
   }
 
-  const relDoc = await getDoc({
+  const referDocIds = await getRel({
+    getDoc,
     key: {
-      id: refedDoc.id,
-      col: {
-        type: 'rel',
-        refedCol,
-        referField,
-        referCol,
-      },
+      refedId: refedDoc.id,
+      refedCol,
+      referField,
+      referCol,
     },
   });
 
-  if (relDoc.tag === 'left') {
-    return;
-  }
-
-  const referDocIds = relDoc.value.data[DOC_IDS_FIELD_NAME];
-  if (referDocIds?.type !== 'stringArray') {
+  if (referDocIds.tag === 'left') {
     return;
   }
 
   referDocIds.value.forEach((referDocId) => {
     mergeDoc({
       key: {
-        col: { type: 'normal', name: referCol },
+        col: referCol,
         id: referDocId,
       },
       docData: {
@@ -213,12 +256,8 @@ export function makeRefDraft<GDE, WR>({
               }
 
               const refDoc = await getDoc({
-                key: {
-                  col: { type: 'normal', name: fieldSpec.refedCol },
-                  id: refField.value.id,
-                },
+                key: { col: fieldSpec.refedCol, id: refField.value.id },
               });
-
               if (refDoc.tag === 'left') return refDoc;
 
               const syncFieldNames = Object.keys(fieldSpec.syncFields);
@@ -265,37 +304,23 @@ export function makeRefDraft<GDE, WR>({
     onDelete: {
       [fieldSpec.refedCol]: {
         mayFailOp: async ({ getDoc, deleteDoc, snapshot: refedDoc }) => {
-          const relDocKey: DocKey = {
-            id: refedDoc.id,
-            col: {
-              type: 'rel',
-              referField: fieldName,
-              referCol: colName,
-              refedCol: fieldSpec.refedCol,
-            },
+          const key = {
+            refedId: refedDoc.id,
+            referField: fieldName,
+            referCol: colName,
+            refedCol: fieldSpec.refedCol,
           };
-          const relDoc = await getDoc({ key: relDocKey });
 
-          if (relDoc.tag === 'left') {
+          const referDocIds = await getRel({ getDoc, key });
+          if (referDocIds.tag === 'left') {
             return;
           }
 
-          const referDocIds = relDoc.value.data[DOC_IDS_FIELD_NAME];
-          if (referDocIds?.type !== 'stringArray') {
-            return;
-          }
-
-          deleteDoc({ key: relDocKey });
+          deleteRel({ deleteDoc, key });
 
           referDocIds.value.forEach((referDocId) =>
-            deleteDoc({
-              key: {
-                id: referDocId,
-                col: { type: 'normal', name: colName },
-              },
-            })
+            deleteDoc({ key: { id: referDocId, col: colName } })
           );
-          return;
         },
       },
     },

@@ -7,31 +7,16 @@ import {
   ColDrafts,
   DataTypeError,
   DB,
-  DbDocKey,
   DocCommit,
   DocKey,
   Draft,
   Either,
   MakeDraft,
-  Op,
   SnapshotOfActionType,
 } from './type';
 
 function isDefined<T>(t: T | undefined): t is T {
   return t !== undefined;
-}
-
-function toDbDocKey({ col, id }: DocKey): DbDocKey {
-  if (col.type === 'normal') {
-    return { col: col.name, id: id };
-  }
-  if (col.type === 'rel') {
-    return {
-      col: '_relation',
-      id: `${col.referCol}_${col.referField}_${col.refedCol}_${id}`,
-    };
-  }
-  assertNever(col);
 }
 
 export function getActionDrafts<GDE, WR>({
@@ -78,13 +63,8 @@ export async function runTrigger<A extends ActionType, GDE, WR>({
   readonly snapshot: SnapshotOfActionType<A>;
   readonly db: DB<GDE, WR>;
 }): Promise<Either<readonly WR[], DataTypeError | GDE>> {
-  const op: Op<GDE, WR> = {
-    getDoc: ({ key }) => db.getDoc({ key: toDbDocKey(key) }),
-    mergeDoc: ({ key, docData }) => db.mergeDoc({ key: toDbDocKey(key), docData }),
-    deleteDoc: ({ key }) => db.deleteDoc({ key: toDbDocKey(key) }),
-  };
   const transactionCommit = await Promise.all(
-    draft.getTransactionCommits.map((gtc) => gtc({ ...op, snapshot }))
+    draft.getTransactionCommits.map((gtc) => gtc({ ...db, snapshot }))
   ).then((transactionCommits) =>
     transactionCommits.reduce(
       (prevTC, currentTC) => {
@@ -141,14 +121,14 @@ export async function runTrigger<A extends ActionType, GDE, WR>({
   const result = await Promise.all(
     Object.entries(transactionCommit.value).flatMap(([colName, docs]) =>
       Object.entries(docs).map(([docId, doc]) => {
-        const key: DbDocKey = { col: colName, id: docId };
+        const key: DocKey = { col: colName, id: docId };
         if (doc.op === 'merge') return db.mergeDoc({ key, docData: doc.data });
         if (doc.op === 'delete') return db.deleteDoc({ key });
         assertNever(doc);
       })
     )
   );
-  Promise.all(draft.mayFailOps.map((mayFailOp) => mayFailOp({ ...op, snapshot })));
+  Promise.all(draft.mayFailOps.map((mayFailOp) => mayFailOp({ ...db, snapshot })));
   return { tag: 'right', value: result };
 }
 
