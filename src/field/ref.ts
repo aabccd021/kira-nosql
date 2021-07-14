@@ -191,8 +191,8 @@ async function propagateRefUpdate<GDE, WR>({
     return;
   }
 
-  referDocIds.value.forEach((referDocId) => {
-    mergeDoc({
+  referDocIds.value.forEach(async (referDocId) => {
+    await mergeDoc({
       key: {
         col: referCol,
         id: referDocId,
@@ -205,8 +205,8 @@ async function propagateRefUpdate<GDE, WR>({
       },
     });
     thisColRefers.forEach((thisColRefer) => {
-      thisColRefer.fields.forEach((thisColReferField) => {
-        propagateRefUpdate({
+      thisColRefer.fields.forEach(async (thisColReferField) => {
+        await propagateRefUpdate({
           getDoc,
           mergeDoc,
           fieldSpec: {
@@ -294,7 +294,7 @@ export function makeRefDraft<GDE, WR>({
     onUpdate: needSync
       ? {
           [fieldSpec.refedCol]: {
-            mayFailOp: async ({ getDoc, mergeDoc, snapshot }) => {
+            mayFailOp: async ({ getDoc, mergeDoc, snapshot }) =>
               propagateRefUpdate({
                 getDoc,
                 mergeDoc,
@@ -302,8 +302,7 @@ export function makeRefDraft<GDE, WR>({
                 refedDoc: snapshot,
                 referCol: colName,
                 referField: fieldName,
-              });
-            },
+              }),
           },
         }
       : undefined,
