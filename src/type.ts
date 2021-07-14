@@ -37,6 +37,7 @@ export type WriteField =
   | ReadWriteField
   | CreationTimeWriteField
   | IncrementWriteField
+  | StringArrayUnionWriteField
   | RefWriteField;
 
 /**
@@ -84,7 +85,12 @@ export type CreationTimeWriteField = {
 
 export type IncrementWriteField = {
   readonly type: 'increment';
-  readonly incrementValue: number;
+  readonly value: number;
+};
+
+export type StringArrayUnionWriteField = {
+  readonly type: 'stringArrayUnion';
+  readonly value: string;
 };
 
 // DB

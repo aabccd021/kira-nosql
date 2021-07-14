@@ -3,7 +3,6 @@ import { RefField, SyncFields, ThisColRefer } from 'kira-core';
 
 import {
   DataTypeError,
-  DeleteDoc,
   DocKey,
   Draft,
   DraftMakerContext,
@@ -17,6 +16,7 @@ import {
 } from '../type';
 
 const DOC_IDS_FIELD_NAME = 'docIds';
+const REL_COL = '_relation';
 
 function readToWriteField([fieldName, inField]: readonly [string, ReadField]): readonly [
   string,
@@ -112,18 +112,12 @@ type RelKey = {
   readonly referCol: string;
 };
 
-function relToDocKey({ referCol, referField, refedCol, refedId }: RelKey): DocKey {
-  return { id: `${referCol}_${referField}_${refedCol}_${refedId}`, col: '_relation' };
+function relToDocId({ referCol, referField, refedCol, refedId }: RelKey): string {
+  return `${referCol}_${referField}_${refedCol}_${refedId}`;
 }
 
-async function deleteRel<WR>({
-  key,
-  deleteDoc,
-}: {
-  readonly key: RelKey;
-  readonly deleteDoc: DeleteDoc<WR>;
-}): Promise<WR> {
-  return deleteDoc({ key: relToDocKey(key) });
+function relToDocKey(key: RelKey): DocKey {
+  return { col: REL_COL, id: relToDocId(key) };
 }
 
 async function getRel<E>({
@@ -148,7 +142,6 @@ async function getRel<E>({
       },
     };
   }
-
   return { tag: 'right', value: referDocIds.value };
 }
 
@@ -279,6 +272,19 @@ export function makeRefDraft<GDE, WR>({
                       },
                     },
                   },
+                  [REL_COL]: {
+                    [relToDocId({
+                      refedId: refField.value.id,
+                      refedCol: fieldSpec.refedCol,
+                      referCol: colName,
+                      referField: fieldName,
+                    })]: {
+                      op: 'merge',
+                      data: {
+                        [DOC_IDS_FIELD_NAME]: { type: 'stringArrayUnion', value: doc.id },
+                      },
+                    },
+                  },
                 },
               };
             },
@@ -316,7 +322,7 @@ export function makeRefDraft<GDE, WR>({
             return;
           }
 
-          deleteRel({ deleteDoc, key });
+          deleteDoc({ key: relToDocKey(key) });
 
           referDocIds.value.forEach((referDocId) =>
             deleteDoc({ key: { id: referDocId, col: colName } })

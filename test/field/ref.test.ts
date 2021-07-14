@@ -161,6 +161,17 @@ describe('makeRefTrigger', () => {
               },
             },
           },
+          _relation: {
+            comment_commentedArticle_article_article0: {
+              op: 'merge',
+              data: {
+                docIds: {
+                  type: 'stringArrayUnion',
+                  value: 'comment0',
+                },
+              },
+            },
+          },
         },
       });
     });
