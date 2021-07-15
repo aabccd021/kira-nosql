@@ -23,7 +23,7 @@ describe('makeCountTimeTrigger', () => {
         value: {
           article: {
             article0: {
-              op: 'merge',
+              op: 'update',
               data: {
                 creationTime: { type: 'creationTime' },
               },

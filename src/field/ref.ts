@@ -259,7 +259,7 @@ export function makeRefDraft<GDE, WR>({
                 value: {
                   [colName]: {
                     [doc.id]: {
-                      op: 'merge',
+                      op: 'update',
                       data: {
                         [fieldName]: {
                           type: 'ref',
@@ -279,7 +279,7 @@ export function makeRefDraft<GDE, WR>({
                       referCol: colName,
                       referField: fieldName,
                     })]: {
-                      op: 'merge',
+                      op: 'set',
                       data: {
                         [DOC_IDS_FIELD_NAME]: { type: 'stringArrayUnion', value: doc.id },
                       },
@@ -307,6 +307,32 @@ export function makeRefDraft<GDE, WR>({
         }
       : undefined,
     onDelete: {
+      [colName]: {
+        getTransactionCommit: async ({ snapshot: doc }) => {
+          const refField = doc.data?.[fieldName];
+          if (refField?.type !== 'ref') {
+            return { tag: 'left', error: { errorType: 'invalid_data_type' } };
+          }
+          return {
+            tag: 'right',
+            value: {
+              [REL_COL]: {
+                [relToDocId({
+                  refedId: refField.value.id,
+                  refedCol: fieldSpec.refedCol,
+                  referCol: colName,
+                  referField: fieldName,
+                })]: {
+                  op: 'update',
+                  data: {
+                    [DOC_IDS_FIELD_NAME]: { type: 'stringArrayRemove', value: doc.id },
+                  },
+                },
+              },
+            },
+          };
+        },
+      },
       [fieldSpec.refedCol]: {
         mayFailOp: async ({ getDoc, deleteDoc, snapshot: refedDoc }) => {
           const key = {

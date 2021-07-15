@@ -149,7 +149,7 @@ describe('makeRefTrigger', () => {
         value: {
           comment: {
             comment0: {
-              op: 'merge',
+              op: 'update',
               data: {
                 commentedArticle: {
                   type: 'ref',
@@ -163,7 +163,7 @@ describe('makeRefTrigger', () => {
           },
           _relation: {
             comment_commentedArticle_article_article0: {
-              op: 'merge',
+              op: 'set',
               data: {
                 docIds: {
                   type: 'stringArrayUnion',
@@ -252,7 +252,7 @@ describe('makeRefTrigger', () => {
   //       value: {
   //         comment: {
   //           comment46: {
-  //             op: 'merge',
+  //             op: 'set',
   //             runTrigger: true,
   //             data: {
   //               commentedArticle: {
@@ -264,7 +264,7 @@ describe('makeRefTrigger', () => {
   //             },
   //           },
   //           comment21: {
-  //             op: 'merge',
+  //             op: 'set',
   //             runTrigger: true,
   //             data: {
   //               commentedArticle: {
@@ -320,7 +320,7 @@ describe('makeRefTrigger', () => {
         },
       });
 
-      expect(Object.keys(draft.onDelete ?? {})).toStrictEqual(['article']);
+      expect(Object.keys(draft.onDelete ?? {})).toStrictEqual(['comment', 'article']);
       expect(mockedMergeDoc).not.toHaveBeenCalled();
       expect(mockedGetDoc).toHaveBeenCalledTimes(1);
       expect(mockedGetDoc).toHaveBeenCalledWith({

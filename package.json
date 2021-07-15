@@ -41,7 +41,10 @@
   },
   "jest": {
     "preset": "ts-jest",
-    "testEnvironment": "node"
+    "testEnvironment": "node",
+    "testMatch": [
+      "**/test/**/*.test.ts"
+    ]
   },
   "eslintConfig": {
     "parser": "@typescript-eslint/parser",

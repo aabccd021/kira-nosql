@@ -4,15 +4,16 @@ import {
   ACTION_TYPE,
   ActionType,
   ColDrafts,
-  DataTypeError,
+  ColTransactionCommit,
   DB,
-  DocCommit,
   Draft,
   Either,
   GetDoc,
+  KiraError,
   MakeDraft,
   SnapshotOfActionType,
   TransactionCommit,
+  TransactionCommitError,
 } from './type';
 
 function isDefined<T>(t: T | undefined): t is T {
@@ -62,54 +63,94 @@ export async function getTransactionCommit<A extends ActionType, GDE, WR>({
   readonly draft: ColDrafts<A, GDE, WR>;
   readonly snapshot: SnapshotOfActionType<A>;
   readonly getDoc: GetDoc<GDE>;
-}): Promise<Either<TransactionCommit, DataTypeError | GDE>> {
+}): Promise<Either<TransactionCommit, KiraError | GDE>> {
   return Promise.all(draft.getTransactionCommits.map((gtc) => gtc({ getDoc, snapshot }))).then(
     (transactionCommits) =>
-      transactionCommits.reduce(
-        (prevTC, currentTC) => {
+      transactionCommits.reduce<Either<TransactionCommit, KiraError | GDE>>(
+        (prevTC, curTC) => {
           if (prevTC.tag === 'left') return prevTC;
-          if (currentTC.tag === 'left') return currentTC;
-          return {
-            tag: 'right',
-            value: {
-              // merge Transaction commit
-              ...currentTC.value,
-              ...Object.fromEntries(
-                Object.entries(prevTC.value).map(([colName, col]) => {
-                  const col2 = currentTC.value[colName] ?? {};
-                  return [
-                    colName,
-                    {
-                      ...col2,
-                      ...Object.fromEntries(
-                        // Merge doc operations. Operation priority is delete > merge.
-                        Object.entries(col).map<readonly [string, DocCommit]>(([docId, docOp]) => {
-                          const docOp2 = col2[docId];
-                          if (docOp.op === 'delete' || docOp2?.op === 'delete') {
-                            return [docId, { op: 'delete' }];
-                          }
-                          if (!docOp2) {
-                            return [docId, docOp];
-                          }
-                          /**
-                           * If both prev.value and e.value provide merge value for the same field,
-                           * value from e.value will be used
-                           */
-                          return [
-                            docId,
-                            {
-                              op: 'merge',
-                              data: { ...docOp.data, ...docOp2.data },
-                            },
-                          ];
-                        })
-                      ),
-                    },
-                  ];
-                })
-              ),
+          if (curTC.tag === 'left') return curTC;
+          return Object.entries(curTC.value).reduce<
+            Either<TransactionCommit, TransactionCommitError>
+          >(
+            (prevTC, [curColName, curColTC]) => {
+              if (prevTC.tag === 'left') {
+                return prevTC;
+              }
+              const prevColTc = prevTC.value[curColName];
+              if (prevColTc === undefined) {
+                return {
+                  tag: 'right',
+                  value: { ...prevTC.value, [curColName]: curColTC },
+                };
+              }
+              const mergedColTC = Object.entries(curColTC).reduce<
+                Either<ColTransactionCommit, TransactionCommitError>
+              >(
+                (prevColTC, [docId, docOp]) => {
+                  if (prevColTC.tag === 'left') {
+                    return prevColTC;
+                  }
+                  const prevOp = prevColTC.value[docId];
+                  if (prevOp === undefined) {
+                    return {
+                      tag: 'right',
+                      value: { ...prevColTC.value, [docId]: docOp },
+                    };
+                  }
+                  if (docOp.op === 'delete' || prevOp?.op === 'delete') {
+                    return {
+                      tag: 'right',
+                      value: {
+                        ...prevColTC.value,
+                        [docId]: { op: 'delete' },
+                      },
+                    };
+                  }
+                  if (docOp.op === 'set' || prevOp?.op === 'set') {
+                    return {
+                      tag: 'right',
+                      value: {
+                        ...prevColTC.value,
+                        [docId]: {
+                          op: 'set',
+                          data: { ...docOp.data, ...prevOp.data },
+                        },
+                      },
+                    };
+                  }
+                  if (docOp.op === 'update' || prevOp?.op === 'update') {
+                    return {
+                      tag: 'right',
+                      value: {
+                        ...prevColTC.value,
+                        [docId]: {
+                          op: 'update',
+                          data: { ...docOp.data, ...prevOp.data },
+                        },
+                      },
+                    };
+                  }
+                  return {
+                    tag: 'left',
+                    error: { errorType: 'transaction_commit' },
+                  };
+                },
+                { tag: 'right', value: prevColTc }
+              );
+              if (mergedColTC.tag === 'left') {
+                return mergedColTC;
+              }
+              return {
+                tag: 'right',
+                value: {
+                  ...prevTC.value,
+                  [curColName]: mergedColTC.value,
+                },
+              };
             },
-          };
+            { tag: 'right', value: prevTC.value }
+          );
         },
         { tag: 'right', value: {} }
       )
