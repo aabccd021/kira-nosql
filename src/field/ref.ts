@@ -171,7 +171,11 @@ async function propagateRefUpdate<GDE, WR>({
     )
   );
 
+  console.log({ updateDiff, refedDoc });
+
   const syncData = filterSyncFields({ data: updateDiff, syncFields });
+
+  console.log({ syncData });
 
   if (syncData === undefined) {
     return;
@@ -187,11 +191,14 @@ async function propagateRefUpdate<GDE, WR>({
     },
   });
 
+  console.log({ referDocIds });
+
   if (referDocIds.tag === 'left') {
     return;
   }
 
   referDocIds.value.forEach(async (referDocId) => {
+    console.log({ referDocId });
     await mergeDoc({
       key: {
         col: referCol,
@@ -206,6 +213,7 @@ async function propagateRefUpdate<GDE, WR>({
     });
     thisColRefers.forEach((thisColRefer) => {
       thisColRefer.fields.forEach(async (thisColReferField) => {
+        console.log({ thisColReferField });
         await propagateRefUpdate({
           getDoc,
           mergeDoc,
