@@ -14,7 +14,7 @@ export function makeCreationTimeDraft<GDE, WR>({
           value: {
             [colName]: {
               [doc.id]: {
-                op: 'merge',
+                op: 'update',
                 data: {
                   [fieldName]: { type: 'creationTime' },
                 },

@@ -38,6 +38,7 @@ export type WriteField =
   | CreationTimeWriteField
   | IncrementWriteField
   | StringArrayUnionWriteField
+  | StringArrayRemoveWriteField
   | RefWriteField;
 
 /**
@@ -90,6 +91,11 @@ export type IncrementWriteField = {
 
 export type StringArrayUnionWriteField = {
   readonly type: 'stringArrayUnion';
+  readonly value: string;
+};
+
+export type StringArrayRemoveWriteField = {
+  readonly type: 'stringArrayRemove';
   readonly value: string;
 };
 
@@ -150,10 +156,12 @@ export type ColDrafts<A extends ActionType, GDE, WR> = {
 };
 
 // Draft Content
-export type TransactionCommit = Dictionary<Dictionary<DocCommit>>;
+export type TransactionCommit = Dictionary<ColTransactionCommit>;
+export type ColTransactionCommit = Dictionary<DocCommit>;
 
 export type DocCommit =
-  | { readonly op: 'merge'; readonly data: WriteDocData }
+  | { readonly op: 'set'; readonly data: WriteDocData }
+  | { readonly op: 'update'; readonly data: WriteDocData }
   | { readonly op: 'delete' };
 
 export type MayFailOp<A extends ActionType, GDE, WR> = (param: {
@@ -163,9 +171,14 @@ export type MayFailOp<A extends ActionType, GDE, WR> = (param: {
   readonly snapshot: SnapshotOfActionType<A>;
 }) => Promise<void>;
 
-// etc
+// Errors
+export type KiraError = DataTypeError | TransactionCommitError;
 export type DataTypeError = {
   readonly errorType: 'invalid_data_type';
+};
+
+export type TransactionCommitError = {
+  readonly errorType: 'transaction_commit';
 };
 
 export type GetTransactionCommit<A extends ActionType, GDE> = (param: {
