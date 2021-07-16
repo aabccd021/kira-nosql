@@ -15,6 +15,7 @@ export function makeCreationTimeDraft<GDE, WR>({
             [colName]: {
               [doc.id]: {
                 op: 'update',
+                onDocAbsent: 'doNotUpdate',
                 data: {
                   [fieldName]: { type: 'creationTime' },
                 },

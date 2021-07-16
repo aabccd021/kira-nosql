@@ -27,6 +27,7 @@ describe('makeCountTrigger', () => {
           article: {
             article0: {
               op: 'update',
+              onDocAbsent: 'doNotUpdate',
               data: {
                 bookmarkCount: {
                   type: 'number',
@@ -71,6 +72,7 @@ describe('makeCountTrigger', () => {
           article: {
             article0: {
               op: 'update',
+              onDocAbsent: 'doNotUpdate',
               data: {
                 bookmarkCount: { type: 'increment', value: 1 },
               },
@@ -182,6 +184,7 @@ describe('makeCountTrigger', () => {
           article: {
             article0: {
               op: 'update',
+              onDocAbsent: 'doNotUpdate',
               data: {
                 bookmarkCount: { type: 'increment', value: -1 },
               },

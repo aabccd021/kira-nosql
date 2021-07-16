@@ -102,13 +102,13 @@ export type StringArrayRemoveWriteField = {
 // DB
 export type DB<GDE, WR> = {
   readonly getDoc: GetDoc<GDE>;
-  readonly mergeDoc: MergeDoc<WR>;
+  readonly updateDoc: UpdateDoc<WR>;
   readonly deleteDoc: DeleteDoc<WR>;
 };
 
 export type GetDoc<E> = (param: { readonly key: DocKey }) => Promise<Either<ReadDocSnapshot, E>>;
 
-export type MergeDoc<WR> = (param: {
+export type UpdateDoc<WR> = (param: {
   readonly key: DocKey;
   readonly docData: WriteDocData;
 }) => Promise<WR>;
@@ -160,13 +160,16 @@ export type TransactionCommit = Dictionary<ColTransactionCommit>;
 export type ColTransactionCommit = Dictionary<DocCommit>;
 
 export type DocCommit =
-  | { readonly op: 'set'; readonly data: WriteDocData }
-  | { readonly op: 'update'; readonly data: WriteDocData }
+  | {
+      readonly op: 'update';
+      readonly data: WriteDocData;
+      readonly onDocAbsent: 'createDoc' | 'doNotUpdate';
+    }
   | { readonly op: 'delete' };
 
 export type MayFailOp<A extends ActionType, GDE, WR> = (param: {
   readonly getDoc: GetDoc<GDE>;
-  readonly mergeDoc: MergeDoc<WR>;
+  readonly updateDoc: UpdateDoc<WR>;
   readonly deleteDoc: DeleteDoc<WR>;
   readonly snapshot: SnapshotOfActionType<A>;
 }) => Promise<void>;
