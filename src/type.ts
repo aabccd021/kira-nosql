@@ -10,6 +10,13 @@ export type DocKey = {
   readonly id: string;
 };
 
+export type RelKey = {
+  readonly refedId: string;
+  readonly refedCol: string;
+  readonly referField: string;
+  readonly referCol: string;
+};
+
 export type ReadDocSnapshot = {
   readonly id: string;
   readonly data: ReadDocData;

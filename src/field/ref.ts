@@ -11,6 +11,7 @@ import {
   ReadDocChange,
   ReadDocData,
   ReadField,
+  RelKey,
   UpdateDoc,
   WriteField,
 } from '../type';
@@ -105,12 +106,7 @@ function isEqualReadDocField({
   assertNever(afterField);
 }
 
-type RelKey = {
-  readonly refedId: string;
-  readonly refedCol: string;
-  readonly referField: string;
-  readonly referCol: string;
-};
+
 
 function relToDocId({ referCol, referField, refedCol, refedId }: RelKey): string {
   return `${referCol}_${referField}_${refedCol}_${refedId}`;
