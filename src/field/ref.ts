@@ -8,10 +8,10 @@ import {
   DraftMakerContext,
   Either,
   GetDoc,
-  MergeDoc,
   ReadDocChange,
   ReadDocData,
   ReadField,
+  UpdateDoc,
   WriteField,
 } from '../type';
 
@@ -147,14 +147,14 @@ async function getRel<E>({
 
 async function propagateRefUpdate<GDE, WR>({
   getDoc,
-  mergeDoc,
+  updateDoc,
   refedDoc,
   referField,
   referCol,
   fieldSpec: { syncFields, refedCol, thisColRefers },
 }: {
   readonly getDoc: GetDoc<GDE>;
-  readonly mergeDoc: MergeDoc<WR>;
+  readonly updateDoc: UpdateDoc<WR>;
   readonly refedDoc: ReadDocChange;
   readonly referField: string;
   readonly referCol: string;
@@ -171,11 +171,7 @@ async function propagateRefUpdate<GDE, WR>({
     )
   );
 
-  console.log({ updateDiff, refedDoc });
-
   const syncData = filterSyncFields({ data: updateDiff, syncFields });
-
-  console.log({ syncData });
 
   if (syncData === undefined) {
     return;
@@ -191,19 +187,13 @@ async function propagateRefUpdate<GDE, WR>({
     },
   });
 
-  console.log({ referDocIds });
-
   if (referDocIds.tag === 'left') {
     return;
   }
 
-  referDocIds.value.forEach(async (referDocId) => {
-    console.log({ referDocId });
-    await mergeDoc({
-      key: {
-        col: referCol,
-        id: referDocId,
-      },
+  referDocIds.value.forEach((referDocId) => {
+    updateDoc({
+      key: { col: referCol, id: referDocId },
       docData: {
         [referField]: {
           type: 'ref',
@@ -212,11 +202,10 @@ async function propagateRefUpdate<GDE, WR>({
       },
     });
     thisColRefers.forEach((thisColRefer) => {
-      thisColRefer.fields.forEach(async (thisColReferField) => {
-        console.log({ thisColReferField });
-        await propagateRefUpdate({
+      thisColRefer.fields.forEach((thisColReferField) => {
+        propagateRefUpdate({
           getDoc,
-          mergeDoc,
+          updateDoc,
           fieldSpec: {
             refedCol: referCol,
             syncFields: thisColReferField.syncFields,
@@ -268,6 +257,7 @@ export function makeRefDraft<GDE, WR>({
                   [colName]: {
                     [doc.id]: {
                       op: 'update',
+                      onDocAbsent: 'doNotUpdate',
                       data: {
                         [fieldName]: {
                           type: 'ref',
@@ -287,7 +277,8 @@ export function makeRefDraft<GDE, WR>({
                       referCol: colName,
                       referField: fieldName,
                     })]: {
-                      op: 'set',
+                      op: 'update',
+                      onDocAbsent: 'createDoc',
                       data: {
                         [DOC_IDS_FIELD_NAME]: { type: 'stringArrayUnion', value: doc.id },
                       },
@@ -302,10 +293,10 @@ export function makeRefDraft<GDE, WR>({
     onUpdate: needSync
       ? {
           [fieldSpec.refedCol]: {
-            mayFailOp: async ({ getDoc, mergeDoc, snapshot }) =>
+            mayFailOp: ({ getDoc, updateDoc, snapshot }) =>
               propagateRefUpdate({
                 getDoc,
-                mergeDoc,
+                updateDoc,
                 fieldSpec: fieldSpec,
                 refedDoc: snapshot,
                 referCol: colName,
@@ -332,6 +323,7 @@ export function makeRefDraft<GDE, WR>({
                   referField: fieldName,
                 })]: {
                   op: 'update',
+                  onDocAbsent: 'doNotUpdate',
                   data: {
                     [DOC_IDS_FIELD_NAME]: { type: 'stringArrayRemove', value: doc.id },
                   },

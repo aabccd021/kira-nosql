@@ -24,6 +24,7 @@ describe('makeCountTimeTrigger', () => {
           article: {
             article0: {
               op: 'update',
+              onDocAbsent: 'doNotUpdate',
               data: {
                 creationTime: { type: 'creationTime' },
               },

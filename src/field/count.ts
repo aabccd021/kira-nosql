@@ -16,6 +16,7 @@ export function makeCountDraft<GDE, WR>({
             [colName]: {
               [doc.id]: {
                 op: 'update',
+                onDocAbsent: 'doNotUpdate',
                 data: {
                   [fieldName]: { type: 'number', value: 0 },
                 },
@@ -39,6 +40,7 @@ export function makeCountDraft<GDE, WR>({
               [colName]: {
                 [counterDoc.value.id]: {
                   op: 'update',
+                  onDocAbsent: 'doNotUpdate',
                   data: {
                     [fieldName]: { type: 'increment', value: 1 },
                   },
@@ -65,6 +67,7 @@ export function makeCountDraft<GDE, WR>({
               [colName]: {
                 [counterDoc.value.id]: {
                   op: 'update',
+                  onDocAbsent: 'doNotUpdate',
                   data: {
                     [fieldName]: { type: 'increment', value: -1 },
                   },

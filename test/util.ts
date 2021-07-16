@@ -1,8 +1,8 @@
-import { DeleteDoc, GetDoc, MergeDoc } from '../src';
+import { DeleteDoc, GetDoc, UpdateDoc } from '../src';
 
 export type GetDocReturn = ReturnType<GetDoc<string>>;
 export type GetDocParam = Parameters<GetDoc<string>>;
-export type MergeDocReturn = ReturnType<MergeDoc<string>>;
-export type MergeDocParam = Parameters<MergeDoc<string>>;
+export type UpdateDocReturn = ReturnType<UpdateDoc<string>>;
+export type UpdateDocParam = Parameters<UpdateDoc<string>>;
 export type DeleteDocReturn = ReturnType<DeleteDoc<string>>;
 export type DeleteDocParam = Parameters<DeleteDoc<string>>;

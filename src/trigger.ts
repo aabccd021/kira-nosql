@@ -84,7 +84,7 @@ export async function getTransactionCommit<A extends ActionType, GDE, WR>({
                   value: { ...prevTC.value, [curColName]: curColTC },
                 };
               }
-              const mergedColTC = Object.entries(curColTC).reduce<
+              const updatedColTC = Object.entries(curColTC).reduce<
                 Either<ColTransactionCommit, TransactionCommitError>
               >(
                 (prevColTC, [docId, docOp]) => {
@@ -98,7 +98,7 @@ export async function getTransactionCommit<A extends ActionType, GDE, WR>({
                       value: { ...prevColTC.value, [docId]: docOp },
                     };
                   }
-                  if (docOp.op === 'delete' || prevOp?.op === 'delete') {
+                  if (docOp.op === 'delete' && prevOp?.op === 'delete') {
                     return {
                       tag: 'right',
                       value: {
@@ -107,25 +107,18 @@ export async function getTransactionCommit<A extends ActionType, GDE, WR>({
                       },
                     };
                   }
-                  if (docOp.op === 'set' || prevOp?.op === 'set') {
-                    return {
-                      tag: 'right',
-                      value: {
-                        ...prevColTC.value,
-                        [docId]: {
-                          op: 'set',
-                          data: { ...docOp.data, ...prevOp.data },
-                        },
-                      },
-                    };
-                  }
-                  if (docOp.op === 'update' || prevOp?.op === 'update') {
+                  if (
+                    docOp.op === 'update' &&
+                    prevOp?.op === 'update' &&
+                    docOp.onDocAbsent === prevOp.onDocAbsent
+                  ) {
                     return {
                       tag: 'right',
                       value: {
                         ...prevColTC.value,
                         [docId]: {
                           op: 'update',
+                          onDocAbsent: docOp.onDocAbsent,
                           data: { ...docOp.data, ...prevOp.data },
                         },
                       },
@@ -138,14 +131,14 @@ export async function getTransactionCommit<A extends ActionType, GDE, WR>({
                 },
                 { tag: 'right', value: prevColTc }
               );
-              if (mergedColTC.tag === 'left') {
-                return mergedColTC;
+              if (updatedColTC.tag === 'left') {
+                return updatedColTC;
               }
               return {
                 tag: 'right',
                 value: {
                   ...prevTC.value,
-                  [curColName]: mergedColTC.value,
+                  [curColName]: updatedColTC.value,
                 },
               };
             },

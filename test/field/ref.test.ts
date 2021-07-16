@@ -4,8 +4,8 @@ import {
   DeleteDocReturn,
   GetDocParam,
   GetDocReturn,
-  MergeDocParam,
-  MergeDocReturn,
+  UpdateDocParam,
+  UpdateDocReturn,
 } from '../util';
 
 describe('makeRefTrigger', () => {
@@ -150,6 +150,7 @@ describe('makeRefTrigger', () => {
           comment: {
             comment0: {
               op: 'update',
+              onDocAbsent: 'doNotUpdate',
               data: {
                 commentedArticle: {
                   type: 'ref',
@@ -163,7 +164,8 @@ describe('makeRefTrigger', () => {
           },
           _relation: {
             comment_commentedArticle_article_article0: {
-              op: 'set',
+              op: 'update',
+              onDocAbsent: 'createDoc',
               data: {
                 docIds: {
                   type: 'stringArrayUnion',
@@ -252,7 +254,7 @@ describe('makeRefTrigger', () => {
   //       value: {
   //         comment: {
   //           comment46: {
-  //             op: 'set',
+  //             op: 'update',
   //             runTrigger: true,
   //             data: {
   //               commentedArticle: {
@@ -264,7 +266,7 @@ describe('makeRefTrigger', () => {
   //             },
   //           },
   //           comment21: {
-  //             op: 'set',
+  //             op: 'update',
   //             runTrigger: true,
   //             data: {
   //               commentedArticle: {
@@ -307,11 +309,11 @@ describe('makeRefTrigger', () => {
         },
       });
       const mockedDeleteDoc = jest.fn<DeleteDocReturn, DeleteDocParam>();
-      const mockedMergeDoc = jest.fn<MergeDocReturn, MergeDocParam>();
+      const mockedUpdateDoc = jest.fn<UpdateDocReturn, UpdateDocParam>();
       await draft.onDelete?.['article']?.mayFailOp?.({
         getDoc: mockedGetDoc,
         deleteDoc: mockedDeleteDoc,
-        mergeDoc: mockedMergeDoc,
+        updateDoc: mockedUpdateDoc,
         snapshot: {
           id: 'article0',
           data: {
@@ -321,7 +323,7 @@ describe('makeRefTrigger', () => {
       });
 
       expect(Object.keys(draft.onDelete ?? {})).toStrictEqual(['comment', 'article']);
-      expect(mockedMergeDoc).not.toHaveBeenCalled();
+      expect(mockedUpdateDoc).not.toHaveBeenCalled();
       expect(mockedGetDoc).toHaveBeenCalledTimes(1);
       expect(mockedGetDoc).toHaveBeenCalledWith({
         key: {
