@@ -18,9 +18,9 @@ export type ReadDocSnapshot = {
 /**
  * DocData
  */
-export type ReadDocData = { readonly [key: string]: ReadField };
+export type ReadDocData = Dictionary<ReadField>;
 
-export type WriteDocData = { readonly [key: string]: WriteField };
+export type WriteDocData = Dictionary<WriteField>;
 
 /**
  * Field

@@ -5,19 +5,25 @@
   "repository": "git@github.com:aabccd021/kira-nosql.git",
   "author": "aabccd021 <aabccd021@gmail.com>",
   "license": "MIT",
-  "main": "lib/index.js",
-  "types": "lib/index.d.ts",
   "files": [
-    "lib"
+    "dist"
   ],
+  "main": "dist/cjs/index.js",
+  "module": "dist/mjs/index.js",
+  "exports": {
+    ".": {
+      "node": "./dist/cjs/index.js",
+      "default": "./dist/mjs/index.js"
+    }
+  },
   "scripts": {
-    "build": "tsc --build tsconfig.build.json",
+    "build": "rm -rf dist && tsc --build tsconfig.mjs.json && tsc --build tsconfig.cjs.json",
     "lint": "eslint . --ext ts",
     "test": "jest --coverage --verbose"
   },
   "dependencies": {
     "assert-never": "^1.2.1",
-    "kira-core": "^0.3.8"
+    "kira-core": "^0.3.14"
   },
   "devDependencies": {
     "@types/jest": "^26.0.23",
