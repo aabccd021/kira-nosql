@@ -38,7 +38,7 @@ describe('makeRefTrigger', () => {
       expect(mockedGetDoc).not.toHaveBeenCalled();
       expect(actionResult).toStrictEqual({
         tag: 'left',
-        error: { type: 'DataTypeError' },
+        error: { type: 'InvalidFieldTypeError' },
       });
     });
 
@@ -74,7 +74,7 @@ describe('makeRefTrigger', () => {
       expect(mockedGetDoc).not.toHaveBeenCalled();
       expect(actionResult).toStrictEqual({
         tag: 'left',
-        error: { type: 'DataTypeError' },
+        error: { type: 'InvalidFieldTypeError' },
       });
     });
 
@@ -115,7 +115,7 @@ describe('makeRefTrigger', () => {
       expect(Object.keys(draft.onCreate ?? {})).toStrictEqual(['comment']);
       expect(mockedGetDoc).toHaveBeenCalledTimes(1);
       expect(mockedGetDoc).toHaveBeenCalledWith({ key: { col: 'article', id: 'article0' } });
-      expect(actionResult).toStrictEqual({ tag: 'left', error: 'error1' });
+      expect(actionResult).toStrictEqual({ tag: 'left', error: { type: 'GetDocError' } });
     });
 
     it('copy ref doc field', async () => {

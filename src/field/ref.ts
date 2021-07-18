@@ -148,7 +148,7 @@ async function getRel({
   if (referDocIds?.type !== 'stringArray') {
     return {
       tag: 'left',
-      error: { type: 'DataTypeError' },
+      error: { type: 'InvalidFieldTypeError' },
     };
   }
   return { tag: 'right', value: referDocIds.value };

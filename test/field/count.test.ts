@@ -125,7 +125,7 @@ describe('makeCountTrigger', () => {
       expect(mockedGetDoc).not.toHaveBeenCalled();
       expect(actionResult).toStrictEqual({
         tag: 'left',
-        error: { type: 'DataTypeError' },
+        error: { type: 'InvalidFieldTypeError' },
       });
     });
 
@@ -157,7 +157,7 @@ describe('makeCountTrigger', () => {
       expect(mockedGetDoc).not.toHaveBeenCalled();
       expect(actionResult).toStrictEqual({
         tag: 'left',
-        error: { type: 'DataTypeError' },
+        error: { type: 'InvalidFieldTypeError' },
       });
     });
   });
@@ -257,7 +257,7 @@ describe('makeCountTrigger', () => {
       expect(mockedGetDoc).not.toHaveBeenCalled();
       expect(actionResult).toStrictEqual({
         tag: 'left',
-        error: { type: 'DataTypeError' },
+        error: { type: 'InvalidFieldTypeError' },
       });
     });
 
@@ -286,7 +286,7 @@ describe('makeCountTrigger', () => {
       expect(mockedGetDoc).not.toHaveBeenCalled();
       expect(actionResult).toStrictEqual({
         tag: 'left',
-        error: { type: 'DataTypeError' },
+        error: { type: 'InvalidFieldTypeError' },
       });
     });
   });

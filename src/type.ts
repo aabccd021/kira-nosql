@@ -195,8 +195,6 @@ export type MakeDraft = (param: {
 }) => Draft;
 
 // Errors
-export type DataTypeError = { readonly type: 'DataTypeError' };
-
 export type InvalidFieldTypeError = { readonly type: 'InvalidFieldTypeError' };
 
 export type InvalidSnapshotError = { readonly type: 'InvalidSnapshotError' };
@@ -212,4 +210,4 @@ export type DraftGetTransactionCommitError =
 
 export type GetTransactionCommitError = IncompatibleDocOpError | DraftGetTransactionCommitError;
 
-export type GetRelError = DataTypeError | GetDocError;
+export type GetRelError = InvalidFieldTypeError | GetDocError;
