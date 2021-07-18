@@ -1,37 +1,48 @@
-import { CountField } from 'kira-core';
+import { CountFieldSpec } from 'kira-core';
 
 import { Draft, DraftMakerContext } from '../type';
 
-export function makeCountDraft<GDE, WR>({
-  colName,
-  fieldSpec,
-  fieldName,
-}: DraftMakerContext<CountField>): Draft<GDE, WR> {
+export function makeCountDraft({
+  context: { colName, fieldName },
+  spec,
+}: {
+  readonly context: DraftMakerContext;
+  readonly spec: CountFieldSpec;
+}): Draft {
   return {
     onCreate: {
       [colName]: {
-        getTransactionCommit: async ({ snapshot: doc }) => ({
-          tag: 'right',
-          value: {
-            [colName]: {
-              [doc.id]: {
-                op: 'update',
-                onDocAbsent: 'doNotUpdate',
-                data: {
-                  [fieldName]: { type: 'number', value: 0 },
+        getTransactionCommit: async ({ snapshot }) => {
+          if (snapshot.type === 'change') {
+            return { tag: 'left', error: { type: 'InvalidSnapshotError' } };
+          }
+          return {
+            tag: 'right',
+            value: {
+              [colName]: {
+                [snapshot.doc.id]: {
+                  op: 'update',
+                  onDocAbsent: 'doNotUpdate',
+                  data: {
+                    [fieldName]: { type: 'number', value: 0 },
+                  },
                 },
               },
             },
-          },
-        }),
+          };
+        },
       },
-      [fieldSpec.countedCol]: {
-        getTransactionCommit: async ({ snapshot: document }) => {
-          const counterDoc = document.data?.[fieldSpec.groupByRef];
+      [spec.countedCol]: {
+        getTransactionCommit: async ({ snapshot }) => {
+          if (snapshot.type === 'change') {
+            return { tag: 'left', error: { type: 'InvalidSnapshotError' } };
+          }
+
+          const counterDoc = snapshot.doc.data?.[spec.groupByRef];
           if (counterDoc?.type !== 'ref') {
             return {
               tag: 'left',
-              error: { errorType: 'invalid_data_type' },
+              error: { type: 'InvalidFieldTypeError' },
             };
           }
           return {
@@ -52,13 +63,17 @@ export function makeCountDraft<GDE, WR>({
       },
     },
     onDelete: {
-      [fieldSpec.countedCol]: {
-        getTransactionCommit: async ({ snapshot: doc }) => {
-          const counterDoc = doc.data?.[fieldSpec.groupByRef];
+      [spec.countedCol]: {
+        getTransactionCommit: async ({ snapshot }) => {
+          if (snapshot.type === 'change') {
+            return { tag: 'left', error: { type: 'InvalidSnapshotError' } };
+          }
+
+          const counterDoc = snapshot.doc.data?.[spec.groupByRef];
           if (counterDoc?.type !== 'ref') {
             return {
               tag: 'left',
-              error: { errorType: 'invalid_data_type' },
+              error: { type: 'InvalidFieldTypeError' },
             };
           }
           return {

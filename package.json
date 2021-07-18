@@ -23,7 +23,7 @@
   },
   "dependencies": {
     "assert-never": "^1.2.1",
-    "kira-core": "^0.3.14"
+    "kira-core": "^0.3.16"
   },
   "devDependencies": {
     "@types/jest": "^26.0.23",

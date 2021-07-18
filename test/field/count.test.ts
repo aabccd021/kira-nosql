@@ -5,9 +5,11 @@ describe('makeCountTrigger', () => {
   describe('onCreate', () => {
     it('set bookmarkCount to 0 when article created', async () => {
       const draft = makeCountDraft({
-        colName: 'article',
-        fieldName: 'bookmarkCount',
-        fieldSpec: {
+        context: {
+          colName: 'article',
+          fieldName: 'bookmarkCount',
+        },
+        spec: {
           type: 'count',
           countedCol: 'bookmark',
           groupByRef: 'bookmarkedarticle',
@@ -16,7 +18,13 @@ describe('makeCountTrigger', () => {
       const mockedGetDoc = jest.fn<GetDocReturn, GetDocParam>();
       const actionResult = await draft.onCreate?.['article']?.getTransactionCommit?.({
         getDoc: mockedGetDoc,
-        snapshot: { id: 'article0', data: {} },
+        snapshot: {
+          type: 'doc',
+          doc: {
+            id: 'article0',
+            data: {},
+          },
+        },
       });
 
       expect(Object.keys(draft.onCreate ?? {})).toStrictEqual(['article', 'bookmark']);
@@ -42,9 +50,11 @@ describe('makeCountTrigger', () => {
 
     it('increase bookmarkCount if new bookmark added', async () => {
       const draft = makeCountDraft({
-        colName: 'article',
-        fieldName: 'bookmarkCount',
-        fieldSpec: {
+        context: {
+          colName: 'article',
+          fieldName: 'bookmarkCount',
+        },
+        spec: {
           type: 'count',
           countedCol: 'bookmark',
           groupByRef: 'bookmarkedarticle',
@@ -54,11 +64,14 @@ describe('makeCountTrigger', () => {
       const actionResult = await draft.onCreate?.['bookmark']?.getTransactionCommit?.({
         getDoc: mockedGetDoc,
         snapshot: {
-          id: 'bookmark0',
-          data: {
-            bookmarkedarticle: {
-              type: 'ref',
-              value: { id: 'article0', data: {} },
+          type: 'doc',
+          doc: {
+            id: 'bookmark0',
+            data: {
+              bookmarkedarticle: {
+                type: 'ref',
+                value: { id: 'article0', data: {} },
+              },
             },
           },
         },
@@ -84,9 +97,11 @@ describe('makeCountTrigger', () => {
 
     it('returns error if counterDoc is not ref field', async () => {
       const draft = makeCountDraft({
-        colName: 'article',
-        fieldName: 'bookmarkCount',
-        fieldSpec: {
+        context: {
+          colName: 'article',
+          fieldName: 'bookmarkCount',
+        },
+        spec: {
           type: 'count',
           countedCol: 'bookmark',
           groupByRef: 'bookmarkedarticle',
@@ -96,9 +111,12 @@ describe('makeCountTrigger', () => {
       const actionResult = await draft.onCreate?.['bookmark']?.getTransactionCommit?.({
         getDoc: mockedGetDoc,
         snapshot: {
-          id: 'bookmark0',
-          data: {
-            bookmarkedarticle: { type: 'number', value: 0 },
+          type: 'doc',
+          doc: {
+            id: 'bookmark0',
+            data: {
+              bookmarkedarticle: { type: 'number', value: 0 },
+            },
           },
         },
       });
@@ -107,15 +125,17 @@ describe('makeCountTrigger', () => {
       expect(mockedGetDoc).not.toHaveBeenCalled();
       expect(actionResult).toStrictEqual({
         tag: 'left',
-        error: { errorType: 'invalid_data_type' },
+        error: { type: 'DataTypeError' },
       });
     });
 
     it('returns error if counterDoc is empty', async () => {
       const draft = makeCountDraft({
-        colName: 'article',
-        fieldName: 'bookmarkCount',
-        fieldSpec: {
+        context: {
+          colName: 'article',
+          fieldName: 'bookmarkCount',
+        },
+        spec: {
           type: 'count',
           countedCol: 'bookmark',
           groupByRef: 'bookmarkedarticle',
@@ -124,14 +144,20 @@ describe('makeCountTrigger', () => {
       const mockedGetDoc = jest.fn<GetDocReturn, GetDocParam>();
       const actionResult = await draft.onCreate?.['bookmark']?.getTransactionCommit?.({
         getDoc: mockedGetDoc,
-        snapshot: { id: 'bookmark0', data: {} },
+        snapshot: {
+          type: 'doc',
+          doc: {
+            id: 'bookmark0',
+            data: {},
+          },
+        },
       });
 
       expect(Object.keys(draft.onCreate ?? {})).toStrictEqual(['article', 'bookmark']);
       expect(mockedGetDoc).not.toHaveBeenCalled();
       expect(actionResult).toStrictEqual({
         tag: 'left',
-        error: { errorType: 'invalid_data_type' },
+        error: { type: 'DataTypeError' },
       });
     });
   });
@@ -139,9 +165,11 @@ describe('makeCountTrigger', () => {
   describe('onUpdate', () => {
     it('does not return action', () => {
       const draft = makeCountDraft({
-        colName: 'article',
-        fieldName: 'creationTime',
-        fieldSpec: {
+        context: {
+          colName: 'article',
+          fieldName: 'creationTime',
+        },
+        spec: {
           type: 'count',
           countedCol: 'bookmark',
           groupByRef: 'bookmarkedarticle',
@@ -154,9 +182,11 @@ describe('makeCountTrigger', () => {
   describe('onDelete', () => {
     it('decrease bookmarkCount by 1 if new bookmark added', async () => {
       const draft = makeCountDraft({
-        colName: 'article',
-        fieldName: 'bookmarkCount',
-        fieldSpec: {
+        context: {
+          colName: 'article',
+          fieldName: 'bookmarkCount',
+        },
+        spec: {
           type: 'count',
           countedCol: 'bookmark',
           groupByRef: 'bookmarkedarticle',
@@ -166,11 +196,14 @@ describe('makeCountTrigger', () => {
       const actionResult = await draft.onDelete?.['bookmark']?.getTransactionCommit?.({
         getDoc: mockedGetDoc,
         snapshot: {
-          id: 'bookmark0',
-          data: {
-            bookmarkedarticle: {
-              type: 'ref',
-              value: { id: 'article0', data: {} },
+          type: 'doc',
+          doc: {
+            id: 'bookmark0',
+            data: {
+              bookmarkedarticle: {
+                type: 'ref',
+                value: { id: 'article0', data: {} },
+              },
             },
           },
         },
@@ -196,9 +229,11 @@ describe('makeCountTrigger', () => {
 
     it('returns error if counterDoc is not ref field', async () => {
       const draft = makeCountDraft({
-        colName: 'article',
-        fieldName: 'bookmarkCount',
-        fieldSpec: {
+        context: {
+          colName: 'article',
+          fieldName: 'bookmarkCount',
+        },
+        spec: {
           type: 'count',
           countedCol: 'bookmark',
           groupByRef: 'bookmarkedarticle',
@@ -208,9 +243,12 @@ describe('makeCountTrigger', () => {
       const actionResult = await draft.onDelete?.['bookmark']?.getTransactionCommit?.({
         getDoc: mockedGetDoc,
         snapshot: {
-          id: 'bookmark0',
-          data: {
-            bookmarkedarticle: { type: 'number', value: 0 },
+          type: 'doc',
+          doc: {
+            id: 'bookmark0',
+            data: {
+              bookmarkedarticle: { type: 'number', value: 0 },
+            },
           },
         },
       });
@@ -219,15 +257,17 @@ describe('makeCountTrigger', () => {
       expect(mockedGetDoc).not.toHaveBeenCalled();
       expect(actionResult).toStrictEqual({
         tag: 'left',
-        error: { errorType: 'invalid_data_type' },
+        error: { type: 'DataTypeError' },
       });
     });
 
     it('returns error if counterDoc is empty', async () => {
       const draft = makeCountDraft({
-        colName: 'article',
-        fieldName: 'bookmarkCount',
-        fieldSpec: {
+        context: {
+          colName: 'article',
+          fieldName: 'bookmarkCount',
+        },
+        spec: {
           type: 'count',
           countedCol: 'bookmark',
           groupByRef: 'bookmarkedarticle',
@@ -236,14 +276,17 @@ describe('makeCountTrigger', () => {
       const mockedGetDoc = jest.fn<GetDocReturn, GetDocParam>();
       const actionResult = await draft.onDelete?.['bookmark']?.getTransactionCommit?.({
         getDoc: mockedGetDoc,
-        snapshot: { id: 'bookmark0', data: {} },
+        snapshot: {
+          type: 'doc',
+          doc: { id: 'bookmark0', data: {} },
+        },
       });
 
       expect(Object.keys(draft.onDelete ?? {})).toStrictEqual(['bookmark']);
       expect(mockedGetDoc).not.toHaveBeenCalled();
       expect(actionResult).toStrictEqual({
         tag: 'left',
-        error: { errorType: 'invalid_data_type' },
+        error: { type: 'DataTypeError' },
       });
     });
   });

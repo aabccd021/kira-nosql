@@ -12,13 +12,15 @@ describe('makeRefTrigger', () => {
   describe('onCreate', () => {
     it('return error if refField is empty', async () => {
       const draft = makeRefDraft({
-        colName: 'comment',
-        fieldName: 'commentedArticle',
-        fieldSpec: {
+        context: {
+          colName: 'comment',
+          fieldName: 'commentedArticle',
+        },
+        spec: {
           type: 'ref',
           refedCol: 'article',
           isOwner: false,
-          syncFields: { title: true, category: true },
+          syncedFields: { title: true, category: true },
           thisColRefers: [],
         },
       });
@@ -26,26 +28,31 @@ describe('makeRefTrigger', () => {
       const mockedGetDoc = jest.fn<GetDocReturn, GetDocParam>();
       const actionResult = await draft.onCreate?.['comment']?.getTransactionCommit?.({
         getDoc: mockedGetDoc,
-        snapshot: { id: 'comment0', data: {} },
+        snapshot: {
+          type: 'doc',
+          doc: { id: 'comment0', data: {} },
+        },
       });
 
       expect(Object.keys(draft.onCreate ?? {})).toStrictEqual(['comment']);
       expect(mockedGetDoc).not.toHaveBeenCalled();
       expect(actionResult).toStrictEqual({
         tag: 'left',
-        error: { errorType: 'invalid_data_type' },
+        error: { type: 'DataTypeError' },
       });
     });
 
     it('return error if refField is not type of ref field', async () => {
       const draft = makeRefDraft({
-        colName: 'comment',
-        fieldName: 'commentedArticle',
-        fieldSpec: {
+        context: {
+          colName: 'comment',
+          fieldName: 'commentedArticle',
+        },
+        spec: {
           type: 'ref',
           refedCol: 'article',
           isOwner: false,
-          syncFields: { title: true, category: true },
+          syncedFields: { title: true, category: true },
           thisColRefers: [],
         },
       });
@@ -53,9 +60,12 @@ describe('makeRefTrigger', () => {
       const actionResult = await draft.onCreate?.['comment']?.getTransactionCommit?.({
         getDoc: mockedGetDoc,
         snapshot: {
-          id: 'comment0',
-          data: {
-            ownerUser: { type: 'string', value: 'somerandomstring' },
+          type: 'doc',
+          doc: {
+            id: 'comment0',
+            data: {
+              ownerUser: { type: 'string', value: 'somerandomstring' },
+            },
           },
         },
       });
@@ -64,34 +74,39 @@ describe('makeRefTrigger', () => {
       expect(mockedGetDoc).not.toHaveBeenCalled();
       expect(actionResult).toStrictEqual({
         tag: 'left',
-        error: { errorType: 'invalid_data_type' },
+        error: { type: 'DataTypeError' },
       });
     });
 
     it('return error if get doc is error', async () => {
       const draft = makeRefDraft({
-        colName: 'comment',
-        fieldName: 'commentedArticle',
-        fieldSpec: {
+        context: {
+          colName: 'comment',
+          fieldName: 'commentedArticle',
+        },
+        spec: {
           type: 'ref',
           refedCol: 'article',
           isOwner: false,
-          syncFields: { title: true, category: true },
+          syncedFields: { title: true, category: true },
           thisColRefers: [],
         },
       });
       const mockedGetDoc = jest.fn<GetDocReturn, GetDocParam>().mockResolvedValueOnce({
         tag: 'left',
-        error: 'error1',
+        error: { type: 'GetDocError' },
       });
       const actionResult = await draft.onCreate?.['comment']?.getTransactionCommit?.({
         getDoc: mockedGetDoc,
         snapshot: {
-          id: 'comment0',
-          data: {
-            commentedArticle: {
-              type: 'ref',
-              value: { id: 'article0', data: {} },
+          type: 'doc',
+          doc: {
+            id: 'comment0',
+            data: {
+              commentedArticle: {
+                type: 'ref',
+                value: { id: 'article0', data: {} },
+              },
             },
           },
         },
@@ -105,12 +120,14 @@ describe('makeRefTrigger', () => {
 
     it('copy ref doc field', async () => {
       const draft = makeRefDraft({
-        colName: 'comment',
-        fieldName: 'commentedArticle',
-        fieldSpec: {
+        context: {
+          colName: 'comment',
+          fieldName: 'commentedArticle',
+        },
+        spec: {
           type: 'ref',
           refedCol: 'article',
-          syncFields: { title: true, category: true },
+          syncedFields: { title: true, category: true },
           isOwner: false,
           thisColRefers: [],
         },
@@ -129,11 +146,14 @@ describe('makeRefTrigger', () => {
       const actionResult = await draft.onCreate?.['comment']?.getTransactionCommit?.({
         getDoc: mockedGetDoc,
         snapshot: {
-          id: 'comment0',
-          data: {
-            commentedArticle: {
-              type: 'ref',
-              value: { id: 'article0', data: {} },
+          type: 'doc',
+          doc: {
+            id: 'comment0',
+            data: {
+              commentedArticle: {
+                type: 'ref',
+                value: { id: 'article0', data: {} },
+              },
             },
           },
         },
@@ -184,10 +204,10 @@ describe('makeRefTrigger', () => {
   //     const draft = makeRefDraft({
   //       colName: 'comment',
   //       fieldName: 'commentedArticle',
-  //       fieldSpec: {
+  //       spec: {
   //         type: 'ref',
   //         refedCol: 'article',
-  //         syncFields: { title: true, readMinute: true },
+  //         syncedFields: { title: true, readMinute: true },
   //         isOwner: false,
   //         thisColRefers: [],
   //       },
@@ -220,10 +240,10 @@ describe('makeRefTrigger', () => {
   //     const draft = makeRefDraft({
   //       colName: 'comment',
   //       fieldName: 'commentedArticle',
-  //       fieldSpec: {
+  //       spec: {
   //         type: 'ref',
   //         refedCol: 'article',
-  //         syncFields: { title: true, readMinute: true },
+  //         syncedFields: { title: true, readMinute: true },
   //         isOwner: false,
   //         thisColRefers: [],
   //       },
@@ -286,12 +306,14 @@ describe('makeRefTrigger', () => {
   describe('onDelete', () => {
     it('delete referencer comment doc', async () => {
       const draft = makeRefDraft({
-        colName: 'comment',
-        fieldName: 'commentedArticle',
-        fieldSpec: {
+        context: {
+          colName: 'comment',
+          fieldName: 'commentedArticle',
+        },
+        spec: {
           type: 'ref',
           refedCol: 'article',
-          syncFields: {},
+          syncedFields: {},
           isOwner: false,
           thisColRefers: [],
         },
@@ -315,9 +337,12 @@ describe('makeRefTrigger', () => {
         deleteDoc: mockedDeleteDoc,
         updateDoc: mockedUpdateDoc,
         snapshot: {
-          id: 'article0',
-          data: {
-            title: { type: 'string', value: 'ARTICLE ZERO TITLE' },
+          type: 'doc',
+          doc: {
+            id: 'article0',
+            data: {
+              title: { type: 'string', value: 'ARTICLE ZERO TITLE' },
+            },
           },
         },
       });
