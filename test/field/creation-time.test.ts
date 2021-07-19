@@ -5,9 +5,11 @@ describe('makeCountTimeTrigger', () => {
   describe('onCreate', () => {
     it('create creationTime field when article created', async () => {
       const draft = makeCreationTimeDraft({
-        colName: 'article',
-        fieldName: 'creationTime',
-        fieldSpec: { type: 'creationTime' },
+        context: {
+          colName: 'article',
+          fieldName: 'creationTime',
+        },
+        spec: { type: 'creationTime' },
       });
       const mockedGetDoc = jest.fn<GetDocReturn, GetDocParam>();
 
@@ -38,9 +40,11 @@ describe('makeCountTimeTrigger', () => {
   describe('onUpdate', () => {
     it('does not return action', () => {
       const draft = makeCreationTimeDraft({
-        colName: 'article',
-        fieldName: 'creationTime',
-        fieldSpec: { type: 'creationTime' },
+        context: {
+          colName: 'article',
+          fieldName: 'creationTime',
+        },
+        spec: { type: 'creationTime' },
       });
       expect(draft.onUpdate).toBeUndefined();
     });
@@ -49,9 +53,11 @@ describe('makeCountTimeTrigger', () => {
   describe('onDelete', () => {
     it('does not return action', () => {
       const draft = makeCreationTimeDraft({
-        colName: 'article',
-        fieldName: 'creationTime',
-        fieldSpec: { type: 'creationTime' },
+        context: {
+          colName: 'article',
+          fieldName: 'creationTime',
+        },
+        spec: { type: 'creationTime' },
       });
       expect(draft.onDelete).toBeUndefined();
     });

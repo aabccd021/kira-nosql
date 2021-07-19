@@ -1,54 +1,69 @@
 import assertNever from 'assert-never';
-import { RefField, SyncFields, ThisColRefer } from 'kira-core';
+import { ColRefer, RefFieldSpec, SyncedFields } from 'kira-core';
 
 import {
-  DataTypeError,
+  Doc,
+  DocChange,
   DocKey,
   Draft,
   DraftMakerContext,
   Either,
+  Field,
   GetDoc,
-  ReadDocChange,
-  ReadDocData,
-  ReadField,
+  GetRelError,
+  RelKey,
   UpdateDoc,
+  WriteDoc,
   WriteField,
 } from '../type';
 
 const DOC_IDS_FIELD_NAME = 'docIds';
 const REL_COL = '_relation';
 
-function readToWriteField([fieldName, inField]: readonly [string, ReadField]): readonly [
+function toWriteDoc(doc: Doc): WriteDoc {
+  return Object.fromEntries(Object.entries(doc).map(readToWriteField));
+}
+
+function readToWriteField([fieldName, field]: readonly [string, Field]): readonly [
   string,
   WriteField
 ] {
-  if (inField.type === 'ref') {
+  if (field.type === 'ref') {
     return [
       fieldName,
       {
         type: 'ref',
-        value: Object.fromEntries(Object.entries(inField.value.data).map(readToWriteField)),
+        value: toWriteDoc(field.value.data),
       },
     ];
   }
-  return [fieldName, inField];
+  if (
+    field.type === 'date' ||
+    field.type === 'number' ||
+    field.type === 'string' ||
+    field.type === 'stringArray' ||
+    field.type === 'image'
+  ) {
+    return [fieldName, field];
+  }
+  assertNever(field);
 }
 
-function filterSyncFields({
+function filterSyncedFields({
   data,
-  syncFields,
+  syncedFields,
 }: {
-  readonly data: ReadDocData;
-  readonly syncFields: SyncFields;
-}): ReadDocData | undefined {
-  return Object.entries(syncFields).reduce<ReadDocData | undefined>((prev, [fieldName, field]) => {
+  readonly data: Doc;
+  readonly syncedFields: SyncedFields;
+}): Doc | undefined {
+  return Object.entries(syncedFields).reduce<Doc | undefined>((prev, [fieldName, field]) => {
     const diffField = data[fieldName];
     if (diffField !== undefined) {
       if (field === true) {
         return { ...prev, [fieldName]: diffField };
       }
       if (diffField.type === 'ref') {
-        const data = filterSyncFields({ data: diffField.value.data, syncFields: field });
+        const data = filterSyncedFields({ data: diffField.value.data, syncedFields: field });
         if (data !== undefined) {
           return {
             ...prev,
@@ -68,8 +83,8 @@ function isEqualReadDocField({
   beforeField,
   afterField,
 }: {
-  readonly beforeField?: ReadField;
-  readonly afterField: ReadField;
+  readonly beforeField?: Field;
+  readonly afterField: Field;
 }): boolean {
   if (afterField.type === 'date') {
     return (
@@ -89,6 +104,9 @@ function isEqualReadDocField({
       afterField.value.every((val, idx) => val === beforeField.value[idx])
     );
   }
+  if (afterField.type === 'image') {
+    return beforeField?.type === 'image' && beforeField.value.url === afterField.value.url;
+  }
   if (afterField.type === 'ref') {
     return (
       beforeField?.type === 'ref' &&
@@ -105,13 +123,6 @@ function isEqualReadDocField({
   assertNever(afterField);
 }
 
-type RelKey = {
-  readonly refedId: string;
-  readonly refedCol: string;
-  readonly referField: string;
-  readonly referCol: string;
-};
-
 function relToDocId({ referCol, referField, refedCol, refedId }: RelKey): string {
   return `${referCol}_${referField}_${refedCol}_${refedId}`;
 }
@@ -120,13 +131,13 @@ function relToDocKey(key: RelKey): DocKey {
   return { col: REL_COL, id: relToDocId(key) };
 }
 
-async function getRel<E>({
+async function getRel({
   key,
   getDoc,
 }: {
   readonly key: RelKey;
-  readonly getDoc: GetDoc<E>;
-}): Promise<Either<readonly string[], E | DataTypeError>> {
+  readonly getDoc: GetDoc;
+}): Promise<Either<readonly string[], GetRelError>> {
   const relDoc = await getDoc({ key: relToDocKey(key) });
 
   if (relDoc.tag === 'left') {
@@ -137,31 +148,29 @@ async function getRel<E>({
   if (referDocIds?.type !== 'stringArray') {
     return {
       tag: 'left',
-      error: {
-        errorType: 'invalid_data_type',
-      },
+      error: { type: 'InvalidFieldTypeError' },
     };
   }
   return { tag: 'right', value: referDocIds.value };
 }
 
-async function propagateRefUpdate<GDE, WR>({
+async function propagateRefUpdate({
   getDoc,
   updateDoc,
   refedDoc,
   referField,
   referCol,
-  fieldSpec: { syncFields, refedCol, thisColRefers },
+  spec: { syncedFields, refedCol, thisColRefers },
 }: {
-  readonly getDoc: GetDoc<GDE>;
-  readonly updateDoc: UpdateDoc<WR>;
-  readonly refedDoc: ReadDocChange;
+  readonly getDoc: GetDoc;
+  readonly updateDoc: UpdateDoc;
+  readonly refedDoc: DocChange;
   readonly referField: string;
   readonly referCol: string;
-  readonly fieldSpec: {
+  readonly spec: {
     readonly refedCol: string;
-    readonly syncFields: SyncFields;
-    readonly thisColRefers: readonly ThisColRefer[];
+    readonly syncedFields: SyncedFields;
+    readonly thisColRefers: readonly ColRefer[];
   };
 }): Promise<void> {
   const updateDiff = Object.fromEntries(
@@ -171,7 +180,7 @@ async function propagateRefUpdate<GDE, WR>({
     )
   );
 
-  const syncData = filterSyncFields({ data: updateDiff, syncFields });
+  const syncData = filterSyncedFields({ data: updateDiff, syncedFields });
 
   if (syncData === undefined) {
     return;
@@ -197,7 +206,7 @@ async function propagateRefUpdate<GDE, WR>({
       docData: {
         [referField]: {
           type: 'ref',
-          value: Object.fromEntries(Object.entries(syncData).map(readToWriteField)),
+          value: toWriteDoc(syncData),
         },
       },
     });
@@ -206,9 +215,9 @@ async function propagateRefUpdate<GDE, WR>({
         propagateRefUpdate({
           getDoc,
           updateDoc,
-          fieldSpec: {
+          spec: {
             refedCol: referCol,
-            syncFields: thisColReferField.syncFields,
+            syncedFields: thisColReferField.syncedFields,
             thisColRefers: thisColRefer.thisColRefers,
           },
           referCol: thisColRefer.colName,
@@ -219,7 +228,10 @@ async function propagateRefUpdate<GDE, WR>({
             after: {
               [referField]: {
                 type: 'ref',
-                value: { id: refedDoc.id, data: syncData },
+                value: {
+                  id: refedDoc.id,
+                  data: syncData,
+                },
               },
             },
           },
@@ -229,33 +241,35 @@ async function propagateRefUpdate<GDE, WR>({
   });
 }
 
-export function makeRefDraft<GDE, WR>({
-  colName,
-  fieldSpec,
-  fieldName,
-}: DraftMakerContext<RefField>): Draft<GDE, WR> {
-  const needSync = Object.keys(fieldSpec.syncFields).length !== 0;
+export function makeRefDraft({
+  context: { colName, fieldName },
+  spec,
+}: {
+  readonly context: DraftMakerContext;
+  readonly spec: RefFieldSpec;
+}): Draft {
+  const needSync = Object.keys(spec.syncedFields).length !== 0;
   return {
     onCreate: needSync
       ? {
           [colName]: {
-            getTransactionCommit: async ({ getDoc, snapshot: doc }) => {
-              const refField = doc.data?.[fieldName];
+            getTransactionCommit: async ({ getDoc, snapshot }) => {
+              const refField = snapshot.data?.[fieldName];
               if (refField?.type !== 'ref') {
-                return { tag: 'left', error: { errorType: 'invalid_data_type' } };
+                return { tag: 'left', error: { type: 'InvalidFieldTypeError' } };
               }
 
               const refDoc = await getDoc({
-                key: { col: fieldSpec.refedCol, id: refField.value.id },
+                key: { col: spec.refedCol, id: refField.value.id },
               });
               if (refDoc.tag === 'left') return refDoc;
 
-              const syncFieldNames = Object.keys(fieldSpec.syncFields);
+              const syncedFieldNames = Object.keys(spec.syncedFields);
               return {
                 tag: 'right',
                 value: {
                   [colName]: {
-                    [doc.id]: {
+                    [snapshot.id]: {
                       op: 'update',
                       onDocAbsent: 'doNotUpdate',
                       data: {
@@ -263,7 +277,7 @@ export function makeRefDraft<GDE, WR>({
                           type: 'ref',
                           value: Object.fromEntries(
                             Object.entries(refDoc.value.data)
-                              .filter(([fieldName]) => syncFieldNames.includes(fieldName))
+                              .filter(([fieldName]) => syncedFieldNames.includes(fieldName))
                               .map(readToWriteField)
                           ),
                         },
@@ -273,14 +287,17 @@ export function makeRefDraft<GDE, WR>({
                   [REL_COL]: {
                     [relToDocId({
                       refedId: refField.value.id,
-                      refedCol: fieldSpec.refedCol,
+                      refedCol: spec.refedCol,
                       referCol: colName,
                       referField: fieldName,
                     })]: {
                       op: 'update',
                       onDocAbsent: 'createDoc',
                       data: {
-                        [DOC_IDS_FIELD_NAME]: { type: 'stringArrayUnion', value: doc.id },
+                        [DOC_IDS_FIELD_NAME]: {
+                          type: 'stringArrayUnion',
+                          value: snapshot.id,
+                        },
                       },
                     },
                   },
@@ -292,25 +309,26 @@ export function makeRefDraft<GDE, WR>({
       : undefined,
     onUpdate: needSync
       ? {
-          [fieldSpec.refedCol]: {
-            mayFailOp: ({ getDoc, updateDoc, snapshot }) =>
-              propagateRefUpdate({
+          [spec.refedCol]: {
+            mayFailOp: async ({ getDoc, updateDoc, snapshot }) => {
+              await propagateRefUpdate({
                 getDoc,
                 updateDoc,
-                fieldSpec: fieldSpec,
+                spec,
                 refedDoc: snapshot,
                 referCol: colName,
                 referField: fieldName,
-              }),
+              });
+            },
           },
         }
       : undefined,
     onDelete: {
       [colName]: {
-        getTransactionCommit: async ({ snapshot: doc }) => {
-          const refField = doc.data?.[fieldName];
+        getTransactionCommit: async ({ snapshot }) => {
+          const refField = snapshot.data?.[fieldName];
           if (refField?.type !== 'ref') {
-            return { tag: 'left', error: { errorType: 'invalid_data_type' } };
+            return { tag: 'left', error: { type: 'InvalidFieldTypeError' } };
           }
           return {
             tag: 'right',
@@ -318,14 +336,17 @@ export function makeRefDraft<GDE, WR>({
               [REL_COL]: {
                 [relToDocId({
                   refedId: refField.value.id,
-                  refedCol: fieldSpec.refedCol,
+                  refedCol: spec.refedCol,
                   referCol: colName,
                   referField: fieldName,
                 })]: {
                   op: 'update',
                   onDocAbsent: 'doNotUpdate',
                   data: {
-                    [DOC_IDS_FIELD_NAME]: { type: 'stringArrayRemove', value: doc.id },
+                    [DOC_IDS_FIELD_NAME]: {
+                      type: 'stringArrayRemove',
+                      value: snapshot.id,
+                    },
                   },
                 },
               },
@@ -333,13 +354,13 @@ export function makeRefDraft<GDE, WR>({
           };
         },
       },
-      [fieldSpec.refedCol]: {
-        mayFailOp: async ({ getDoc, deleteDoc, snapshot: refedDoc }) => {
+      [spec.refedCol]: {
+        mayFailOp: async ({ getDoc, deleteDoc, snapshot: refed }) => {
           const key = {
-            refedId: refedDoc.id,
+            refedId: refed.id,
             referField: fieldName,
             referCol: colName,
-            refedCol: fieldSpec.refedCol,
+            refedCol: spec.refedCol,
           };
 
           const referDocIds = await getRel({ getDoc, key });

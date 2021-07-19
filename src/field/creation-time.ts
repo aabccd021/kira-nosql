@@ -1,28 +1,32 @@
-import { CreationTimeField } from 'kira-core';
+import { CreationTimeFieldSpec } from 'kira-core';
 
 import { Draft, DraftMakerContext } from '../type';
 
-export function makeCreationTimeDraft<GDE, WR>({
-  colName,
-  fieldName,
-}: DraftMakerContext<CreationTimeField>): Draft<GDE, WR> {
+export function makeCreationTimeDraft({
+  context: { colName, fieldName },
+}: {
+  readonly context: DraftMakerContext;
+  readonly spec: CreationTimeFieldSpec;
+}): Draft {
   return {
     onCreate: {
       [colName]: {
-        getTransactionCommit: async ({ snapshot: doc }) => ({
-          tag: 'right',
-          value: {
-            [colName]: {
-              [doc.id]: {
-                op: 'update',
-                onDocAbsent: 'doNotUpdate',
-                data: {
-                  [fieldName]: { type: 'creationTime' },
+        getTransactionCommit: async ({ snapshot }) => {
+          return {
+            tag: 'right',
+            value: {
+              [colName]: {
+                [snapshot.id]: {
+                  op: 'update',
+                  onDocAbsent: 'doNotUpdate',
+                  data: {
+                    [fieldName]: { type: 'creationTime' },
+                  },
                 },
               },
             },
-          },
-        }),
+          };
+        },
       },
     },
   };

@@ -1,4 +1,4 @@
-import { Dictionary, Field } from 'kira-core';
+import { Dictionary, FieldSpec } from 'kira-core';
 
 // utils
 export type Either<V, E> =
@@ -10,51 +10,54 @@ export type DocKey = {
   readonly id: string;
 };
 
-export type ReadDocSnapshot = {
+export type RelKey = {
+  readonly refedId: string;
+  readonly refedCol: string;
+  readonly referField: string;
+  readonly referCol: string;
+};
+
+export type DocSnapshot = {
   readonly id: string;
-  readonly data: ReadDocData;
+  readonly data: Doc;
 };
 
 /**
  * DocData
  */
-export type ReadDocData = Dictionary<ReadField>;
+export type Doc = Dictionary<Field>;
 
-export type WriteDocData = Dictionary<WriteField>;
+export type WriteDoc = Dictionary<WriteField>;
 
 /**
  * Field
  */
-export type ReadWriteField =
-  | StringPrimitiveField
-  | NumberPrimitiveField
-  | DatePrimitiveField
-  | StringArrayReadField;
+export type ReadWriteField = StringField | NumberField | DateField | StringArrayField | ImageField;
 
-export type ReadField = ReadWriteField | RefReadField;
+export type Field = ReadWriteField | RefReadField;
 
 export type WriteField =
   | ReadWriteField
-  | CreationTimeWriteField
-  | IncrementWriteField
-  | StringArrayUnionWriteField
-  | StringArrayRemoveWriteField
+  | CreationTimeField
+  | IncrementField
+  | StringArrayUnionField
+  | StringArrayRemoveField
   | RefWriteField;
 
 /**
  * Primitive Fields
  */
-export type StringPrimitiveField = {
+export type StringField = {
   readonly type: 'string';
   readonly value: string;
 };
 
-export type NumberPrimitiveField = {
+export type NumberField = {
   readonly type: 'number';
   readonly value: number;
 };
 
-export type DatePrimitiveField = {
+export type DateField = {
   readonly type: 'date';
   readonly value: Date;
 };
@@ -64,12 +67,19 @@ export type DatePrimitiveField = {
  */
 export type RefReadField = {
   readonly type: 'ref';
-  readonly value: ReadDocSnapshot;
+  readonly value: DocSnapshot;
 };
 
-export type StringArrayReadField = {
+export type StringArrayField = {
   readonly type: 'stringArray';
   readonly value: readonly string[];
+};
+
+export type ImageField = {
+  readonly type: 'image';
+  readonly value: {
+    readonly url: string;
+  };
 };
 
 /**
@@ -77,82 +87,69 @@ export type StringArrayReadField = {
  */
 export type RefWriteField = {
   readonly type: 'ref';
-  readonly value: WriteDocData;
+  readonly value: WriteDoc;
 };
 
-export type CreationTimeWriteField = {
+export type CreationTimeField = {
   readonly type: 'creationTime';
 };
 
-export type IncrementWriteField = {
+export type IncrementField = {
   readonly type: 'increment';
   readonly value: number;
 };
 
-export type StringArrayUnionWriteField = {
+export type StringArrayUnionField = {
   readonly type: 'stringArrayUnion';
   readonly value: string;
 };
 
-export type StringArrayRemoveWriteField = {
+export type StringArrayRemoveField = {
   readonly type: 'stringArrayRemove';
   readonly value: string;
 };
 
 // DB
-export type DB<GDE, WR> = {
-  readonly getDoc: GetDoc<GDE>;
-  readonly updateDoc: UpdateDoc<WR>;
-  readonly deleteDoc: DeleteDoc<WR>;
+export type DBWriteResult = { readonly isSuccess: boolean };
+export type DB = {
+  readonly getDoc: GetDoc;
+  readonly updateDoc: UpdateDoc;
+  readonly deleteDoc: DeleteDoc;
 };
 
-export type GetDoc<E> = (param: { readonly key: DocKey }) => Promise<Either<ReadDocSnapshot, E>>;
+export type GetDoc = (param: { readonly key: DocKey }) => Promise<Either<DocSnapshot, GetDocError>>;
 
-export type UpdateDoc<WR> = (param: {
+export type UpdateDoc = (param: {
   readonly key: DocKey;
-  readonly docData: WriteDocData;
-}) => Promise<WR>;
+  readonly docData: WriteDoc;
+}) => Promise<DBWriteResult>;
 
-export type DeleteDoc<WR> = (param: { readonly key: DocKey }) => Promise<WR>;
+export type DeleteDoc = (param: { readonly key: DocKey }) => Promise<DBWriteResult>;
 
 // Trigger
-export type ReadDocChange = {
-  readonly id: string;
-  readonly before: ReadDocData;
-  readonly after: ReadDocData;
-};
-
-export type SnapshotOfActionType<A extends ActionType> = A extends 'onCreate'
-  ? ReadDocSnapshot
-  : A extends 'onDelete'
-  ? ReadDocSnapshot
-  : A extends 'onUpdate'
-  ? ReadDocChange
-  : never;
-
-export const ACTION_TYPE = ['onCreate', 'onUpdate', 'onDelete'] as const;
-export type ActionType = typeof ACTION_TYPE[number];
-
-export type DraftMakerContext<F extends Field> = {
+export type DraftMakerContext = {
   readonly colName: string;
-  readonly fieldSpec: F;
   readonly fieldName: string;
 };
 
-export type Draft<GDE, WR> = {
-  readonly [A in ActionType]?: ActionDraft<A, GDE, WR>;
+export type DraftError = { readonly type: 'DraftError' };
+
+export type Draft = {
+  readonly onCreate?: ActionDraft<DocSnapshot>;
+  readonly onUpdate?: ActionDraft<DocChange>;
+  readonly onDelete?: ActionDraft<DocSnapshot>;
 };
 
-export type ActionDraft<A extends ActionType, GDE, WR> = Dictionary<ColDraft<A, GDE, WR>>;
+export type ActionDraft<S extends Snapshot> = Dictionary<ColDraft<S>>;
 
-export type ColDraft<A extends ActionType, GDE, WR> = {
-  readonly getTransactionCommit?: GetTransactionCommit<A, GDE>;
-  readonly mayFailOp?: MayFailOp<A, GDE, WR>;
+export type ColDraft<S extends Snapshot> = {
+  readonly getTransactionCommit?: DraftGetTransactionCommit<S>;
+  readonly mayFailOp?: MayFailOp<S>;
 };
 
-export type ColDrafts<A extends ActionType, GDE, WR> = {
-  readonly getTransactionCommits: readonly GetTransactionCommit<A, GDE>[];
-  readonly mayFailOps: readonly MayFailOp<A, GDE, WR>[];
+export type ColDrafts<S extends Snapshot> = {
+  readonly getTransactionCommits: readonly DraftGetTransactionCommit<S>[];
+  readonly mayFailOps: readonly MayFailOp<S>[];
 };
 
 // Draft Content
@@ -162,35 +159,46 @@ export type ColTransactionCommit = Dictionary<DocCommit>;
 export type DocCommit =
   | {
       readonly op: 'update';
-      readonly data: WriteDocData;
+      readonly data: WriteDoc;
       readonly onDocAbsent: 'createDoc' | 'doNotUpdate';
     }
   | { readonly op: 'delete' };
 
-export type MayFailOp<A extends ActionType, GDE, WR> = (param: {
-  readonly getDoc: GetDoc<GDE>;
-  readonly updateDoc: UpdateDoc<WR>;
-  readonly deleteDoc: DeleteDoc<WR>;
-  readonly snapshot: SnapshotOfActionType<A>;
+export type Snapshot = DocSnapshot | DocChange;
+
+export type DocChange = {
+  readonly id: string;
+  readonly before: Doc;
+  readonly after: Doc;
+};
+
+export type MayFailOp<S extends Snapshot> = (param: {
+  readonly getDoc: GetDoc;
+  readonly updateDoc: UpdateDoc;
+  readonly deleteDoc: DeleteDoc;
+  readonly snapshot: S;
 }) => Promise<void>;
 
-// Errors
-export type KiraError = DataTypeError | TransactionCommitError;
-export type DataTypeError = {
-  readonly errorType: 'invalid_data_type';
-};
+export type DraftGetTransactionCommit<S extends Snapshot> = (param: {
+  readonly getDoc: GetDoc;
+  readonly snapshot: S;
+}) => Promise<Either<TransactionCommit, DraftGetTransactionCommitError>>;
 
-export type TransactionCommitError = {
-  readonly errorType: 'transaction_commit';
-};
-
-export type GetTransactionCommit<A extends ActionType, GDE> = (param: {
-  readonly getDoc: GetDoc<GDE>;
-  readonly snapshot: SnapshotOfActionType<A>;
-}) => Promise<Either<TransactionCommit, DataTypeError | GDE>>;
-
-export type MakeDraft<F extends Field, GDE, WR> = (param: {
+export type MakeDraft = (param: {
   readonly colName: string;
   readonly fieldName: string;
-  readonly fieldSpec: F;
-}) => Draft<GDE, WR>;
+  readonly spec: FieldSpec;
+}) => Draft;
+
+// Errors
+export type InvalidFieldTypeError = { readonly type: 'InvalidFieldTypeError' };
+
+export type GetDocError = { readonly type: 'GetDocError' };
+
+export type IncompatibleDocOpError = { readonly type: 'IncompatibleDocOpError' };
+
+export type DraftGetTransactionCommitError = GetDocError | InvalidFieldTypeError;
+
+export type GetTransactionCommitError = IncompatibleDocOpError | DraftGetTransactionCommitError;
+
+export type GetRelError = InvalidFieldTypeError | GetDocError;
