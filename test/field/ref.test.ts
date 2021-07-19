@@ -28,10 +28,7 @@ describe('makeRefTrigger', () => {
       const mockedGetDoc = jest.fn<GetDocReturn, GetDocParam>();
       const actionResult = await draft.onCreate?.['comment']?.getTransactionCommit?.({
         getDoc: mockedGetDoc,
-        snapshot: {
-          type: 'doc',
-          doc: { id: 'comment0', data: {} },
-        },
+        snapshot: { id: 'comment0', data: {} },
       });
 
       expect(Object.keys(draft.onCreate ?? {})).toStrictEqual(['comment']);
@@ -60,12 +57,9 @@ describe('makeRefTrigger', () => {
       const actionResult = await draft.onCreate?.['comment']?.getTransactionCommit?.({
         getDoc: mockedGetDoc,
         snapshot: {
-          type: 'doc',
-          doc: {
-            id: 'comment0',
-            data: {
-              ownerUser: { type: 'string', value: 'somerandomstring' },
-            },
+          id: 'comment0',
+          data: {
+            ownerUser: { type: 'string', value: 'somerandomstring' },
           },
         },
       });
@@ -99,14 +93,11 @@ describe('makeRefTrigger', () => {
       const actionResult = await draft.onCreate?.['comment']?.getTransactionCommit?.({
         getDoc: mockedGetDoc,
         snapshot: {
-          type: 'doc',
-          doc: {
-            id: 'comment0',
-            data: {
-              commentedArticle: {
-                type: 'ref',
-                value: { id: 'article0', data: {} },
-              },
+          id: 'comment0',
+          data: {
+            commentedArticle: {
+              type: 'ref',
+              value: { id: 'article0', data: {} },
             },
           },
         },
@@ -146,14 +137,11 @@ describe('makeRefTrigger', () => {
       const actionResult = await draft.onCreate?.['comment']?.getTransactionCommit?.({
         getDoc: mockedGetDoc,
         snapshot: {
-          type: 'doc',
-          doc: {
-            id: 'comment0',
-            data: {
-              commentedArticle: {
-                type: 'ref',
-                value: { id: 'article0', data: {} },
-              },
+          id: 'comment0',
+          data: {
+            commentedArticle: {
+              type: 'ref',
+              value: { id: 'article0', data: {} },
             },
           },
         },
@@ -337,12 +325,9 @@ describe('makeRefTrigger', () => {
         deleteDoc: mockedDeleteDoc,
         updateDoc: mockedUpdateDoc,
         snapshot: {
-          type: 'doc',
-          doc: {
-            id: 'article0',
-            data: {
-              title: { type: 'string', value: 'ARTICLE ZERO TITLE' },
-            },
+          id: 'article0',
+          data: {
+            title: { type: 'string', value: 'ARTICLE ZERO TITLE' },
           },
         },
       });

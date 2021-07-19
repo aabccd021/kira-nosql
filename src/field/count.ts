@@ -13,14 +13,11 @@ export function makeCountDraft({
     onCreate: {
       [colName]: {
         getTransactionCommit: async ({ snapshot }) => {
-          if (snapshot.type === 'change') {
-            return { tag: 'left', error: { type: 'InvalidSnapshotError' } };
-          }
           return {
             tag: 'right',
             value: {
               [colName]: {
-                [snapshot.doc.id]: {
+                [snapshot.id]: {
                   op: 'update',
                   onDocAbsent: 'doNotUpdate',
                   data: {
@@ -34,11 +31,7 @@ export function makeCountDraft({
       },
       [spec.countedCol]: {
         getTransactionCommit: async ({ snapshot }) => {
-          if (snapshot.type === 'change') {
-            return { tag: 'left', error: { type: 'InvalidSnapshotError' } };
-          }
-
-          const counterDoc = snapshot.doc.data?.[spec.groupByRef];
+          const counterDoc = snapshot.data?.[spec.groupByRef];
           if (counterDoc?.type !== 'ref') {
             return {
               tag: 'left',
@@ -65,11 +58,7 @@ export function makeCountDraft({
     onDelete: {
       [spec.countedCol]: {
         getTransactionCommit: async ({ snapshot }) => {
-          if (snapshot.type === 'change') {
-            return { tag: 'left', error: { type: 'InvalidSnapshotError' } };
-          }
-
-          const counterDoc = snapshot.doc.data?.[spec.groupByRef];
+          const counterDoc = snapshot.data?.[spec.groupByRef];
           if (counterDoc?.type !== 'ref') {
             return {
               tag: 'left',

@@ -254,11 +254,7 @@ export function makeRefDraft({
       ? {
           [colName]: {
             getTransactionCommit: async ({ getDoc, snapshot }) => {
-              if (snapshot.type === 'change') {
-                return { tag: 'left', error: { type: 'InvalidSnapshotError' } };
-              }
-
-              const refField = snapshot.doc.data?.[fieldName];
+              const refField = snapshot.data?.[fieldName];
               if (refField?.type !== 'ref') {
                 return { tag: 'left', error: { type: 'InvalidFieldTypeError' } };
               }
@@ -273,7 +269,7 @@ export function makeRefDraft({
                 tag: 'right',
                 value: {
                   [colName]: {
-                    [snapshot.doc.id]: {
+                    [snapshot.id]: {
                       op: 'update',
                       onDocAbsent: 'doNotUpdate',
                       data: {
@@ -300,7 +296,7 @@ export function makeRefDraft({
                       data: {
                         [DOC_IDS_FIELD_NAME]: {
                           type: 'stringArrayUnion',
-                          value: snapshot.doc.id,
+                          value: snapshot.id,
                         },
                       },
                     },
@@ -315,16 +311,14 @@ export function makeRefDraft({
       ? {
           [spec.refedCol]: {
             mayFailOp: async ({ getDoc, updateDoc, snapshot }) => {
-              if (snapshot.type === 'change') {
-                await propagateRefUpdate({
-                  getDoc,
-                  updateDoc,
-                  spec,
-                  refedDoc: snapshot.change,
-                  referCol: colName,
-                  referField: fieldName,
-                });
-              }
+              await propagateRefUpdate({
+                getDoc,
+                updateDoc,
+                spec,
+                refedDoc: snapshot,
+                referCol: colName,
+                referField: fieldName,
+              });
             },
           },
         }
@@ -332,10 +326,7 @@ export function makeRefDraft({
     onDelete: {
       [colName]: {
         getTransactionCommit: async ({ snapshot }) => {
-          if (snapshot.type === 'change') {
-            return { tag: 'left', error: { type: 'InvalidSnapshotError' } };
-          }
-          const refField = snapshot.doc.data?.[fieldName];
+          const refField = snapshot.data?.[fieldName];
           if (refField?.type !== 'ref') {
             return { tag: 'left', error: { type: 'InvalidFieldTypeError' } };
           }
@@ -354,7 +345,7 @@ export function makeRefDraft({
                   data: {
                     [DOC_IDS_FIELD_NAME]: {
                       type: 'stringArrayRemove',
-                      value: snapshot.doc.id,
+                      value: snapshot.id,
                     },
                   },
                 },
@@ -365,25 +356,23 @@ export function makeRefDraft({
       },
       [spec.refedCol]: {
         mayFailOp: async ({ getDoc, deleteDoc, snapshot: refed }) => {
-          if (refed.type === 'doc') {
-            const key = {
-              refedId: refed.doc.id,
-              referField: fieldName,
-              referCol: colName,
-              refedCol: spec.refedCol,
-            };
+          const key = {
+            refedId: refed.id,
+            referField: fieldName,
+            referCol: colName,
+            refedCol: spec.refedCol,
+          };
 
-            const referDocIds = await getRel({ getDoc, key });
-            if (referDocIds.tag === 'left') {
-              return;
-            }
-
-            deleteDoc({ key: relToDocKey(key) });
-
-            referDocIds.value.forEach((referDocId) =>
-              deleteDoc({ key: { id: referDocId, col: colName } })
-            );
+          const referDocIds = await getRel({ getDoc, key });
+          if (referDocIds.tag === 'left') {
+            return;
           }
+
+          deleteDoc({ key: relToDocKey(key) });
+
+          referDocIds.value.forEach((referDocId) =>
+            deleteDoc({ key: { id: referDocId, col: colName } })
+          );
         },
       },
     },

@@ -19,11 +19,8 @@ describe('makeCountTrigger', () => {
       const actionResult = await draft.onCreate?.['article']?.getTransactionCommit?.({
         getDoc: mockedGetDoc,
         snapshot: {
-          type: 'doc',
-          doc: {
-            id: 'article0',
-            data: {},
-          },
+          id: 'article0',
+          data: {},
         },
       });
 
@@ -64,14 +61,11 @@ describe('makeCountTrigger', () => {
       const actionResult = await draft.onCreate?.['bookmark']?.getTransactionCommit?.({
         getDoc: mockedGetDoc,
         snapshot: {
-          type: 'doc',
-          doc: {
-            id: 'bookmark0',
-            data: {
-              bookmarkedarticle: {
-                type: 'ref',
-                value: { id: 'article0', data: {} },
-              },
+          id: 'bookmark0',
+          data: {
+            bookmarkedarticle: {
+              type: 'ref',
+              value: { id: 'article0', data: {} },
             },
           },
         },
@@ -111,12 +105,9 @@ describe('makeCountTrigger', () => {
       const actionResult = await draft.onCreate?.['bookmark']?.getTransactionCommit?.({
         getDoc: mockedGetDoc,
         snapshot: {
-          type: 'doc',
-          doc: {
-            id: 'bookmark0',
-            data: {
-              bookmarkedarticle: { type: 'number', value: 0 },
-            },
+          id: 'bookmark0',
+          data: {
+            bookmarkedarticle: { type: 'number', value: 0 },
           },
         },
       });
@@ -145,11 +136,8 @@ describe('makeCountTrigger', () => {
       const actionResult = await draft.onCreate?.['bookmark']?.getTransactionCommit?.({
         getDoc: mockedGetDoc,
         snapshot: {
-          type: 'doc',
-          doc: {
-            id: 'bookmark0',
-            data: {},
-          },
+          id: 'bookmark0',
+          data: {},
         },
       });
 
@@ -196,14 +184,11 @@ describe('makeCountTrigger', () => {
       const actionResult = await draft.onDelete?.['bookmark']?.getTransactionCommit?.({
         getDoc: mockedGetDoc,
         snapshot: {
-          type: 'doc',
-          doc: {
-            id: 'bookmark0',
-            data: {
-              bookmarkedarticle: {
-                type: 'ref',
-                value: { id: 'article0', data: {} },
-              },
+          id: 'bookmark0',
+          data: {
+            bookmarkedarticle: {
+              type: 'ref',
+              value: { id: 'article0', data: {} },
             },
           },
         },
@@ -243,12 +228,9 @@ describe('makeCountTrigger', () => {
       const actionResult = await draft.onDelete?.['bookmark']?.getTransactionCommit?.({
         getDoc: mockedGetDoc,
         snapshot: {
-          type: 'doc',
-          doc: {
-            id: 'bookmark0',
-            data: {
-              bookmarkedarticle: { type: 'number', value: 0 },
-            },
+          id: 'bookmark0',
+          data: {
+            bookmarkedarticle: { type: 'number', value: 0 },
           },
         },
       });
@@ -276,10 +258,7 @@ describe('makeCountTrigger', () => {
       const mockedGetDoc = jest.fn<GetDocReturn, GetDocParam>();
       const actionResult = await draft.onDelete?.['bookmark']?.getTransactionCommit?.({
         getDoc: mockedGetDoc,
-        snapshot: {
-          type: 'doc',
-          doc: { id: 'bookmark0', data: {} },
-        },
+        snapshot: { id: 'bookmark0', data: {} },
       });
 
       expect(Object.keys(draft.onDelete ?? {})).toStrictEqual(['bookmark']);

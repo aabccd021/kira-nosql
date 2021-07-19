@@ -1,23 +1,33 @@
 import { Dictionary, FieldSpec } from 'kira-core';
 
 import {
-  ACTION_TYPE,
-  ActionType,
+  ColDraft,
   ColDrafts,
   ColTransactionCommit,
   DB,
+  DocChange,
+  DocSnapshot,
   Draft,
   Either,
   GetDoc,
   GetTransactionCommitError,
   IncompatibleDocOpError,
   MakeDraft,
+  Snapshot,
   TransactionCommit,
-  TriggerSnapshot,
 } from './type';
 
 function isDefined<T>(t: T | undefined): t is T {
   return t !== undefined;
+}
+
+function colDraftArrToDrafts<S extends Snapshot>(
+  colDraft: readonly (ColDraft<S> | undefined)[]
+): ColDrafts<S> {
+  return {
+    getTransactionCommits: colDraft.map((x) => x?.getTransactionCommit).filter(isDefined),
+    mayFailOps: colDraft.map((x) => x?.mayFailOp).filter(isDefined),
+  };
 }
 
 export function getActionDrafts({
@@ -26,19 +36,19 @@ export function getActionDrafts({
 }: {
   readonly drafts: readonly Draft[];
   readonly colName: string;
-}): { readonly [A in ActionType]?: ColDrafts } {
-  return Object.fromEntries(
-    ACTION_TYPE.map((actionType) => {
-      const colDrafts = drafts.map((draft) => draft[actionType]?.[colName]);
-      return [
-        actionType,
-        {
-          getTransactionCommits: colDrafts.map((x) => x?.getTransactionCommit).filter(isDefined),
-          mayFailOps: colDrafts.map((x) => x?.mayFailOp).filter(isDefined),
-        },
-      ];
-    })
-  );
+}): {
+  readonly onCreate?: ColDrafts<DocSnapshot>;
+  readonly onUpdate?: ColDrafts<DocChange>;
+  readonly onDelete?: ColDrafts<DocSnapshot>;
+} {
+  const onCreate = drafts.map((draft) => draft.onCreate?.[colName]);
+  const onUpdate = drafts.map((draft) => draft.onUpdate?.[colName]);
+  const onDelete = drafts.map((draft) => draft.onDelete?.[colName]);
+  return {
+    onCreate: colDraftArrToDrafts(onCreate),
+    onUpdate: colDraftArrToDrafts(onUpdate),
+    onDelete: colDraftArrToDrafts(onDelete),
+  };
 }
 
 export function getDraft({
@@ -55,13 +65,13 @@ export function getDraft({
   );
 }
 
-export async function getTransactionCommit({
+export async function getTransactionCommit<S extends Snapshot>({
   draft,
   snapshot,
   getDoc,
 }: {
-  readonly draft: ColDrafts;
-  readonly snapshot: TriggerSnapshot;
+  readonly draft: ColDrafts<S>;
+  readonly snapshot: S;
   readonly getDoc: GetDoc;
 }): Promise<Either<TransactionCommit, GetTransactionCommitError>> {
   return Promise.all(draft.getTransactionCommits.map((gtc) => gtc({ getDoc, snapshot }))).then(
@@ -148,18 +158,18 @@ export async function getTransactionCommit({
   );
 }
 
-export async function runMayFailOps({
+export async function runMayFailOps<S extends Snapshot>({
   draft,
   snapshot,
   db,
 }: {
-  readonly draft: ColDrafts;
-  readonly snapshot: TriggerSnapshot;
+  readonly draft: ColDrafts<S>;
+  readonly snapshot: S;
   readonly db: DB;
 }): Promise<void> {
   await Promise.all(draft.mayFailOps.map((mayFailOp) => mayFailOp({ ...db, snapshot })));
 }
 
-export function isTriggerRequired(colDrafts: ColDrafts): boolean {
+export function isTriggerRequired<S extends Snapshot>(colDrafts: ColDrafts<S>): boolean {
   return colDrafts.getTransactionCommits.length > 0 || colDrafts.mayFailOps.length > 0;
 }

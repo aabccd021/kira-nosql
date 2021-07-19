@@ -127,10 +127,6 @@ export type UpdateDoc = (param: {
 export type DeleteDoc = (param: { readonly key: DocKey }) => Promise<DBWriteResult>;
 
 // Trigger
-
-export const ACTION_TYPE = ['onCreate', 'onUpdate', 'onDelete'] as const;
-export type ActionType = typeof ACTION_TYPE[number];
-
 export type DraftMakerContext = {
   readonly colName: string;
   readonly fieldName: string;
@@ -139,19 +135,21 @@ export type DraftMakerContext = {
 export type DraftError = { readonly type: 'DraftError' };
 
 export type Draft = {
-  readonly [A in ActionType]?: ActionDraft;
+  readonly onCreate?: ActionDraft<DocSnapshot>;
+  readonly onUpdate?: ActionDraft<DocChange>;
+  readonly onDelete?: ActionDraft<DocSnapshot>;
 };
 
-export type ActionDraft = Dictionary<ColDraft>;
+export type ActionDraft<S extends Snapshot> = Dictionary<ColDraft<S>>;
 
-export type ColDraft = {
-  readonly getTransactionCommit?: DraftGetTransactionCommit;
-  readonly mayFailOp?: MayFailOp;
+export type ColDraft<S extends Snapshot> = {
+  readonly getTransactionCommit?: DraftGetTransactionCommit<S>;
+  readonly mayFailOp?: MayFailOp<S>;
 };
 
-export type ColDrafts = {
-  readonly getTransactionCommits: readonly DraftGetTransactionCommit[];
-  readonly mayFailOps: readonly MayFailOp[];
+export type ColDrafts<S extends Snapshot> = {
+  readonly getTransactionCommits: readonly DraftGetTransactionCommit<S>[];
+  readonly mayFailOps: readonly MayFailOp<S>[];
 };
 
 // Draft Content
@@ -166,9 +164,7 @@ export type DocCommit =
     }
   | { readonly op: 'delete' };
 
-export type TriggerSnapshot =
-  | { readonly type: 'doc'; readonly doc: DocSnapshot }
-  | { readonly type: 'change'; readonly change: DocChange };
+export type Snapshot = DocSnapshot | DocChange;
 
 export type DocChange = {
   readonly id: string;
@@ -176,16 +172,16 @@ export type DocChange = {
   readonly after: Doc;
 };
 
-export type MayFailOp = (param: {
+export type MayFailOp<S extends Snapshot> = (param: {
   readonly getDoc: GetDoc;
   readonly updateDoc: UpdateDoc;
   readonly deleteDoc: DeleteDoc;
-  readonly snapshot: TriggerSnapshot;
+  readonly snapshot: S;
 }) => Promise<void>;
 
-export type DraftGetTransactionCommit = (param: {
+export type DraftGetTransactionCommit<S extends Snapshot> = (param: {
   readonly getDoc: GetDoc;
-  readonly snapshot: TriggerSnapshot;
+  readonly snapshot: S;
 }) => Promise<Either<TransactionCommit, DraftGetTransactionCommitError>>;
 
 export type MakeDraft = (param: {
@@ -197,16 +193,11 @@ export type MakeDraft = (param: {
 // Errors
 export type InvalidFieldTypeError = { readonly type: 'InvalidFieldTypeError' };
 
-export type InvalidSnapshotError = { readonly type: 'InvalidSnapshotError' };
-
 export type GetDocError = { readonly type: 'GetDocError' };
 
 export type IncompatibleDocOpError = { readonly type: 'IncompatibleDocOpError' };
 
-export type DraftGetTransactionCommitError =
-  | GetDocError
-  | InvalidSnapshotError
-  | InvalidFieldTypeError;
+export type DraftGetTransactionCommitError = GetDocError | InvalidFieldTypeError;
 
 export type GetTransactionCommitError = IncompatibleDocOpError | DraftGetTransactionCommitError;
 

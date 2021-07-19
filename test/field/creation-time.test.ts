@@ -15,10 +15,7 @@ describe('makeCountTimeTrigger', () => {
 
       const actionResult = await draft.onCreate?.['article']?.getTransactionCommit?.({
         getDoc: mockedGetDoc,
-        snapshot: {
-          type: 'doc',
-          doc: { id: 'article0', data: {} },
-        },
+        snapshot: { id: 'article0', data: {} },
       });
 
       expect(Object.keys(draft.onCreate ?? {})).toStrictEqual(['article']);

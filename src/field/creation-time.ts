@@ -12,14 +12,11 @@ export function makeCreationTimeDraft({
     onCreate: {
       [colName]: {
         getTransactionCommit: async ({ snapshot }) => {
-          if (snapshot.type === 'change') {
-            return { tag: 'left', error: { type: 'InvalidSnapshotError' } };
-          }
           return {
             tag: 'right',
             value: {
               [colName]: {
-                [snapshot.doc.id]: {
+                [snapshot.id]: {
                   op: 'update',
                   onDocAbsent: 'doNotUpdate',
                   data: {
