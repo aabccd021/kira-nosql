@@ -1,19 +1,18 @@
-import { Dictionary, FieldSpec } from 'kira-core';
+import { Spec } from 'kira-core';
 
 import {
+  ActionTrigger,
   ColDraft,
-  ColDrafts,
   ColTransactionCommit,
+  ColTrigger,
   DB,
-  DocChange,
-  DocSnapshot,
   Draft,
   Either,
   GetDoc,
   GetTransactionCommitError,
   IncompatibleDocOpError,
-  MakeDraft,
   Snapshot,
+  SpecToDraft,
   TransactionCommit,
 } from './type';
 
@@ -21,60 +20,55 @@ function isDefined<T>(t: T | undefined): t is T {
   return t !== undefined;
 }
 
-function colDraftArrToDrafts<S extends Snapshot>(
+function colDraftsToActionTrigger<S extends Snapshot>(
   colDraft: readonly (ColDraft<S> | undefined)[]
-): ColDrafts<S> {
+): ActionTrigger<S> {
   return {
     getTransactionCommits: colDraft.map((x) => x?.getTransactionCommit).filter(isDefined),
     mayFailOps: colDraft.map((x) => x?.mayFailOp).filter(isDefined),
   };
 }
 
-export function getActionDrafts({
+export function getColTrigger({
   drafts,
   colName,
 }: {
   readonly drafts: readonly Draft[];
   readonly colName: string;
-}): {
-  readonly onCreate?: ColDrafts<DocSnapshot>;
-  readonly onUpdate?: ColDrafts<DocChange>;
-  readonly onDelete?: ColDrafts<DocSnapshot>;
-} {
-  const onCreate = drafts.map((draft) => draft.onCreate?.[colName]);
-  const onUpdate = drafts.map((draft) => draft.onUpdate?.[colName]);
-  const onDelete = drafts.map((draft) => draft.onDelete?.[colName]);
+}): ColTrigger {
   return {
-    onCreate: colDraftArrToDrafts(onCreate),
-    onUpdate: colDraftArrToDrafts(onUpdate),
-    onDelete: colDraftArrToDrafts(onDelete),
+    onCreate: colDraftsToActionTrigger(drafts.map((draft) => draft.onCreate?.[colName])),
+    onUpdate: colDraftsToActionTrigger(drafts.map((draft) => draft.onUpdate?.[colName])),
+    onDelete: colDraftsToActionTrigger(drafts.map((draft) => draft.onDelete?.[colName])),
   };
 }
 
 export function getDraft({
   spec,
-  makeDraft,
+  specToDraft,
 }: {
-  readonly spec: Dictionary<Dictionary<FieldSpec>>;
-  readonly makeDraft: MakeDraft;
+  readonly spec: Spec;
+  readonly specToDraft: SpecToDraft;
 }): readonly Draft[] {
   return Object.entries(spec).flatMap(([colName, docFieldSpecs]) =>
     Object.entries(docFieldSpecs).map(([fieldName, spec]) =>
-      makeDraft({ colName, fieldName, spec })
+      specToDraft({ colName, fieldName, spec })
     )
   );
 }
 
 export async function getTransactionCommit<S extends Snapshot>({
-  draft,
+  actionTrigger,
   snapshot,
-  getDoc,
+  db,
 }: {
-  readonly draft: ColDrafts<S>;
+  readonly actionTrigger: ActionTrigger<S>;
   readonly snapshot: S;
-  readonly getDoc: GetDoc;
+  readonly db: {
+    readonly getDoc: GetDoc;
+  };
 }): Promise<Either<TransactionCommit, GetTransactionCommitError>> {
-  return Promise.all(draft.getTransactionCommits.map((gtc) => gtc({ getDoc, snapshot }))).then(
+  return Promise.all(actionTrigger.getTransactionCommits.map((gtc) => gtc({ db, snapshot }))).then(
     (transactionCommits) =>
       transactionCommits.reduce<Either<TransactionCommit, GetTransactionCommitError>>(
         (prevTC, curTC) => {
@@ -159,17 +153,17 @@ export async function getTransactionCommit<S extends Snapshot>({
 }
 
 export async function runMayFailOps<S extends Snapshot>({
-  draft,
+  actionTrigger,
   snapshot,
   db,
 }: {
-  readonly draft: ColDrafts<S>;
+  readonly actionTrigger: ActionTrigger<S>;
   readonly snapshot: S;
   readonly db: DB;
 }): Promise<void> {
-  await Promise.all(draft.mayFailOps.map((mayFailOp) => mayFailOp({ ...db, snapshot })));
+  await Promise.all(actionTrigger.mayFailOps.map((mayFailOp) => mayFailOp({ db, snapshot })));
 }
 
-export function isTriggerRequired<S extends Snapshot>(colDrafts: ColDrafts<S>): boolean {
-  return colDrafts.getTransactionCommits.length > 0 || colDrafts.mayFailOps.length > 0;
+export function isTriggerRequired<S extends Snapshot>(actionTrigger: ActionTrigger<S>): boolean {
+  return actionTrigger.getTransactionCommits.length > 0 || actionTrigger.mayFailOps.length > 0;
 }

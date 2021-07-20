@@ -149,7 +149,13 @@ export type ColDraft<S extends Snapshot> = {
   readonly mayFailOp?: MayFailOp<S>;
 };
 
-export type ColDrafts<S extends Snapshot> = {
+export type ColTrigger = {
+  readonly onCreate?: ActionTrigger<DocSnapshot>;
+  readonly onUpdate?: ActionTrigger<DocChange>;
+  readonly onDelete?: ActionTrigger<DocSnapshot>;
+};
+
+export type ActionTrigger<S extends Snapshot> = {
   readonly getTransactionCommits: readonly DraftGetTransactionCommit<S>[];
   readonly mayFailOps: readonly MayFailOp<S>[];
 };
@@ -175,18 +181,22 @@ export type DocChange = {
 };
 
 export type MayFailOp<S extends Snapshot> = (param: {
-  readonly getDoc: GetDoc;
-  readonly updateDoc: UpdateDoc;
-  readonly deleteDoc: DeleteDoc;
+  readonly db: {
+    readonly getDoc: GetDoc;
+    readonly updateDoc: UpdateDoc;
+    readonly deleteDoc: DeleteDoc;
+  };
   readonly snapshot: S;
 }) => Promise<void>;
 
 export type DraftGetTransactionCommit<S extends Snapshot> = (param: {
-  readonly getDoc: GetDoc;
+  readonly db: {
+    readonly getDoc: GetDoc;
+  };
   readonly snapshot: S;
 }) => Promise<Either<TransactionCommit, DraftGetTransactionCommitError>>;
 
-export type MakeDraft = (param: {
+export type SpecToDraft = (param: {
   readonly colName: string;
   readonly fieldName: string;
   readonly spec: FieldSpec;

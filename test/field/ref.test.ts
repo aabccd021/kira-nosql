@@ -27,7 +27,9 @@ describe('makeRefTrigger', () => {
 
       const mockedGetDoc = jest.fn<GetDocReturn, GetDocParam>();
       const actionResult = await draft.onCreate?.['comment']?.getTransactionCommit?.({
-        getDoc: mockedGetDoc,
+        db: {
+          getDoc: mockedGetDoc,
+        },
         snapshot: { id: 'comment0', data: {} },
       });
 
@@ -55,7 +57,9 @@ describe('makeRefTrigger', () => {
       });
       const mockedGetDoc = jest.fn<GetDocReturn, GetDocParam>();
       const actionResult = await draft.onCreate?.['comment']?.getTransactionCommit?.({
-        getDoc: mockedGetDoc,
+        db: {
+          getDoc: mockedGetDoc,
+        },
         snapshot: {
           id: 'comment0',
           data: {
@@ -91,7 +95,9 @@ describe('makeRefTrigger', () => {
         error: { type: 'GetDocError' },
       });
       const actionResult = await draft.onCreate?.['comment']?.getTransactionCommit?.({
-        getDoc: mockedGetDoc,
+        db: {
+          getDoc: mockedGetDoc,
+        },
         snapshot: {
           id: 'comment0',
           data: {
@@ -126,16 +132,15 @@ describe('makeRefTrigger', () => {
       const mockedGetDoc = jest.fn<GetDocReturn, GetDocParam>().mockResolvedValueOnce({
         tag: 'right',
         value: {
-          id: 'aricle0',
-          data: {
-            title: { type: 'string', value: 'Article Zero Title' },
-            category: { type: 'string', value: 'Animal' },
-            publishedMedia: { type: 'string', value: 'book' },
-          },
+          title: { type: 'string', value: 'Article Zero Title' },
+          category: { type: 'string', value: 'Animal' },
+          publishedMedia: { type: 'string', value: 'book' },
         },
       });
       const actionResult = await draft.onCreate?.['comment']?.getTransactionCommit?.({
-        getDoc: mockedGetDoc,
+        db: {
+          getDoc: mockedGetDoc,
+        },
         snapshot: {
           id: 'comment0',
           data: {
@@ -309,21 +314,20 @@ describe('makeRefTrigger', () => {
       const mockedGetDoc = jest.fn<GetDocReturn, GetDocParam>().mockResolvedValueOnce({
         tag: 'right',
         value: {
-          id: 'comment-commentedArticle-article-article0',
-          data: {
-            docIds: {
-              type: 'stringArray',
-              value: ['comment0', 'comment46'],
-            },
+          docIds: {
+            type: 'stringArray',
+            value: ['comment0', 'comment46'],
           },
         },
       });
       const mockedDeleteDoc = jest.fn<DeleteDocReturn, DeleteDocParam>();
       const mockedUpdateDoc = jest.fn<UpdateDocReturn, UpdateDocParam>();
       await draft.onDelete?.['article']?.mayFailOp?.({
-        getDoc: mockedGetDoc,
-        deleteDoc: mockedDeleteDoc,
-        updateDoc: mockedUpdateDoc,
+        db: {
+          getDoc: mockedGetDoc,
+          deleteDoc: mockedDeleteDoc,
+          updateDoc: mockedUpdateDoc,
+        },
         snapshot: {
           id: 'article0',
           data: {

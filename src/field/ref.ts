@@ -133,12 +133,14 @@ function relToDocKey(key: RelKey): DocKey {
 
 async function getRel({
   key,
-  getDoc,
+  db,
 }: {
   readonly key: RelKey;
-  readonly getDoc: GetDoc;
+  readonly db: {
+    readonly getDoc: GetDoc;
+  };
 }): Promise<Either<readonly string[], GetRelError>> {
-  const relDoc = await getDoc({ key: relToDocKey(key) });
+  const relDoc = await db.getDoc(relToDocKey(key));
 
   if (relDoc.tag === 'left') {
     return relDoc;
@@ -155,15 +157,16 @@ async function getRel({
 }
 
 async function propagateRefUpdate({
-  getDoc,
-  updateDoc,
+  db,
   refedDoc,
   referField,
   referCol,
   spec: { syncedFields, refedCol, thisColRefers },
 }: {
-  readonly getDoc: GetDoc;
-  readonly updateDoc: UpdateDoc;
+  readonly db: {
+    readonly getDoc: GetDoc;
+    readonly updateDoc: UpdateDoc;
+  };
   readonly refedDoc: DocChange;
   readonly referField: string;
   readonly referCol: string;
@@ -187,7 +190,7 @@ async function propagateRefUpdate({
   }
 
   const referDocIds = await getRel({
-    getDoc,
+    db,
     key: {
       refedId: refedDoc.id,
       refedCol,
@@ -201,7 +204,7 @@ async function propagateRefUpdate({
   }
 
   referDocIds.value.forEach((referDocId) => {
-    updateDoc({
+    db.updateDoc({
       key: { col: referCol, id: referDocId },
       docData: {
         [referField]: {
@@ -213,8 +216,7 @@ async function propagateRefUpdate({
     thisColRefers.forEach((thisColRefer) => {
       thisColRefer.fields.forEach((thisColReferField) => {
         propagateRefUpdate({
-          getDoc,
-          updateDoc,
+          db,
           spec: {
             refedCol: referCol,
             syncedFields: thisColReferField.syncedFields,
@@ -253,15 +255,13 @@ export function makeRefDraft({
     onCreate: needSync
       ? {
           [colName]: {
-            getTransactionCommit: async ({ getDoc, snapshot }) => {
+            getTransactionCommit: async ({ db, snapshot }) => {
               const refField = snapshot.data?.[fieldName];
               if (refField?.type !== 'ref') {
                 return { tag: 'left', error: { type: 'InvalidFieldTypeError' } };
               }
 
-              const refDoc = await getDoc({
-                key: { col: spec.refedCol, id: refField.value.id },
-              });
+              const refDoc = await db.getDoc({ col: spec.refedCol, id: refField.value.id });
               if (refDoc.tag === 'left') return refDoc;
 
               const syncedFieldNames = Object.keys(spec.syncedFields);
@@ -310,10 +310,9 @@ export function makeRefDraft({
     onUpdate: needSync
       ? {
           [spec.refedCol]: {
-            mayFailOp: async ({ getDoc, updateDoc, snapshot }) => {
+            mayFailOp: async ({ db, snapshot }) => {
               await propagateRefUpdate({
-                getDoc,
-                updateDoc,
+                db,
                 spec,
                 refedDoc: snapshot,
                 referCol: colName,
@@ -355,7 +354,7 @@ export function makeRefDraft({
         },
       },
       [spec.refedCol]: {
-        mayFailOp: async ({ getDoc, deleteDoc, snapshot: refed }) => {
+        mayFailOp: async ({ db, snapshot: refed }) => {
           const key = {
             refedId: refed.id,
             referField: fieldName,
@@ -363,16 +362,14 @@ export function makeRefDraft({
             refedCol: spec.refedCol,
           };
 
-          const referDocIds = await getRel({ getDoc, key });
+          const referDocIds = await getRel({ db, key });
           if (referDocIds.tag === 'left') {
             return;
           }
 
-          deleteDoc({ key: relToDocKey(key) });
+          db.deleteDoc(relToDocKey(key));
 
-          referDocIds.value.forEach((referDocId) =>
-            deleteDoc({ key: { id: referDocId, col: colName } })
-          );
+          referDocIds.value.forEach((referDocId) => db.deleteDoc({ id: referDocId, col: colName }));
         },
       },
     },
