@@ -111,7 +111,7 @@ describe('makeRefTrigger', () => {
 
       expect(Object.keys(draft.onCreate ?? {})).toStrictEqual(['comment']);
       expect(mockedGetDoc).toHaveBeenCalledTimes(1);
-      expect(mockedGetDoc).toHaveBeenCalledWith({ key: { col: 'article', id: 'article0' } });
+      expect(mockedGetDoc).toHaveBeenCalledWith({ col: 'article', id: 'article0' });
       expect(actionResult).toStrictEqual({ tag: 'left', error: { type: 'GetDocError' } });
     });
 
@@ -154,9 +154,7 @@ describe('makeRefTrigger', () => {
 
       expect(Object.keys(draft.onCreate ?? {})).toStrictEqual(['comment']);
       expect(mockedGetDoc).toHaveBeenCalledTimes(1);
-      expect(mockedGetDoc).toHaveBeenCalledWith({
-        key: { col: 'article', id: 'article0' },
-      });
+      expect(mockedGetDoc).toHaveBeenCalledWith({ col: 'article', id: 'article0' });
       expect(actionResult).toStrictEqual({
         tag: 'right',
         value: {
@@ -340,24 +338,16 @@ describe('makeRefTrigger', () => {
       expect(mockedUpdateDoc).not.toHaveBeenCalled();
       expect(mockedGetDoc).toHaveBeenCalledTimes(1);
       expect(mockedGetDoc).toHaveBeenCalledWith({
-        key: {
-          col: '_relation',
-          id: 'comment_commentedArticle_article_article0',
-        },
+        col: '_relation',
+        id: 'comment_commentedArticle_article_article0',
       });
       expect(mockedDeleteDoc).toHaveBeenCalledTimes(3);
       expect(mockedDeleteDoc).toHaveBeenNthCalledWith(1, {
-        key: {
-          col: '_relation',
-          id: 'comment_commentedArticle_article_article0',
-        },
+        col: '_relation',
+        id: 'comment_commentedArticle_article_article0',
       });
-      expect(mockedDeleteDoc).toHaveBeenNthCalledWith(2, {
-        key: { id: 'comment0', col: 'comment' },
-      });
-      expect(mockedDeleteDoc).toHaveBeenNthCalledWith(3, {
-        key: { id: 'comment46', col: 'comment' },
-      });
+      expect(mockedDeleteDoc).toHaveBeenNthCalledWith(2, { id: 'comment0', col: 'comment' });
+      expect(mockedDeleteDoc).toHaveBeenNthCalledWith(3, { id: 'comment46', col: 'comment' });
     });
   });
 });
