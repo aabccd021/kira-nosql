@@ -144,7 +144,7 @@ async function getRel({
     return relDoc;
   }
 
-  const referDocIds = relDoc.value.data[DOC_IDS_FIELD_NAME];
+  const referDocIds = relDoc.value[DOC_IDS_FIELD_NAME];
   if (referDocIds?.type !== 'stringArray') {
     return {
       tag: 'left',
@@ -276,7 +276,7 @@ export function makeRefDraft({
                         [fieldName]: {
                           type: 'ref',
                           value: Object.fromEntries(
-                            Object.entries(refDoc.value.data)
+                            Object.entries(refDoc.value)
                               .filter(([fieldName]) => syncedFieldNames.includes(fieldName))
                               .map(readToWriteField)
                           ),
