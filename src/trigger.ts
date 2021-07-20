@@ -4,9 +4,7 @@ import {
   ActionTrigger,
   ColDraft,
   ColTransactionCommit,
-  ColTrigger,
   DB,
-  Draft,
   Either,
   GetDoc,
   GetTransactionCommitError,
@@ -14,6 +12,7 @@ import {
   Snapshot,
   SpecToDraft,
   TransactionCommit,
+  Trigger,
 } from './type';
 
 function isDefined<T>(t: T | undefined): t is T {
@@ -29,31 +28,29 @@ function colDraftsToActionTrigger<S extends Snapshot>(
   };
 }
 
-export function getColTrigger({
-  drafts,
-  colName,
-}: {
-  readonly drafts: readonly Draft[];
-  readonly colName: string;
-}): ColTrigger {
-  return {
-    onCreate: colDraftsToActionTrigger(drafts.map((draft) => draft.onCreate?.[colName])),
-    onUpdate: colDraftsToActionTrigger(drafts.map((draft) => draft.onUpdate?.[colName])),
-    onDelete: colDraftsToActionTrigger(drafts.map((draft) => draft.onDelete?.[colName])),
-  };
-}
-
-export function getDraft({
+export function getTrigger({
   spec,
   specToDraft,
 }: {
   readonly spec: Spec;
   readonly specToDraft: SpecToDraft;
-}): readonly Draft[] {
-  return Object.entries(spec).flatMap(([colName, docFieldSpecs]) =>
+}): Trigger {
+  const drafts = Object.entries(spec).flatMap(([colName, docFieldSpecs]) =>
     Object.entries(docFieldSpecs).map(([fieldName, spec]) =>
       specToDraft({ colName, fieldName, spec })
     )
+  );
+  return Object.fromEntries(
+    Object.entries(spec).map(([colName]) => {
+      return [
+        colName,
+        {
+          onCreate: colDraftsToActionTrigger(drafts.map((draft) => draft.onCreate?.[colName])),
+          onUpdate: colDraftsToActionTrigger(drafts.map((draft) => draft.onUpdate?.[colName])),
+          onDelete: colDraftsToActionTrigger(drafts.map((draft) => draft.onDelete?.[colName])),
+        },
+      ];
+    })
   );
 }
 

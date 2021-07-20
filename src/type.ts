@@ -149,6 +149,8 @@ export type ColDraft<S extends Snapshot> = {
   readonly mayFailOp?: MayFailOp<S>;
 };
 
+export type Trigger = Dictionary<ColTrigger>;
+
 export type ColTrigger = {
   readonly onCreate?: ActionTrigger<DocSnapshot>;
   readonly onUpdate?: ActionTrigger<DocChange>;
