@@ -27,7 +27,9 @@ describe('makeRefTrigger', () => {
 
       const mockedGetDoc = jest.fn<GetDocReturn, GetDocParam>();
       const actionResult = await draft.onCreate?.['comment']?.getTransactionCommit?.({
-        getDoc: mockedGetDoc,
+        db: {
+          getDoc: mockedGetDoc,
+        },
         snapshot: { id: 'comment0', data: {} },
       });
 
@@ -55,7 +57,9 @@ describe('makeRefTrigger', () => {
       });
       const mockedGetDoc = jest.fn<GetDocReturn, GetDocParam>();
       const actionResult = await draft.onCreate?.['comment']?.getTransactionCommit?.({
-        getDoc: mockedGetDoc,
+        db: {
+          getDoc: mockedGetDoc,
+        },
         snapshot: {
           id: 'comment0',
           data: {
@@ -91,7 +95,9 @@ describe('makeRefTrigger', () => {
         error: { type: 'GetDocError' },
       });
       const actionResult = await draft.onCreate?.['comment']?.getTransactionCommit?.({
-        getDoc: mockedGetDoc,
+        db: {
+          getDoc: mockedGetDoc,
+        },
         snapshot: {
           id: 'comment0',
           data: {
@@ -105,7 +111,7 @@ describe('makeRefTrigger', () => {
 
       expect(Object.keys(draft.onCreate ?? {})).toStrictEqual(['comment']);
       expect(mockedGetDoc).toHaveBeenCalledTimes(1);
-      expect(mockedGetDoc).toHaveBeenCalledWith({ key: { col: 'article', id: 'article0' } });
+      expect(mockedGetDoc).toHaveBeenCalledWith({ col: 'article', id: 'article0' });
       expect(actionResult).toStrictEqual({ tag: 'left', error: { type: 'GetDocError' } });
     });
 
@@ -126,16 +132,15 @@ describe('makeRefTrigger', () => {
       const mockedGetDoc = jest.fn<GetDocReturn, GetDocParam>().mockResolvedValueOnce({
         tag: 'right',
         value: {
-          id: 'aricle0',
-          data: {
-            title: { type: 'string', value: 'Article Zero Title' },
-            category: { type: 'string', value: 'Animal' },
-            publishedMedia: { type: 'string', value: 'book' },
-          },
+          title: { type: 'string', value: 'Article Zero Title' },
+          category: { type: 'string', value: 'Animal' },
+          publishedMedia: { type: 'string', value: 'book' },
         },
       });
       const actionResult = await draft.onCreate?.['comment']?.getTransactionCommit?.({
-        getDoc: mockedGetDoc,
+        db: {
+          getDoc: mockedGetDoc,
+        },
         snapshot: {
           id: 'comment0',
           data: {
@@ -149,9 +154,7 @@ describe('makeRefTrigger', () => {
 
       expect(Object.keys(draft.onCreate ?? {})).toStrictEqual(['comment']);
       expect(mockedGetDoc).toHaveBeenCalledTimes(1);
-      expect(mockedGetDoc).toHaveBeenCalledWith({
-        key: { col: 'article', id: 'article0' },
-      });
+      expect(mockedGetDoc).toHaveBeenCalledWith({ col: 'article', id: 'article0' });
       expect(actionResult).toStrictEqual({
         tag: 'right',
         value: {
@@ -309,21 +312,20 @@ describe('makeRefTrigger', () => {
       const mockedGetDoc = jest.fn<GetDocReturn, GetDocParam>().mockResolvedValueOnce({
         tag: 'right',
         value: {
-          id: 'comment-commentedArticle-article-article0',
-          data: {
-            docIds: {
-              type: 'stringArray',
-              value: ['comment0', 'comment46'],
-            },
+          docIds: {
+            type: 'stringArray',
+            value: ['comment0', 'comment46'],
           },
         },
       });
       const mockedDeleteDoc = jest.fn<DeleteDocReturn, DeleteDocParam>();
       const mockedUpdateDoc = jest.fn<UpdateDocReturn, UpdateDocParam>();
       await draft.onDelete?.['article']?.mayFailOp?.({
-        getDoc: mockedGetDoc,
-        deleteDoc: mockedDeleteDoc,
-        updateDoc: mockedUpdateDoc,
+        db: {
+          getDoc: mockedGetDoc,
+          deleteDoc: mockedDeleteDoc,
+          updateDoc: mockedUpdateDoc,
+        },
         snapshot: {
           id: 'article0',
           data: {
@@ -336,24 +338,16 @@ describe('makeRefTrigger', () => {
       expect(mockedUpdateDoc).not.toHaveBeenCalled();
       expect(mockedGetDoc).toHaveBeenCalledTimes(1);
       expect(mockedGetDoc).toHaveBeenCalledWith({
-        key: {
-          col: '_relation',
-          id: 'comment_commentedArticle_article_article0',
-        },
+        col: '_relation',
+        id: 'comment_commentedArticle_article_article0',
       });
       expect(mockedDeleteDoc).toHaveBeenCalledTimes(3);
       expect(mockedDeleteDoc).toHaveBeenNthCalledWith(1, {
-        key: {
-          col: '_relation',
-          id: 'comment_commentedArticle_article_article0',
-        },
+        col: '_relation',
+        id: 'comment_commentedArticle_article_article0',
       });
-      expect(mockedDeleteDoc).toHaveBeenNthCalledWith(2, {
-        key: { id: 'comment0', col: 'comment' },
-      });
-      expect(mockedDeleteDoc).toHaveBeenNthCalledWith(3, {
-        key: { id: 'comment46', col: 'comment' },
-      });
+      expect(mockedDeleteDoc).toHaveBeenNthCalledWith(2, { id: 'comment0', col: 'comment' });
+      expect(mockedDeleteDoc).toHaveBeenNthCalledWith(3, { id: 'comment46', col: 'comment' });
     });
   });
 });

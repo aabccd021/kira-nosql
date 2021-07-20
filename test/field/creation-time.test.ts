@@ -14,7 +14,9 @@ describe('makeCountTimeTrigger', () => {
       const mockedGetDoc = jest.fn<GetDocReturn, GetDocParam>();
 
       const actionResult = await draft.onCreate?.['article']?.getTransactionCommit?.({
-        getDoc: mockedGetDoc,
+        db: {
+          getDoc: mockedGetDoc,
+        },
         snapshot: { id: 'article0', data: {} },
       });
 
