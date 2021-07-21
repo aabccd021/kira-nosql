@@ -33,7 +33,10 @@ function readToWriteField([fieldName, field]: readonly [string, Field]): readonl
       fieldName,
       {
         type: 'ref',
-        value: toWriteDoc(field.value.data),
+        value: {
+          id: field.value.id,
+          data: toWriteDoc(field.value.data),
+        },
       },
     ];
   }
@@ -209,7 +212,10 @@ async function propagateRefUpdate({
       docData: {
         [referField]: {
           type: 'ref',
-          value: toWriteDoc(syncData),
+          value: {
+            id: referDocId,
+            data: toWriteDoc(syncData),
+          },
         },
       },
     });
@@ -261,8 +267,9 @@ export function makeRefDraft({
                 return { tag: 'left', error: { type: 'InvalidFieldTypeError' } };
               }
 
-              const refDoc = await db.getDoc({ col: spec.refedCol, id: refField.value.id });
-              if (refDoc.tag === 'left') return refDoc;
+              const refedDocId = refField.value.id;
+              const refedDoc = await db.getDoc({ col: spec.refedCol, id: refedDocId });
+              if (refedDoc.tag === 'left') return refedDoc;
 
               const syncedFieldNames = Object.keys(spec.syncedFields);
               return {
@@ -275,11 +282,14 @@ export function makeRefDraft({
                       data: {
                         [fieldName]: {
                           type: 'ref',
-                          value: Object.fromEntries(
-                            Object.entries(refDoc.value)
-                              .filter(([fieldName]) => syncedFieldNames.includes(fieldName))
-                              .map(readToWriteField)
-                          ),
+                          value: {
+                            id: refedDocId,
+                            data: Object.fromEntries(
+                              Object.entries(refedDoc.value)
+                                .filter(([fieldName]) => syncedFieldNames.includes(fieldName))
+                                .map(readToWriteField)
+                            ),
+                          },
                         },
                       },
                     },

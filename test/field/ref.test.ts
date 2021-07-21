@@ -166,8 +166,11 @@ describe('makeRefTrigger', () => {
                 commentedArticle: {
                   type: 'ref',
                   value: {
-                    title: { type: 'string', value: 'Article Zero Title' },
-                    category: { type: 'string', value: 'Animal' },
+                    id: 'article0',
+                    data: {
+                      title: { type: 'string', value: 'Article Zero Title' },
+                      category: { type: 'string', value: 'Animal' },
+                    },
                   },
                 },
               },
