@@ -33,10 +33,7 @@ function readToWriteField([fieldName, field]: readonly [string, Field]): readonl
       fieldName,
       {
         type: 'ref',
-        value: {
-          id: field.value.id,
-          data: toWriteDoc(field.value.data),
-        },
+        value: toWriteDoc(field.value.data),
       },
     ];
   }
@@ -212,10 +209,7 @@ async function propagateRefUpdate({
       docData: {
         [referField]: {
           type: 'ref',
-          value: {
-            id: referDocId,
-            data: toWriteDoc(syncData),
-          },
+          value: toWriteDoc(syncData),
         },
       },
     });
@@ -267,8 +261,7 @@ export function makeRefDraft({
                 return { tag: 'left', error: { type: 'InvalidFieldTypeError' } };
               }
 
-              const refedDocId = refField.value.id;
-              const refedDoc = await db.getDoc({ col: spec.refedCol, id: refedDocId });
+              const refedDoc = await db.getDoc({ col: spec.refedCol, id: refField.value.id });
               if (refedDoc.tag === 'left') return refedDoc;
 
               const syncedFieldNames = Object.keys(spec.syncedFields);
@@ -282,14 +275,11 @@ export function makeRefDraft({
                       data: {
                         [fieldName]: {
                           type: 'ref',
-                          value: {
-                            id: refedDocId,
-                            data: Object.fromEntries(
-                              Object.entries(refedDoc.value)
-                                .filter(([fieldName]) => syncedFieldNames.includes(fieldName))
-                                .map(readToWriteField)
-                            ),
-                          },
+                          value: Object.fromEntries(
+                            Object.entries(refedDoc.value)
+                              .filter(([fieldName]) => syncedFieldNames.includes(fieldName))
+                              .map(readToWriteField)
+                          ),
                         },
                       },
                     },
