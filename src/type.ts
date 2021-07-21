@@ -23,6 +23,11 @@ export type DocSnapshot = {
   readonly data: Doc;
 };
 
+export type WriteDocSnapshot = {
+  readonly id: string;
+  readonly data: WriteDoc;
+};
+
 /**
  * DocData
  */
@@ -88,7 +93,7 @@ export type ImageField = {
  */
 export type RefWriteField = {
   readonly type: 'ref';
-  readonly value: WriteDoc;
+  readonly value: WriteDocSnapshot;
 };
 
 export type CreationTimeField = {
