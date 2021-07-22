@@ -1,4 +1,13 @@
-import { makeCountDraft } from '../../src';
+import {
+  IncrementField,
+  InvalidFieldTypeError,
+  Left,
+  makeCountDraft,
+  NumberField,
+  RefField,
+  Right,
+  UpdateDocCommit,
+} from '../../src';
 import { GetDocParam, GetDocReturn } from '../util';
 
 describe('makeCountTrigger', () => {
@@ -10,7 +19,7 @@ describe('makeCountTrigger', () => {
           fieldName: 'bookmarkCount',
         },
         spec: {
-          type: 'count',
+          _type: 'count',
           countedCol: 'bookmark',
           groupByRef: 'bookmarkedarticle',
         },
@@ -28,23 +37,18 @@ describe('makeCountTrigger', () => {
 
       expect(Object.keys(draft.onCreate ?? {})).toStrictEqual(['article', 'bookmark']);
       expect(mockedGetDoc).not.toHaveBeenCalled();
-      expect(actionResult).toStrictEqual({
-        tag: 'right',
-        value: {
+      expect(actionResult).toStrictEqual(
+        Right({
           article: {
-            article0: {
-              op: 'update',
+            article0: UpdateDocCommit({
               onDocAbsent: 'doNotUpdate',
               data: {
-                bookmarkCount: {
-                  type: 'number',
-                  value: 0,
-                },
+                bookmarkCount: NumberField(0),
               },
-            },
+            }),
           },
-        },
-      });
+        })
+      );
     });
 
     it('increase bookmarkCount if new bookmark added', async () => {
@@ -54,7 +58,7 @@ describe('makeCountTrigger', () => {
           fieldName: 'bookmarkCount',
         },
         spec: {
-          type: 'count',
+          _type: 'count',
           countedCol: 'bookmark',
           groupByRef: 'bookmarkedarticle',
         },
@@ -67,30 +71,25 @@ describe('makeCountTrigger', () => {
         snapshot: {
           id: 'bookmark0',
           data: {
-            bookmarkedarticle: {
-              type: 'ref',
-              value: { id: 'article0', data: {} },
-            },
+            bookmarkedarticle: RefField({ id: 'article0', data: {} }),
           },
         },
       });
 
       expect(Object.keys(draft.onCreate ?? {})).toStrictEqual(['article', 'bookmark']);
       expect(mockedGetDoc).not.toHaveBeenCalled();
-      expect(actionResult).toStrictEqual({
-        tag: 'right',
-        value: {
+      expect(actionResult).toStrictEqual(
+        Right({
           article: {
-            article0: {
-              op: 'update',
+            article0: UpdateDocCommit({
               onDocAbsent: 'doNotUpdate',
               data: {
-                bookmarkCount: { type: 'increment', value: 1 },
+                bookmarkCount: IncrementField(1),
               },
-            },
+            }),
           },
-        },
-      });
+        })
+      );
     });
 
     it('returns error if counterDoc is not ref field', async () => {
@@ -100,7 +99,7 @@ describe('makeCountTrigger', () => {
           fieldName: 'bookmarkCount',
         },
         spec: {
-          type: 'count',
+          _type: 'count',
           countedCol: 'bookmark',
           groupByRef: 'bookmarkedarticle',
         },
@@ -113,17 +112,14 @@ describe('makeCountTrigger', () => {
         snapshot: {
           id: 'bookmark0',
           data: {
-            bookmarkedarticle: { type: 'number', value: 0 },
+            bookmarkedarticle: NumberField(0),
           },
         },
       });
 
       expect(Object.keys(draft.onCreate ?? {})).toStrictEqual(['article', 'bookmark']);
       expect(mockedGetDoc).not.toHaveBeenCalled();
-      expect(actionResult).toStrictEqual({
-        tag: 'left',
-        error: { type: 'InvalidFieldTypeError' },
-      });
+      expect(actionResult).toStrictEqual(Left(InvalidFieldTypeError()));
     });
 
     it('returns error if counterDoc is empty', async () => {
@@ -133,7 +129,7 @@ describe('makeCountTrigger', () => {
           fieldName: 'bookmarkCount',
         },
         spec: {
-          type: 'count',
+          _type: 'count',
           countedCol: 'bookmark',
           groupByRef: 'bookmarkedarticle',
         },
@@ -151,10 +147,7 @@ describe('makeCountTrigger', () => {
 
       expect(Object.keys(draft.onCreate ?? {})).toStrictEqual(['article', 'bookmark']);
       expect(mockedGetDoc).not.toHaveBeenCalled();
-      expect(actionResult).toStrictEqual({
-        tag: 'left',
-        error: { type: 'InvalidFieldTypeError' },
-      });
+      expect(actionResult).toStrictEqual(Left(InvalidFieldTypeError()));
     });
   });
 
@@ -166,7 +159,7 @@ describe('makeCountTrigger', () => {
           fieldName: 'creationTime',
         },
         spec: {
-          type: 'count',
+          _type: 'count',
           countedCol: 'bookmark',
           groupByRef: 'bookmarkedarticle',
         },
@@ -183,7 +176,7 @@ describe('makeCountTrigger', () => {
           fieldName: 'bookmarkCount',
         },
         spec: {
-          type: 'count',
+          _type: 'count',
           countedCol: 'bookmark',
           groupByRef: 'bookmarkedarticle',
         },
@@ -196,30 +189,25 @@ describe('makeCountTrigger', () => {
         snapshot: {
           id: 'bookmark0',
           data: {
-            bookmarkedarticle: {
-              type: 'ref',
-              value: { id: 'article0', data: {} },
-            },
+            bookmarkedarticle: RefField({ id: 'article0', data: {} }),
           },
         },
       });
 
       expect(Object.keys(draft.onDelete ?? {})).toStrictEqual(['bookmark']);
       expect(mockedGetDoc).not.toHaveBeenCalled();
-      expect(actionResult).toStrictEqual({
-        tag: 'right',
-        value: {
+      expect(actionResult).toStrictEqual(
+        Right({
           article: {
-            article0: {
-              op: 'update',
+            article0: UpdateDocCommit({
               onDocAbsent: 'doNotUpdate',
               data: {
-                bookmarkCount: { type: 'increment', value: -1 },
+                bookmarkCount: IncrementField(-1),
               },
-            },
+            }),
           },
-        },
-      });
+        })
+      );
     });
 
     it('returns error if counterDoc is not ref field', async () => {
@@ -229,7 +217,7 @@ describe('makeCountTrigger', () => {
           fieldName: 'bookmarkCount',
         },
         spec: {
-          type: 'count',
+          _type: 'count',
           countedCol: 'bookmark',
           groupByRef: 'bookmarkedarticle',
         },
@@ -242,17 +230,14 @@ describe('makeCountTrigger', () => {
         snapshot: {
           id: 'bookmark0',
           data: {
-            bookmarkedarticle: { type: 'number', value: 0 },
+            bookmarkedarticle: NumberField(0),
           },
         },
       });
 
       expect(Object.keys(draft.onDelete ?? {})).toStrictEqual(['bookmark']);
       expect(mockedGetDoc).not.toHaveBeenCalled();
-      expect(actionResult).toStrictEqual({
-        tag: 'left',
-        error: { type: 'InvalidFieldTypeError' },
-      });
+      expect(actionResult).toStrictEqual(Left(InvalidFieldTypeError()));
     });
 
     it('returns error if counterDoc is empty', async () => {
@@ -262,7 +247,7 @@ describe('makeCountTrigger', () => {
           fieldName: 'bookmarkCount',
         },
         spec: {
-          type: 'count',
+          _type: 'count',
           countedCol: 'bookmark',
           groupByRef: 'bookmarkedarticle',
         },
@@ -277,10 +262,7 @@ describe('makeCountTrigger', () => {
 
       expect(Object.keys(draft.onDelete ?? {})).toStrictEqual(['bookmark']);
       expect(mockedGetDoc).not.toHaveBeenCalled();
-      expect(actionResult).toStrictEqual({
-        tag: 'left',
-        error: { type: 'InvalidFieldTypeError' },
-      });
+      expect(actionResult).toStrictEqual(Left(InvalidFieldTypeError()));
     });
   });
 });

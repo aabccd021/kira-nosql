@@ -1,4 +1,16 @@
-import { makeRefDraft } from '../../src';
+import {
+  GetDocError,
+  InvalidFieldTypeError,
+  Left,
+  makeRefDraft,
+  RefField,
+  RefWriteField,
+  Right,
+  StringArrayField,
+  StringArrayUnionField,
+  StringField,
+  UpdateDocCommit,
+} from '../../src';
 import {
   DeleteDocParam,
   DeleteDocReturn,
@@ -17,7 +29,7 @@ describe('makeRefTrigger', () => {
           fieldName: 'commentedArticle',
         },
         spec: {
-          type: 'ref',
+          _type: 'ref',
           refedCol: 'article',
           isOwner: false,
           syncedFields: { title: true, category: true },
@@ -35,10 +47,7 @@ describe('makeRefTrigger', () => {
 
       expect(Object.keys(draft.onCreate ?? {})).toStrictEqual(['comment']);
       expect(mockedGetDoc).not.toHaveBeenCalled();
-      expect(actionResult).toStrictEqual({
-        tag: 'left',
-        error: { type: 'InvalidFieldTypeError' },
-      });
+      expect(actionResult).toStrictEqual(Left(InvalidFieldTypeError()));
     });
 
     it('return error if refField is not type of ref field', async () => {
@@ -48,7 +57,7 @@ describe('makeRefTrigger', () => {
           fieldName: 'commentedArticle',
         },
         spec: {
-          type: 'ref',
+          _type: 'ref',
           refedCol: 'article',
           isOwner: false,
           syncedFields: { title: true, category: true },
@@ -63,17 +72,14 @@ describe('makeRefTrigger', () => {
         snapshot: {
           id: 'comment0',
           data: {
-            ownerUser: { type: 'string', value: 'somerandomstring' },
+            ownerUser: StringField('somerandomstring'),
           },
         },
       });
 
       expect(Object.keys(draft.onCreate ?? {})).toStrictEqual(['comment']);
       expect(mockedGetDoc).not.toHaveBeenCalled();
-      expect(actionResult).toStrictEqual({
-        tag: 'left',
-        error: { type: 'InvalidFieldTypeError' },
-      });
+      expect(actionResult).toStrictEqual(Left(InvalidFieldTypeError()));
     });
 
     it('return error if get doc is error', async () => {
@@ -83,17 +89,16 @@ describe('makeRefTrigger', () => {
           fieldName: 'commentedArticle',
         },
         spec: {
-          type: 'ref',
+          _type: 'ref',
           refedCol: 'article',
           isOwner: false,
           syncedFields: { title: true, category: true },
           thisColRefers: [],
         },
       });
-      const mockedGetDoc = jest.fn<GetDocReturn, GetDocParam>().mockResolvedValueOnce({
-        tag: 'left',
-        error: { type: 'GetDocError' },
-      });
+      const mockedGetDoc = jest
+        .fn<GetDocReturn, GetDocParam>()
+        .mockResolvedValueOnce(Left(GetDocError()));
       const actionResult = await draft.onCreate?.['comment']?.getTransactionCommit?.({
         db: {
           getDoc: mockedGetDoc,
@@ -101,10 +106,10 @@ describe('makeRefTrigger', () => {
         snapshot: {
           id: 'comment0',
           data: {
-            commentedArticle: {
-              type: 'ref',
-              value: { id: 'article0', data: {} },
-            },
+            commentedArticle: RefField({
+              id: 'article0',
+              data: {},
+            }),
           },
         },
       });
@@ -112,7 +117,7 @@ describe('makeRefTrigger', () => {
       expect(Object.keys(draft.onCreate ?? {})).toStrictEqual(['comment']);
       expect(mockedGetDoc).toHaveBeenCalledTimes(1);
       expect(mockedGetDoc).toHaveBeenCalledWith({ col: 'article', id: 'article0' });
-      expect(actionResult).toStrictEqual({ tag: 'left', error: { type: 'GetDocError' } });
+      expect(actionResult).toStrictEqual(Left(GetDocError()));
     });
 
     it('copy ref doc field', async () => {
@@ -122,21 +127,20 @@ describe('makeRefTrigger', () => {
           fieldName: 'commentedArticle',
         },
         spec: {
-          type: 'ref',
+          _type: 'ref',
           refedCol: 'article',
           syncedFields: { title: true, category: true },
           isOwner: false,
           thisColRefers: [],
         },
       });
-      const mockedGetDoc = jest.fn<GetDocReturn, GetDocParam>().mockResolvedValueOnce({
-        tag: 'right',
-        value: {
-          title: { type: 'string', value: 'Article Zero Title' },
-          category: { type: 'string', value: 'Animal' },
-          publishedMedia: { type: 'string', value: 'book' },
-        },
-      });
+      const mockedGetDoc = jest.fn<GetDocReturn, GetDocParam>().mockResolvedValueOnce(
+        Right({
+          title: StringField('Article Zero Title'),
+          category: StringField('Animal'),
+          publishedMedia: StringField('book'),
+        })
+      );
       const actionResult = await draft.onCreate?.['comment']?.getTransactionCommit?.({
         db: {
           getDoc: mockedGetDoc,
@@ -144,10 +148,10 @@ describe('makeRefTrigger', () => {
         snapshot: {
           id: 'comment0',
           data: {
-            commentedArticle: {
-              type: 'ref',
-              value: { id: 'article0', data: {} },
-            },
+            commentedArticle: RefField({
+              id: 'article0',
+              data: {},
+            }),
           },
         },
       });
@@ -155,38 +159,29 @@ describe('makeRefTrigger', () => {
       expect(Object.keys(draft.onCreate ?? {})).toStrictEqual(['comment']);
       expect(mockedGetDoc).toHaveBeenCalledTimes(1);
       expect(mockedGetDoc).toHaveBeenCalledWith({ col: 'article', id: 'article0' });
-      expect(actionResult).toStrictEqual({
-        tag: 'right',
-        value: {
+      expect(actionResult).toStrictEqual(
+        Right({
           comment: {
-            comment0: {
-              op: 'update',
+            comment0: UpdateDocCommit({
               onDocAbsent: 'doNotUpdate',
               data: {
-                commentedArticle: {
-                  type: 'ref',
-                  value: {
-                    title: { type: 'string', value: 'Article Zero Title' },
-                    category: { type: 'string', value: 'Animal' },
-                  },
-                },
+                commentedArticle: RefWriteField({
+                  title: StringField('Article Zero Title'),
+                  category: StringField('Animal'),
+                }),
               },
-            },
+            }),
           },
           _relation: {
-            comment_commentedArticle_article_article0: {
-              op: 'update',
+            comment_commentedArticle_article_article0: UpdateDocCommit({
               onDocAbsent: 'createDoc',
               data: {
-                docIds: {
-                  type: 'stringArrayUnion',
-                  value: 'comment0',
-                },
+                docIds: StringArrayUnionField('comment0'),
               },
-            },
+            }),
           },
-        },
-      });
+        })
+      );
     });
   });
 
@@ -209,16 +204,16 @@ describe('makeRefTrigger', () => {
   //       snapshot: {
   //         id: 'article0',
   //         before: {
-  //           title: { type: 'string', value: 'Keyakizaka renamed to Sakurazaka' },
+  //           title: StringField('Keyakizaka renamed to Sakurazaka' },
   //           publishTime: { type: 'date', value: new Date(2018, 9, 13, 0, 0, 0, 0) },
   //           readMinute: { type: 'number', value: 10 },
-  //           content: { type: 'string', value: 'Its renamed' },
+  //           content: StringField('Its renamed' },
   //         },
   //         after: {
-  //           title: { type: 'string', value: 'Keyakizaka renamed to Sakurazaka' },
+  //           title: StringField('Keyakizaka renamed to Sakurazaka' },
   //           publishTime: { type: 'date', value: new Date(2018, 9, 13, 0, 0, 0, 0) },
   //           readMinute: { type: 'number', value: 10 },
-  //           content: { type: 'string', value: 'Its renamed' },
+  //           content: StringField('Its renamed' },
   //         },
   //       },
   //     });
@@ -245,16 +240,16 @@ describe('makeRefTrigger', () => {
   //       snapshot: {
   //         id: 'article0',
   //         before: {
-  //           title: { type: 'string', value: 'Keyakizaka renamed to Sakurazaka' },
+  //           title: StringField('Keyakizaka renamed to Sakurazaka' },
   //           publishTime: { type: 'date', value: new Date(2018, 9, 13, 0, 0, 0, 0) },
   //           readMinute: { type: 'number', value: 10 },
-  //           content: { type: 'string', value: 'Its renamed' },
+  //           content: StringField('Its renamed' },
   //         },
   //         after: {
-  //           title: { type: 'string', value: 'Keyakizaka46 renamed to Sakurazaka46' },
+  //           title: StringField('Keyakizaka46 renamed to Sakurazaka46' },
   //           publishTime: { type: 'date', value: new Date(2018, 9, 13, 0, 0, 0, 0) },
   //           readMinute: { type: 'number', value: 10 },
-  //           content: { type: 'string', value: 'Its renamed sir' },
+  //           content: StringField('Its renamed sir' },
   //         },
   //       },
   //     });
@@ -271,7 +266,7 @@ describe('makeRefTrigger', () => {
   //               commentedArticle: {
   //                 type: 'ref',
   //                 value: {
-  //                   title: { type: 'string', value: 'Keyakizaka46 renamed to Sakurazaka46' },
+  //                   title: StringField('Keyakizaka46 renamed to Sakurazaka46' },
   //                 },
   //               },
   //             },
@@ -283,7 +278,7 @@ describe('makeRefTrigger', () => {
   //               commentedArticle: {
   //                 type: 'ref',
   //                 value: {
-  //                   title: { type: 'string', value: 'Keyakizaka46 renamed to Sakurazaka46' },
+  //                   title: StringField('Keyakizaka46 renamed to Sakurazaka46' },
   //                 },
   //               },
   //             },
@@ -302,22 +297,19 @@ describe('makeRefTrigger', () => {
           fieldName: 'commentedArticle',
         },
         spec: {
-          type: 'ref',
+          _type: 'ref',
           refedCol: 'article',
           syncedFields: {},
           isOwner: false,
           thisColRefers: [],
         },
       });
-      const mockedGetDoc = jest.fn<GetDocReturn, GetDocParam>().mockResolvedValueOnce({
-        tag: 'right',
-        value: {
-          docIds: {
-            type: 'stringArray',
-            value: ['comment0', 'comment46'],
-          },
-        },
-      });
+      const mockedGetDoc = jest.fn<GetDocReturn, GetDocParam>().mockResolvedValueOnce(
+        Right({
+          docIds: StringArrayField(['comment0', 'comment46']),
+        })
+      );
+
       const mockedDeleteDoc = jest.fn<DeleteDocReturn, DeleteDocParam>();
       const mockedUpdateDoc = jest.fn<UpdateDocReturn, UpdateDocParam>();
       await draft.onDelete?.['article']?.mayFailOp?.({
@@ -329,7 +321,7 @@ describe('makeRefTrigger', () => {
         snapshot: {
           id: 'article0',
           data: {
-            title: { type: 'string', value: 'ARTICLE ZERO TITLE' },
+            title: StringField('ARTICLE ZERO TITLE'),
           },
         },
       });
