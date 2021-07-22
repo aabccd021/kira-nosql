@@ -1,11 +1,25 @@
 import { Dictionary, FieldSpec } from 'kira-core';
 
-// utils
-export type Either<V, E> = Right<V> | Left<E>;
+/**
+ *Either
+ */
+export type Either<E, V> = Left<E> | Right<V>;
 
-export type Right<V> = { readonly tag: 'right'; readonly value: V };
-export type Left<E> = { readonly tag: 'left'; readonly error: E };
+export function Right<V>(value: V): Right<V> {
+  return { _tag: 'right', value };
+}
 
+export type Right<V> = { readonly _tag: 'right'; readonly value: V };
+
+export function Left<V>(error: V): Left<V> {
+  return { _tag: 'left', error };
+}
+
+export type Left<E> = { readonly _tag: 'left'; readonly error: E };
+
+/**
+ *Key
+ */
 export type DocKey = {
   readonly col: string;
   readonly id: string;
@@ -18,24 +32,35 @@ export type RelKey = {
   readonly referCol: string;
 };
 
+/**
+ *Snapshot
+ */
+export type Snapshot = DocSnapshot | DocChange;
+
+export type DocChange = {
+  readonly id: string;
+  readonly before: Doc;
+  readonly after: Doc;
+};
+
 export type DocSnapshot = {
   readonly id: string;
   readonly data: Doc;
 };
 
 /**
- * DocData
+ *Doc
  */
 export type Doc = Dictionary<Field>;
 
 export type WriteDoc = Dictionary<WriteField>;
 
 /**
- * Field
+ *Field
  */
 export type ReadWriteField = StringField | NumberField | DateField | StringArrayField | ImageField;
 
-export type Field = ReadWriteField | RefReadField;
+export type Field = ReadWriteField | RefField;
 
 export type WriteField =
   | ReadWriteField
@@ -46,71 +71,154 @@ export type WriteField =
   | RefWriteField;
 
 /**
- * Primitive Fields
+ *Primitive Fields
  */
+
+/**
+ *StringField
+ */
+export function StringField(value: string): StringField {
+  return { _type: 'string', value };
+}
+
 export type StringField = {
-  readonly type: 'string';
+  readonly _type: 'string';
   readonly value: string;
 };
 
+/**
+ *NumberField
+ */
+export function NumberField(value: number): NumberField {
+  return { _type: 'number', value };
+}
+
 export type NumberField = {
-  readonly type: 'number';
+  readonly _type: 'number';
   readonly value: number;
 };
 
+/**
+ *DateField
+ */
+export function DateField(value: Date): DateField {
+  return { _type: 'date', value };
+}
+
 export type DateField = {
-  readonly type: 'date';
+  readonly _type: 'date';
   readonly value: Date;
 };
 
 /**
- * ReadFields
+ *ReadFields
  */
-export type RefReadField = {
-  readonly type: 'ref';
+
+/**
+ *RefReadField
+ */
+export function RefField(value: DocSnapshot): RefField {
+  return { _type: 'ref', value };
+}
+
+export type RefField = {
+  readonly _type: 'ref';
   readonly value: DocSnapshot;
 };
 
+/**
+ *StringArrayField
+ */
+export function StringArrayField(value: readonly string[]): StringArrayField {
+  return { _type: 'stringArray', value };
+}
+
 export type StringArrayField = {
-  readonly type: 'stringArray';
+  readonly _type: 'stringArray';
   readonly value: readonly string[];
 };
 
+/**
+ *ImageField
+ */
+export function ImageField(value: ImageFieldValue): ImageField {
+  return { _type: 'image', value };
+}
+
 export type ImageField = {
-  readonly type: 'image';
-  readonly value: {
-    readonly url: string;
-  };
+  readonly _type: 'image';
+  readonly value: ImageFieldValue;
+};
+
+export type ImageFieldValue = {
+  readonly url: string;
 };
 
 /**
- * WriteFields
+ *WriteFields
  */
+
+/**
+ *RefWriteField
+ */
+export function RefWriteField(value: WriteDoc): RefWriteField {
+  return { _type: 'ref', value };
+}
+
 export type RefWriteField = {
-  readonly type: 'ref';
+  readonly _type: 'ref';
   readonly value: WriteDoc;
 };
 
+/**
+ *CreationTimeField
+ */
+export function CreationTimeField(): CreationTimeField {
+  return { _type: 'creationTime' };
+}
+
 export type CreationTimeField = {
-  readonly type: 'creationTime';
+  readonly _type: 'creationTime';
 };
 
+/**
+ *CreationTimeField
+ */
+export function IncrementField(value: number): IncrementField {
+  return { _type: 'increment', value };
+}
+
 export type IncrementField = {
-  readonly type: 'increment';
+  readonly _type: 'increment';
   readonly value: number;
 };
 
+/**
+ *StringArrayUnionField
+ */
+export function StringArrayUnionField(value: string): StringArrayUnionField {
+  return { _type: 'stringArrayUnion', value };
+}
 export type StringArrayUnionField = {
-  readonly type: 'stringArrayUnion';
+  readonly _type: 'stringArrayUnion';
   readonly value: string;
 };
+
+/**
+ *StringArrayRemoveField
+ */
+export function StringArrayRemoveField(value: string): StringArrayRemoveField {
+  return { _type: 'stringArrayRemove', value };
+}
 
 export type StringArrayRemoveField = {
-  readonly type: 'stringArrayRemove';
+  readonly _type: 'stringArrayRemove';
   readonly value: string;
 };
 
-// DB
+/**
+ *DB
+ */
 export type DBWriteResult = { readonly isSuccess: boolean };
 
 export type DB = {
@@ -119,7 +227,7 @@ export type DB = {
   readonly deleteDoc: DeleteDoc;
 };
 
-export type GetDoc = (key: DocKey) => Promise<Either<Doc, GetDocError>>;
+export type GetDoc = (key: DocKey) => Promise<Either<GetDocError, Doc>>;
 
 export type UpdateDoc = (param: {
   readonly key: DocKey;
@@ -128,13 +236,29 @@ export type UpdateDoc = (param: {
 
 export type DeleteDoc = (key: DocKey) => Promise<DBWriteResult>;
 
-// Trigger
+/**
+ *Trigger
+ */
+export type Trigger = Dictionary<ColTrigger>;
+
+export type ColTrigger = {
+  readonly onCreate?: ActionTrigger<DocSnapshot>;
+  readonly onUpdate?: ActionTrigger<DocChange>;
+  readonly onDelete?: ActionTrigger<DocSnapshot>;
+};
+
+export type ActionTrigger<S extends Snapshot> = {
+  readonly getTransactionCommits: readonly DraftGetTransactionCommit<S>[];
+  readonly mayFailOps: readonly MayFailOp<S>[];
+};
+
+/**
+ *Draft
+ */
 export type DraftMakerContext = {
   readonly colName: string;
   readonly fieldName: string;
 };
-
-export type DraftError = { readonly type: 'DraftError' };
 
 export type Draft = {
   readonly onCreate?: ActionDraft<DocSnapshot>;
@@ -149,54 +273,12 @@ export type ColDraft<S extends Snapshot> = {
   readonly mayFailOp?: MayFailOp<S>;
 };
 
-export type Trigger = Dictionary<ColTrigger>;
-
-export type ColTrigger = {
-  readonly onCreate?: ActionTrigger<DocSnapshot>;
-  readonly onUpdate?: ActionTrigger<DocChange>;
-  readonly onDelete?: ActionTrigger<DocSnapshot>;
-};
-
-export type ActionTrigger<S extends Snapshot> = {
-  readonly getTransactionCommits: readonly DraftGetTransactionCommit<S>[];
-  readonly mayFailOps: readonly MayFailOp<S>[];
-};
-
-// Draft Content
-export type TransactionCommit = Dictionary<ColTransactionCommit>;
-export type ColTransactionCommit = Dictionary<DocCommit>;
-
-export type DocCommit =
-  | {
-      readonly op: 'update';
-      readonly data: WriteDoc;
-      readonly onDocAbsent: 'createDoc' | 'doNotUpdate';
-    }
-  | { readonly op: 'delete' };
-
-export type Snapshot = DocSnapshot | DocChange;
-
-export type DocChange = {
-  readonly id: string;
-  readonly before: Doc;
-  readonly after: Doc;
-};
-
-export type MayFailOp<S extends Snapshot> = (param: {
-  readonly db: {
-    readonly getDoc: GetDoc;
-    readonly updateDoc: UpdateDoc;
-    readonly deleteDoc: DeleteDoc;
-  };
-  readonly snapshot: S;
-}) => Promise<void>;
-
 export type DraftGetTransactionCommit<S extends Snapshot> = (param: {
+  readonly snapshot: S;
   readonly db: {
     readonly getDoc: GetDoc;
   };
-  readonly snapshot: S;
-}) => Promise<Either<TransactionCommit, DraftGetTransactionCommitError>>;
+}) => Promise<Either<DraftGetTransactionCommitError, TransactionCommit>>;
 
 export type SpecToDraft = (param: {
   readonly colName: string;
@@ -204,15 +286,110 @@ export type SpecToDraft = (param: {
   readonly spec: FieldSpec;
 }) => Draft;
 
-// Errors
-export type InvalidFieldTypeError = { readonly type: 'InvalidFieldTypeError' };
+/**
+ *Commit
+ */
+export type TransactionCommit = Dictionary<ColTransactionCommit>;
 
-export type GetDocError = { readonly type: 'GetDocError' };
+export type ColTransactionCommit = Dictionary<DocCommit>;
 
-export type IncompatibleDocOpError = { readonly type: 'IncompatibleDocOpError' };
+export type MayFailOp<S extends Snapshot> = (param: {
+  readonly snapshot: S;
+  readonly db: {
+    readonly getDoc: GetDoc;
+    readonly updateDoc: UpdateDoc;
+    readonly deleteDoc: DeleteDoc;
+  };
+}) => Promise<void>;
 
+/**
+ * DocCommit
+ */
+export type DocCommit = UpdateDocCommit | DeleteDocCommit;
+
+/**
+ * DeleteDocCommit
+ */
+export function DeleteDocCommit(): DeleteDocCommit {
+  return { _type: 'delete' };
+}
+
+export type DeleteDocCommit = { readonly _type: 'delete' };
+
+/**
+ * UpdateDocCommit
+ */
+export type UpdateDocCommitValue = {
+  readonly data: WriteDoc;
+  readonly onDocAbsent: 'createDoc' | 'doNotUpdate';
+};
+
+export function UpdateDocCommit(value: UpdateDocCommitValue): UpdateDocCommit {
+  return { ...value, _type: 'update' };
+}
+
+export type UpdateDocCommit = {
+  readonly _type: 'update';
+} & UpdateDocCommitValue;
+
+/**
+ *Errors
+ */
+
+/**
+ *InvalidFieldTypeError
+ */
+export function InvalidFieldTypeError(): InvalidFieldTypeError {
+  return { _type: 'InvalidFieldTypeError' };
+}
+
+export type InvalidFieldTypeError = {
+  readonly _type: 'InvalidFieldTypeError';
+};
+
+/**
+ * GetDocError
+ */
+export function GetDocError(): GetDocError {
+  return { _type: 'GetDocError' };
+}
+
+export type GetDocError = {
+  readonly _type: 'GetDocError';
+};
+
+/**
+ * IncompatibleDocOpError
+ */
+export function IncompatibleDocOpError(): IncompatibleDocOpError {
+  return { _type: 'IncompatibleDocOpError' };
+}
+
+export type IncompatibleDocOpError = {
+  readonly _type: 'IncompatibleDocOpError';
+};
+
+/**
+ * DraftGetTransactionCommitError
+ */
 export type DraftGetTransactionCommitError = GetDocError | InvalidFieldTypeError;
 
+/**
+ * GetTransactionCommitError
+ */
 export type GetTransactionCommitError = IncompatibleDocOpError | DraftGetTransactionCommitError;
 
+/**
+ * GetRelError
+ */
 export type GetRelError = InvalidFieldTypeError | GetDocError;
+
+/**
+ *  DraftError
+ */
+export function DraftError(): DraftError {
+  return { _type: 'DraftError' };
+}
+export type DraftError = {
+  readonly _type: 'DraftError';
+};

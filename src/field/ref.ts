@@ -11,8 +11,16 @@ import {
   Field,
   GetDoc,
   GetRelError,
+  InvalidFieldTypeError,
+  Left,
+  RefField,
+  RefWriteField,
   RelKey,
+  Right,
+  StringArrayRemoveField,
+  StringArrayUnionField,
   UpdateDoc,
+  UpdateDocCommit,
   WriteDoc,
   WriteField,
 } from '../type';
@@ -28,21 +36,15 @@ function readToWriteField([fieldName, field]: readonly [string, Field]): readonl
   string,
   WriteField
 ] {
-  if (field.type === 'ref') {
-    return [
-      fieldName,
-      {
-        type: 'ref',
-        value: toWriteDoc(field.value.data),
-      },
-    ];
+  if (field._type === 'ref') {
+    return [fieldName, RefWriteField(toWriteDoc(field.value.data))];
   }
   if (
-    field.type === 'date' ||
-    field.type === 'number' ||
-    field.type === 'string' ||
-    field.type === 'stringArray' ||
-    field.type === 'image'
+    field._type === 'date' ||
+    field._type === 'number' ||
+    field._type === 'string' ||
+    field._type === 'stringArray' ||
+    field._type === 'image'
   ) {
     return [fieldName, field];
   }
@@ -62,15 +64,12 @@ function filterSyncedFields({
       if (field === true) {
         return { ...prev, [fieldName]: diffField };
       }
-      if (diffField.type === 'ref') {
+      if (diffField._type === 'ref') {
         const data = filterSyncedFields({ data: diffField.value.data, syncedFields: field });
         if (data !== undefined) {
           return {
             ...prev,
-            [fieldName]: {
-              type: 'ref',
-              value: { id: diffField.value.id, data },
-            },
+            [fieldName]: RefField({ id: diffField.value.id, data }),
           };
         }
       }
@@ -86,30 +85,30 @@ function isEqualReadDocField({
   readonly beforeField?: Field;
   readonly afterField: Field;
 }): boolean {
-  if (afterField.type === 'date') {
+  if (afterField._type === 'date') {
     return (
-      beforeField?.type === 'date' && afterField.value.getTime() === beforeField.value.getTime()
+      beforeField?._type === 'date' && afterField.value.getTime() === beforeField.value.getTime()
     );
   }
-  if (afterField.type === 'number') {
-    return beforeField?.type === 'number' && afterField.value === beforeField.value;
+  if (afterField._type === 'number') {
+    return beforeField?._type === 'number' && afterField.value === beforeField.value;
   }
-  if (afterField.type === 'string') {
-    return beforeField?.type === 'string' && afterField.value === beforeField.value;
+  if (afterField._type === 'string') {
+    return beforeField?._type === 'string' && afterField.value === beforeField.value;
   }
-  if (afterField.type === 'stringArray') {
+  if (afterField._type === 'stringArray') {
     return (
-      beforeField?.type === 'stringArray' &&
+      beforeField?._type === 'stringArray' &&
       afterField.value.length === beforeField.value.length &&
       afterField.value.every((val, idx) => val === beforeField.value[idx])
     );
   }
-  if (afterField.type === 'image') {
-    return beforeField?.type === 'image' && beforeField.value.url === afterField.value.url;
+  if (afterField._type === 'image') {
+    return beforeField?._type === 'image' && beforeField.value.url === afterField.value.url;
   }
-  if (afterField.type === 'ref') {
+  if (afterField._type === 'ref') {
     return (
-      beforeField?.type === 'ref' &&
+      beforeField?._type === 'ref' &&
       Object.entries(afterField.value.data).every(
         ([fieldName, aff]) =>
           afterField.value.id === beforeField.value.id &&
@@ -139,21 +138,20 @@ async function getRel({
   readonly db: {
     readonly getDoc: GetDoc;
   };
-}): Promise<Either<readonly string[], GetRelError>> {
+}): Promise<Either<GetRelError, readonly string[]>> {
   const relDoc = await db.getDoc(relToDocKey(key));
 
-  if (relDoc.tag === 'left') {
+  if (relDoc._tag === 'left') {
     return relDoc;
   }
 
   const referDocIds = relDoc.value[DOC_IDS_FIELD_NAME];
-  if (referDocIds?.type !== 'stringArray') {
-    return {
-      tag: 'left',
-      error: { type: 'InvalidFieldTypeError' },
-    };
+
+  if (referDocIds?._type !== 'stringArray') {
+    return Left(InvalidFieldTypeError());
   }
-  return { tag: 'right', value: referDocIds.value };
+
+  return Right(referDocIds.value);
 }
 
 async function propagateRefUpdate({
@@ -199,7 +197,7 @@ async function propagateRefUpdate({
     },
   });
 
-  if (referDocIds.tag === 'left') {
+  if (referDocIds._tag === 'left') {
     return;
   }
 
@@ -207,12 +205,10 @@ async function propagateRefUpdate({
     db.updateDoc({
       key: { col: referCol, id: referDocId },
       docData: {
-        [referField]: {
-          type: 'ref',
-          value: toWriteDoc(syncData),
-        },
+        [referField]: RefWriteField(toWriteDoc(syncData)),
       },
     });
+
     thisColRefers.forEach((thisColRefer) => {
       thisColRefer.fields.forEach((thisColReferField) => {
         propagateRefUpdate({
@@ -228,13 +224,10 @@ async function propagateRefUpdate({
             id: referDocId,
             before: {},
             after: {
-              [referField]: {
-                type: 'ref',
-                value: {
-                  id: refedDoc.id,
-                  data: syncData,
-                },
-              },
+              [referField]: RefField({
+                id: refedDoc.id,
+                data: syncData,
+              }),
             },
           },
         });
@@ -257,52 +250,45 @@ export function makeRefDraft({
           [colName]: {
             getTransactionCommit: async ({ db, snapshot }) => {
               const refField = snapshot.data?.[fieldName];
-              if (refField?.type !== 'ref') {
-                return { tag: 'left', error: { type: 'InvalidFieldTypeError' } };
+
+              if (refField?._type !== 'ref') {
+                return Left(InvalidFieldTypeError());
               }
 
               const refedDoc = await db.getDoc({ col: spec.refedCol, id: refField.value.id });
-              if (refedDoc.tag === 'left') return refedDoc;
+
+              if (refedDoc._tag === 'left') return refedDoc;
 
               const syncedFieldNames = Object.keys(spec.syncedFields);
-              return {
-                tag: 'right',
-                value: {
-                  [colName]: {
-                    [snapshot.id]: {
-                      op: 'update',
-                      onDocAbsent: 'doNotUpdate',
-                      data: {
-                        [fieldName]: {
-                          type: 'ref',
-                          value: Object.fromEntries(
-                            Object.entries(refedDoc.value)
-                              .filter(([fieldName]) => syncedFieldNames.includes(fieldName))
-                              .map(readToWriteField)
-                          ),
-                        },
-                      },
+              return Right({
+                [colName]: {
+                  [snapshot.id]: UpdateDocCommit({
+                    onDocAbsent: 'doNotUpdate',
+                    data: {
+                      [fieldName]: RefWriteField(
+                        Object.fromEntries(
+                          Object.entries(refedDoc.value)
+                            .filter(([fieldName]) => syncedFieldNames.includes(fieldName))
+                            .map(readToWriteField)
+                        )
+                      ),
                     },
-                  },
-                  [REL_COL]: {
-                    [relToDocId({
-                      refedId: refField.value.id,
-                      refedCol: spec.refedCol,
-                      referCol: colName,
-                      referField: fieldName,
-                    })]: {
-                      op: 'update',
-                      onDocAbsent: 'createDoc',
-                      data: {
-                        [DOC_IDS_FIELD_NAME]: {
-                          type: 'stringArrayUnion',
-                          value: snapshot.id,
-                        },
-                      },
-                    },
-                  },
+                  }),
                 },
-              };
+                [REL_COL]: {
+                  [relToDocId({
+                    refedId: refField.value.id,
+                    refedCol: spec.refedCol,
+                    referCol: colName,
+                    referField: fieldName,
+                  })]: UpdateDocCommit({
+                    onDocAbsent: 'createDoc',
+                    data: {
+                      [DOC_IDS_FIELD_NAME]: StringArrayUnionField(snapshot.id),
+                    },
+                  }),
+                },
+              });
             },
           },
         }
@@ -326,31 +312,26 @@ export function makeRefDraft({
       [colName]: {
         getTransactionCommit: async ({ snapshot }) => {
           const refField = snapshot.data?.[fieldName];
-          if (refField?.type !== 'ref') {
-            return { tag: 'left', error: { type: 'InvalidFieldTypeError' } };
+
+          if (refField?._type !== 'ref') {
+            return Left(InvalidFieldTypeError());
           }
-          return {
-            tag: 'right',
-            value: {
-              [REL_COL]: {
-                [relToDocId({
-                  refedId: refField.value.id,
-                  refedCol: spec.refedCol,
-                  referCol: colName,
-                  referField: fieldName,
-                })]: {
-                  op: 'update',
-                  onDocAbsent: 'doNotUpdate',
-                  data: {
-                    [DOC_IDS_FIELD_NAME]: {
-                      type: 'stringArrayRemove',
-                      value: snapshot.id,
-                    },
-                  },
+
+          return Right({
+            [REL_COL]: {
+              [relToDocId({
+                refedId: refField.value.id,
+                refedCol: spec.refedCol,
+                referCol: colName,
+                referField: fieldName,
+              })]: UpdateDocCommit({
+                onDocAbsent: 'doNotUpdate',
+                data: {
+                  [DOC_IDS_FIELD_NAME]: StringArrayRemoveField(snapshot.id),
                 },
-              },
+              }),
             },
-          };
+          });
         },
       },
       [spec.refedCol]: {
@@ -363,7 +344,7 @@ export function makeRefDraft({
           };
 
           const referDocIds = await getRel({ db, key });
-          if (referDocIds.tag === 'left') {
+          if (referDocIds._tag === 'left') {
             return;
           }
 

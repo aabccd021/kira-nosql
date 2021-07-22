@@ -1,4 +1,4 @@
-import { makeCreationTimeDraft } from '../../src';
+import { CreationTimeField, makeCreationTimeDraft, Right, UpdateDocCommit } from '../../src';
 import { GetDocParam, GetDocReturn } from '../util';
 
 describe('makeCountTimeTrigger', () => {
@@ -9,7 +9,7 @@ describe('makeCountTimeTrigger', () => {
           colName: 'article',
           fieldName: 'creationTime',
         },
-        spec: { type: 'creationTime' },
+        spec: { _type: 'creationTime' },
       });
       const mockedGetDoc = jest.fn<GetDocReturn, GetDocParam>();
 
@@ -22,20 +22,18 @@ describe('makeCountTimeTrigger', () => {
 
       expect(Object.keys(draft.onCreate ?? {})).toStrictEqual(['article']);
       expect(mockedGetDoc).not.toHaveBeenCalled();
-      expect(actionResult).toStrictEqual({
-        tag: 'right',
-        value: {
+      expect(actionResult).toStrictEqual(
+        Right({
           article: {
-            article0: {
-              op: 'update',
+            article0: UpdateDocCommit({
               onDocAbsent: 'doNotUpdate',
               data: {
-                creationTime: { type: 'creationTime' },
+                creationTime: CreationTimeField(),
               },
-            },
+            }),
           },
-        },
-      });
+        })
+      );
     });
   });
 
@@ -46,7 +44,7 @@ describe('makeCountTimeTrigger', () => {
           colName: 'article',
           fieldName: 'creationTime',
         },
-        spec: { type: 'creationTime' },
+        spec: { _type: 'creationTime' },
       });
       expect(draft.onUpdate).toBeUndefined();
     });
@@ -59,7 +57,7 @@ describe('makeCountTimeTrigger', () => {
           colName: 'article',
           fieldName: 'creationTime',
         },
-        spec: { type: 'creationTime' },
+        spec: { _type: 'creationTime' },
       });
       expect(draft.onDelete).toBeUndefined();
     });

@@ -5,14 +5,18 @@ import {
   ColDraft,
   ColTransactionCommit,
   DB,
+  DeleteDocCommit,
   Either,
   GetDoc,
   GetTransactionCommitError,
   IncompatibleDocOpError,
+  Left,
+  Right,
   Snapshot,
   SpecToDraft,
   TransactionCommit,
   Trigger,
+  UpdateDocCommit,
 } from './type';
 
 function isDefined<T>(t: T | undefined): t is T {
@@ -64,87 +68,62 @@ export async function getTransactionCommit<S extends Snapshot>({
   readonly db: {
     readonly getDoc: GetDoc;
   };
-}): Promise<Either<TransactionCommit, GetTransactionCommitError>> {
+}): Promise<Either<GetTransactionCommitError, TransactionCommit>> {
   return Promise.all(actionTrigger.getTransactionCommits.map((gtc) => gtc({ db, snapshot }))).then(
     (transactionCommits) =>
-      transactionCommits.reduce<Either<TransactionCommit, GetTransactionCommitError>>(
+      transactionCommits.reduce<Either<GetTransactionCommitError, TransactionCommit>>(
         (prevTC, curTC) => {
-          if (prevTC.tag === 'left') return prevTC;
-          if (curTC.tag === 'left') return curTC;
+          if (prevTC._tag === 'left') return prevTC;
+          if (curTC._tag === 'left') return curTC;
           return Object.entries(curTC.value).reduce<
-            Either<TransactionCommit, IncompatibleDocOpError>
-          >(
-            (prevTC, [curColName, curColTC]) => {
-              if (prevTC.tag === 'left') return prevTC;
+            Either<IncompatibleDocOpError, TransactionCommit>
+          >((prevTC, [curColName, curColTC]) => {
+            if (prevTC._tag === 'left') return prevTC;
 
-              const prevColTc = prevTC.value[curColName];
-              if (prevColTc === undefined) {
-                return {
-                  tag: 'right',
-                  value: { ...prevTC.value, [curColName]: curColTC },
-                };
+            const prevColTc = prevTC.value[curColName];
+            if (prevColTc === undefined) {
+              return Right({ ...prevTC.value, [curColName]: curColTC });
+            }
+            const updatedColTC = Object.entries(curColTC).reduce<
+              Either<IncompatibleDocOpError, ColTransactionCommit>
+            >((prevColTC, [docId, docOp]) => {
+              if (prevColTC._tag === 'left') return prevColTC;
+
+              const prevOp = prevColTC.value[docId];
+              if (prevOp === undefined) {
+                return Right({ ...prevColTC.value, [docId]: docOp });
               }
-              const updatedColTC = Object.entries(curColTC).reduce<
-                Either<ColTransactionCommit, IncompatibleDocOpError>
-              >(
-                (prevColTC, [docId, docOp]) => {
-                  if (prevColTC.tag === 'left') return prevColTC;
+              if (docOp._type === 'delete' && prevOp?._type === 'delete') {
+                return Right({
+                  ...prevColTC.value,
+                  [docId]: DeleteDocCommit(),
+                });
+              }
+              if (
+                docOp._type === 'update' &&
+                prevOp?._type === 'update' &&
+                docOp.onDocAbsent === prevOp.onDocAbsent
+              ) {
+                return Right({
+                  ...prevColTC.value,
+                  [docId]: UpdateDocCommit({
+                    onDocAbsent: docOp.onDocAbsent,
+                    data: { ...docOp.data, ...prevOp.data },
+                  }),
+                });
+              }
+              return Left(IncompatibleDocOpError());
+            }, Right(prevColTc));
 
-                  const prevOp = prevColTC.value[docId];
-                  if (prevOp === undefined) {
-                    return {
-                      tag: 'right',
-                      value: { ...prevColTC.value, [docId]: docOp },
-                    };
-                  }
-                  if (docOp.op === 'delete' && prevOp?.op === 'delete') {
-                    return {
-                      tag: 'right',
-                      value: {
-                        ...prevColTC.value,
-                        [docId]: { op: 'delete' },
-                      },
-                    };
-                  }
-                  if (
-                    docOp.op === 'update' &&
-                    prevOp?.op === 'update' &&
-                    docOp.onDocAbsent === prevOp.onDocAbsent
-                  ) {
-                    return {
-                      tag: 'right',
-                      value: {
-                        ...prevColTC.value,
-                        [docId]: {
-                          op: 'update',
-                          onDocAbsent: docOp.onDocAbsent,
-                          data: { ...docOp.data, ...prevOp.data },
-                        },
-                      },
-                    };
-                  }
-                  return {
-                    tag: 'left',
-                    error: { type: 'IncompatibleDocOpError' },
-                  };
-                },
-                { tag: 'right', value: prevColTc }
-              );
+            if (updatedColTC._tag === 'left') return updatedColTC;
 
-              if (updatedColTC.tag === 'left') return updatedColTC;
-
-              return {
-                tag: 'right',
-                value: {
-                  ...prevTC.value,
-                  [curColName]: updatedColTC.value,
-                },
-              };
-            },
-            { tag: 'right', value: prevTC.value }
-          );
+            return Right({
+              ...prevTC.value,
+              [curColName]: updatedColTC.value,
+            });
+          }, Right(prevTC.value));
         },
-        { tag: 'right', value: {} }
+        Right({})
       )
   );
 }

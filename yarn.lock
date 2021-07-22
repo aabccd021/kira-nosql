@@ -3056,10 +3056,10 @@ kind-of@^6.0.0, kind-of@^6.0.2:
   resolved "https://registry.yarnpkg.com/kind-of/-/kind-of-6.0.3.tgz#07c05034a6c349fa06e24fa35aa76db4580ce4dd"
   integrity sha512-dcS1ul+9tmeD95T+x28/ehLgd9mENa3LsvDTtzm3vyBEO7RPptvAD+t44WVXaUjTBRcrpFeFlC8WCruUR456hw==
 
-kira-core@^0.3.17:
-  version "0.3.17"
-  resolved "https://registry.yarnpkg.com/kira-core/-/kira-core-0.3.17.tgz#13dab2165ee14b43141e62a07857fe31bb6acd29"
-  integrity sha512-u1fQ1MJiRHpYnupC8fU4vxWsq54rSuzbQGSudYka/85sH5vmQUSYPyp6lEzbODehCpAUPnxjIIZTR/FLyvVbvA==
+kira-core@^0.3.18:
+  version "0.3.18"
+  resolved "https://registry.yarnpkg.com/kira-core/-/kira-core-0.3.18.tgz#1ca6e20c21e965ed2370b98ea185f93d5dfdc0be"
+  integrity sha512-4EdIQ6+L9/6R5djezdF6QAWtcJn9movYJLVSBvjtYR47CX5TFv7FYo23oF9d+SJ73MTBCrQckDJrvIOtWR/7Zg==
 
 kleur@^3.0.3:
   version "3.0.3"

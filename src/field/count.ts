@@ -1,6 +1,15 @@
 import { CountFieldSpec } from 'kira-core';
 
-import { Draft, DraftMakerContext } from '../type';
+import {
+  Draft,
+  DraftMakerContext,
+  IncrementField,
+  InvalidFieldTypeError,
+  Left,
+  NumberField,
+  Right,
+  UpdateDocCommit,
+} from '../type';
 
 export function makeCountDraft({
   context: { colName, fieldName },
@@ -13,45 +22,36 @@ export function makeCountDraft({
     onCreate: {
       [colName]: {
         getTransactionCommit: async ({ snapshot }) => {
-          return {
-            tag: 'right',
-            value: {
-              [colName]: {
-                [snapshot.id]: {
-                  op: 'update',
-                  onDocAbsent: 'doNotUpdate',
-                  data: {
-                    [fieldName]: { type: 'number', value: 0 },
-                  },
+          return Right({
+            [colName]: {
+              [snapshot.id]: UpdateDocCommit({
+                onDocAbsent: 'doNotUpdate',
+                data: {
+                  [fieldName]: NumberField(0),
                 },
-              },
+              }),
             },
-          };
+          });
         },
       },
       [spec.countedCol]: {
         getTransactionCommit: async ({ snapshot }) => {
           const counterDoc = snapshot.data?.[spec.groupByRef];
-          if (counterDoc?.type !== 'ref') {
-            return {
-              tag: 'left',
-              error: { type: 'InvalidFieldTypeError' },
-            };
+
+          if (counterDoc?._type !== 'ref') {
+            return Left(InvalidFieldTypeError());
           }
-          return {
-            tag: 'right',
-            value: {
-              [colName]: {
-                [counterDoc.value.id]: {
-                  op: 'update',
-                  onDocAbsent: 'doNotUpdate',
-                  data: {
-                    [fieldName]: { type: 'increment', value: 1 },
-                  },
+
+          return Right({
+            [colName]: {
+              [counterDoc.value.id]: UpdateDocCommit({
+                onDocAbsent: 'doNotUpdate',
+                data: {
+                  [fieldName]: IncrementField(1),
                 },
-              },
+              }),
             },
-          };
+          });
         },
       },
     },
@@ -59,26 +59,21 @@ export function makeCountDraft({
       [spec.countedCol]: {
         getTransactionCommit: async ({ snapshot }) => {
           const counterDoc = snapshot.data?.[spec.groupByRef];
-          if (counterDoc?.type !== 'ref') {
-            return {
-              tag: 'left',
-              error: { type: 'InvalidFieldTypeError' },
-            };
+
+          if (counterDoc?._type !== 'ref') {
+            return Left(InvalidFieldTypeError());
           }
-          return {
-            tag: 'right',
-            value: {
-              [colName]: {
-                [counterDoc.value.id]: {
-                  op: 'update',
-                  onDocAbsent: 'doNotUpdate',
-                  data: {
-                    [fieldName]: { type: 'increment', value: -1 },
-                  },
+
+          return Right({
+            [colName]: {
+              [counterDoc.value.id]: UpdateDocCommit({
+                onDocAbsent: 'doNotUpdate',
+                data: {
+                  [fieldName]: IncrementField(-1),
                 },
-              },
+              }),
             },
-          };
+          });
         },
       },
     },
