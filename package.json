@@ -80,6 +80,16 @@
     "ignorePatterns": [
       "lib/**"
     ],
+    "overrides": [
+      {
+        "files": [
+          "test/**/*.ts"
+        ],
+        "rules": {
+          "functional/no-return-void": "off"
+        }
+      }
+    ],
     "rules": {
       "@typescript-eslint/no-unused-vars": "off",
       "eqeqeq": "warn",

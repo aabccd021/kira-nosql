@@ -6,11 +6,16 @@ import {
   NumberField,
   RefField,
   Right,
+  testSetup,
+  testTeardown,
   UpdateDocCommit,
 } from '../../src';
 import { GetDocParam, GetDocReturn } from '../util';
 
 describe('makeCountTrigger', () => {
+  beforeAll(testSetup);
+  afterAll(testTeardown);
+
   describe('onCreate', () => {
     it('set bookmarkCount to 0 when article created', async () => {
       const draft = makeCountDraft({
@@ -119,7 +124,21 @@ describe('makeCountTrigger', () => {
 
       expect(Object.keys(draft.onCreate ?? {})).toStrictEqual(['article', 'bookmark']);
       expect(mockedGetDoc).not.toHaveBeenCalled();
-      expect(actionResult).toStrictEqual(Left(InvalidFieldTypeError()));
+      expect(actionResult).toStrictEqual(
+        Left(
+          InvalidFieldTypeError({
+            colName: 'article',
+            doc: {
+              bookmarkedarticle: {
+                _type: 'number',
+                value: 0,
+              },
+            },
+            expectedFieldType: 'ref',
+            fieldName: 'bookmarkCount',
+          })
+        )
+      );
     });
 
     it('returns error if counterDoc is empty', async () => {
@@ -147,7 +166,16 @@ describe('makeCountTrigger', () => {
 
       expect(Object.keys(draft.onCreate ?? {})).toStrictEqual(['article', 'bookmark']);
       expect(mockedGetDoc).not.toHaveBeenCalled();
-      expect(actionResult).toStrictEqual(Left(InvalidFieldTypeError()));
+      expect(actionResult).toStrictEqual(
+        Left(
+          InvalidFieldTypeError({
+            colName: 'article',
+            fieldName: 'bookmarkCount',
+            expectedFieldType: 'ref',
+            doc: {},
+          })
+        )
+      );
     });
   });
 
@@ -237,7 +265,20 @@ describe('makeCountTrigger', () => {
 
       expect(Object.keys(draft.onDelete ?? {})).toStrictEqual(['bookmark']);
       expect(mockedGetDoc).not.toHaveBeenCalled();
-      expect(actionResult).toStrictEqual(Left(InvalidFieldTypeError()));
+      expect(actionResult).toMatchObject({
+        _tag: 'left',
+        error: InvalidFieldTypeError({
+          colName: 'article',
+          doc: {
+            bookmarkedarticle: {
+              _type: 'number',
+              value: 0,
+            },
+          },
+          expectedFieldType: 'ref',
+          fieldName: 'bookmarkCount',
+        }),
+      });
     });
 
     it('returns error if counterDoc is empty', async () => {
@@ -262,7 +303,16 @@ describe('makeCountTrigger', () => {
 
       expect(Object.keys(draft.onDelete ?? {})).toStrictEqual(['bookmark']);
       expect(mockedGetDoc).not.toHaveBeenCalled();
-      expect(actionResult).toStrictEqual(Left(InvalidFieldTypeError()));
+      expect(actionResult).toStrictEqual(
+        Left(
+          InvalidFieldTypeError({
+            colName: 'article',
+            fieldName: 'bookmarkCount',
+            expectedFieldType: 'ref',
+            doc: {},
+          })
+        )
+      );
     });
   });
 });

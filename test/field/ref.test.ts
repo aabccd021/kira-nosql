@@ -9,6 +9,8 @@ import {
   StringArrayField,
   StringArrayUnionField,
   StringField,
+  testSetup,
+  testTeardown,
   UpdateDocCommit,
 } from '../../src';
 import {
@@ -21,6 +23,9 @@ import {
 } from '../util';
 
 describe('makeRefTrigger', () => {
+  beforeAll(testSetup);
+  afterAll(testTeardown);
+
   describe('onCreate', () => {
     it('return error if refField is empty', async () => {
       const draft = makeRefDraft({
@@ -47,7 +52,16 @@ describe('makeRefTrigger', () => {
 
       expect(Object.keys(draft.onCreate ?? {})).toStrictEqual(['comment']);
       expect(mockedGetDoc).not.toHaveBeenCalled();
-      expect(actionResult).toStrictEqual(Left(InvalidFieldTypeError()));
+      expect(actionResult).toStrictEqual(
+        Left(
+          InvalidFieldTypeError({
+            colName: 'comment',
+            fieldName: 'commentedArticle',
+            expectedFieldType: 'ref',
+            doc: {},
+          })
+        )
+      );
     });
 
     it('return error if refField is not type of ref field', async () => {
@@ -79,7 +93,21 @@ describe('makeRefTrigger', () => {
 
       expect(Object.keys(draft.onCreate ?? {})).toStrictEqual(['comment']);
       expect(mockedGetDoc).not.toHaveBeenCalled();
-      expect(actionResult).toStrictEqual(Left(InvalidFieldTypeError()));
+      expect(actionResult).toStrictEqual(
+        Left(
+          InvalidFieldTypeError({
+            colName: 'comment',
+            doc: {
+              ownerUser: {
+                _type: 'string',
+                value: 'somerandomstring',
+              },
+            },
+            expectedFieldType: 'ref',
+            fieldName: 'commentedArticle',
+          })
+        )
+      );
     });
 
     it('return error if get doc is error', async () => {
@@ -96,9 +124,16 @@ describe('makeRefTrigger', () => {
           thisColRefers: [],
         },
       });
-      const mockedGetDoc = jest
-        .fn<GetDocReturn, GetDocParam>()
-        .mockResolvedValueOnce(Left(GetDocError()));
+      const mockedGetDoc = jest.fn<GetDocReturn, GetDocParam>().mockResolvedValueOnce(
+        Left(
+          GetDocError({
+            colName: 'x',
+            fieldName: 'x',
+            expectedFieldType: 'stringArray',
+            doc: {},
+          })
+        )
+      );
       const actionResult = await draft.onCreate?.['comment']?.getTransactionCommit?.({
         db: {
           getDoc: mockedGetDoc,
@@ -117,7 +152,16 @@ describe('makeRefTrigger', () => {
       expect(Object.keys(draft.onCreate ?? {})).toStrictEqual(['comment']);
       expect(mockedGetDoc).toHaveBeenCalledTimes(1);
       expect(mockedGetDoc).toHaveBeenCalledWith({ col: 'article', id: 'article0' });
-      expect(actionResult).toStrictEqual(Left(GetDocError()));
+      expect(actionResult).toStrictEqual(
+        Left(
+          GetDocError({
+            colName: 'x',
+            fieldName: 'x',
+            expectedFieldType: 'stringArray',
+            doc: {},
+          })
+        )
+      );
     });
 
     it('copy ref doc field', async () => {

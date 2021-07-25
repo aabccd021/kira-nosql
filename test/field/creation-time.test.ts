@@ -1,7 +1,17 @@
-import { CreationTimeField, makeCreationTimeDraft, Right, UpdateDocCommit } from '../../src';
+import {
+  CreationTimeField,
+  makeCreationTimeDraft,
+  Right,
+  testSetup,
+  testTeardown,
+  UpdateDocCommit,
+} from '../../src';
 import { GetDocParam, GetDocReturn } from '../util';
 
 describe('makeCountTimeTrigger', () => {
+  beforeAll(testSetup);
+  afterAll(testTeardown);
+
   describe('onCreate', () => {
     it('create creationTime field when article created', async () => {
       const draft = makeCreationTimeDraft({

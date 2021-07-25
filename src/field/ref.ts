@@ -139,7 +139,8 @@ async function getRel({
     readonly getDoc: GetDoc;
   };
 }): Promise<Either<GetRelError, readonly string[]>> {
-  const relDoc = await db.getDoc(relToDocKey(key));
+  const docKey = relToDocKey(key);
+  const relDoc = await db.getDoc(docKey);
 
   if (relDoc._tag === 'left') {
     return relDoc;
@@ -148,7 +149,14 @@ async function getRel({
   const referDocIds = relDoc.value[DOC_IDS_FIELD_NAME];
 
   if (referDocIds?._type !== 'stringArray') {
-    return Left(InvalidFieldTypeError());
+    return Left(
+      InvalidFieldTypeError({
+        colName: docKey.col,
+        fieldName: DOC_IDS_FIELD_NAME,
+        expectedFieldType: 'stringArray',
+        doc: relDoc.value,
+      })
+    );
   }
 
   return Right(referDocIds.value);
@@ -252,7 +260,14 @@ export function makeRefDraft({
               const refField = snapshot.data?.[fieldName];
 
               if (refField?._type !== 'ref') {
-                return Left(InvalidFieldTypeError());
+                return Left(
+                  InvalidFieldTypeError({
+                    colName,
+                    fieldName,
+                    expectedFieldType: 'ref',
+                    doc: snapshot.data,
+                  })
+                );
               }
 
               const refedDoc = await db.getDoc({ col: spec.refedCol, id: refField.value.id });
@@ -314,7 +329,14 @@ export function makeRefDraft({
           const refField = snapshot.data?.[fieldName];
 
           if (refField?._type !== 'ref') {
-            return Left(InvalidFieldTypeError());
+            return Left(
+              InvalidFieldTypeError({
+                colName,
+                fieldName,
+                expectedFieldType: 'ref',
+                doc: snapshot.data,
+              })
+            );
           }
 
           return Right({
