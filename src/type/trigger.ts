@@ -1,9 +1,9 @@
 import { Dictionary, FieldSpec } from 'kira-core';
 
+import { Either } from '../util';
 import { DeleteDoc, GetDoc, GetDocError, UpdateDoc } from './db';
 import { DocChange, DocSnapshot, Snapshot, WriteDoc } from './doc';
 import { InvalidFieldTypeError } from './error';
-import { Either } from '../util';
 
 /**
  *Trigger

@@ -1,5 +1,5 @@
-import { Doc, WriteDoc } from './doc';
 import { DocKey, Either } from '../util';
+import { Doc, WriteDoc } from './doc';
 
 /**
  *DB

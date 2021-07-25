@@ -1,5 +1,5 @@
 import { GetDocError } from './db';
-import { Doc, Field } from './doc';
+import { Doc, Field, WriteField } from './doc';
 
 /**
  *InvalidFieldTypeError
@@ -23,3 +23,19 @@ export type InvalidFieldTypeError = InvalidFieldTypeErrorValue & {
  * GetRelError
  */
 export type GetRelError = InvalidFieldTypeError | GetDocError;
+
+/**
+ * WriteToDocError
+ */
+export function WriteToDocError(value: WriteToDocErrorValue): WriteToDocError {
+  return { _type: 'WriteToDocError', ...value };
+}
+
+export type WriteToDocErrorValue = {
+  readonly expectedFieldTypes: readonly (Field['_type'] | WriteField['_type'] | 'undefined')[];
+  readonly field: Field | undefined;
+};
+
+export type WriteToDocError = WriteToDocErrorValue & {
+  readonly _type: 'WriteToDocError';
+};
