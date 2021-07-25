@@ -1,6 +1,6 @@
 {
   "name": "kira-nosql",
-  "version": "0.1.22",
+  "version": "0.1.23",
   "description": "NoSQL utils for Kira",
   "repository": "git@github.com:aabccd021/kira-nosql.git",
   "author": "aabccd021 <aabccd021@gmail.com>",
@@ -79,6 +79,16 @@
     ],
     "ignorePatterns": [
       "lib/**"
+    ],
+    "overrides": [
+      {
+        "files": [
+          "test/**/*.ts"
+        ],
+        "rules": {
+          "functional/no-return-void": "off"
+        }
+      }
     ],
     "rules": {
       "@typescript-eslint/no-unused-vars": "off",

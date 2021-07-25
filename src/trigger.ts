@@ -86,33 +86,35 @@ export async function getTransactionCommit<S extends Snapshot>({
             }
             const updatedColTC = Object.entries(curColTC).reduce<
               Either<IncompatibleDocOpError, ColTransactionCommit>
-            >((prevColTC, [docId, docOp]) => {
+            >((prevColTC, [docId, docCommit]) => {
               if (prevColTC._tag === 'left') return prevColTC;
 
-              const prevOp = prevColTC.value[docId];
-              if (prevOp === undefined) {
-                return Right({ ...prevColTC.value, [docId]: docOp });
+              const prevCommit = prevColTC.value[docId];
+              if (prevCommit === undefined) {
+                return Right({ ...prevColTC.value, [docId]: docCommit });
               }
-              if (docOp._type === 'delete' && prevOp?._type === 'delete') {
+              if (docCommit._op === 'delete' && prevCommit?._op === 'delete') {
                 return Right({
                   ...prevColTC.value,
                   [docId]: DeleteDocCommit(),
                 });
               }
               if (
-                docOp._type === 'update' &&
-                prevOp?._type === 'update' &&
-                docOp.onDocAbsent === prevOp.onDocAbsent
+                docCommit._op === 'update' &&
+                prevCommit?._op === 'update' &&
+                docCommit.onDocAbsent === prevCommit.onDocAbsent
               ) {
                 return Right({
                   ...prevColTC.value,
                   [docId]: UpdateDocCommit({
-                    onDocAbsent: docOp.onDocAbsent,
-                    data: { ...docOp.data, ...prevOp.data },
+                    onDocAbsent: docCommit.onDocAbsent,
+                    data: { ...docCommit.data, ...prevCommit.data },
                   }),
                 });
               }
-              return Left(IncompatibleDocOpError());
+              return Left(
+                IncompatibleDocOpError({ docCommit1: prevCommit, docCommit2: docCommit })
+              );
             }, Right(prevColTc));
 
             if (updatedColTC._tag === 'left') return updatedColTC;

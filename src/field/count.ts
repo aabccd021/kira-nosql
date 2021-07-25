@@ -39,7 +39,14 @@ export function makeCountDraft({
           const counterDoc = snapshot.data?.[spec.groupByRef];
 
           if (counterDoc?._type !== 'ref') {
-            return Left(InvalidFieldTypeError());
+            return Left(
+              InvalidFieldTypeError({
+                colName,
+                fieldName,
+                expectedFieldType: 'ref',
+                doc: snapshot.data,
+              })
+            );
           }
 
           return Right({
@@ -61,7 +68,14 @@ export function makeCountDraft({
           const counterDoc = snapshot.data?.[spec.groupByRef];
 
           if (counterDoc?._type !== 'ref') {
-            return Left(InvalidFieldTypeError());
+            return Left(
+              InvalidFieldTypeError({
+                colName,
+                fieldName,
+                expectedFieldType: 'ref',
+                doc: snapshot.data,
+              })
+            );
           }
 
           return Right({
