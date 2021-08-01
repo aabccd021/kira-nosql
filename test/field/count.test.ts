@@ -15,7 +15,7 @@ import {
   UpdateDocCommit,
 } from '../../src';
 import {
-  buildDraft,
+  testBuildDraft,
   DeleteDocParam,
   DeleteDocReturn,
   ExecOnRelDocsParam,
@@ -28,7 +28,7 @@ import {
 
 describe('Count trigger', () => {
   const trigger = getTrigger({
-    buildDraft,
+    buildDraft: testBuildDraft,
     spec: {
       article: {
         bookmarkCount: {

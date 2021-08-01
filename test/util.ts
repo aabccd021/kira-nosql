@@ -18,7 +18,7 @@ export type DeleteDocParam = Parameters<DeleteDoc>;
 export type ExecOnRelDocsReturn = ReturnType<ExecOnRelDocs>;
 export type ExecOnRelDocsParam = Parameters<ExecOnRelDocs>;
 
-export const buildDraft: BuildDraft = ({ context, spec }) => {
+export const testBuildDraft: BuildDraft = ({ context, spec }) => {
   if (spec._type === 'CreationTime') {
     return makeCreationTimeDraft({ context, spec });
   }
