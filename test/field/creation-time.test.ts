@@ -17,23 +17,23 @@ describe('CreationTime trigger', () => {
   });
 
   describe('onCreate', () => {
-    const onCreateTrigger = trigger['article']?.onCreate;
+    const onCreateArticleTrigger = trigger['article']?.onCreate;
 
     it('trigger is defined', async () => {
-      expect(onCreateTrigger).toBeDefined();
+      expect(onCreateArticleTrigger).toBeDefined();
     });
 
     // TODO: mayFailOps
     it('create creationTime field when article created', async () => {
       const mockedGetDoc = jest.fn<GetDocReturn, GetDocParam>();
-      const onCreateTransactionCommit = await getTransactionCommit({
-        actionTrigger: onCreateTrigger as ActionTrigger<DocSnapshot>,
+      const onCreateArticleTC = await getTransactionCommit({
+        actionTrigger: onCreateArticleTrigger as ActionTrigger<DocSnapshot>,
         getDoc: mockedGetDoc,
         snapshot: { doc: {}, id: 'article0' },
       });
 
       expect(mockedGetDoc).not.toHaveBeenCalled();
-      expect(onCreateTransactionCommit).toStrictEqual(
+      expect(onCreateArticleTC).toStrictEqual(
         Value({
           article: {
             article0: UpdateDocCommit({
@@ -50,15 +50,15 @@ describe('CreationTime trigger', () => {
 
   describe('onUpdate', () => {
     it('trigger is undefined', () => {
-      const onUpdateTrigger = trigger['article']?.onUpdate;
-      expect(onUpdateTrigger).toBeUndefined();
+      const onUpdateArticleTrigger = trigger['article']?.onUpdate;
+      expect(onUpdateArticleTrigger).toBeUndefined();
     });
   });
 
   describe('onDelete', () => {
     it('trigger is undefined', () => {
-      const onDeleteTrigger = trigger['article']?.onDelete;
-      expect(onDeleteTrigger).toBeUndefined();
+      const onDeleteArticleTrigger = trigger['article']?.onDelete;
+      expect(onDeleteArticleTrigger).toBeUndefined();
     });
   });
 });
