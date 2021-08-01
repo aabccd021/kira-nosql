@@ -12,12 +12,20 @@ export type RelKey = {
 };
 
 /**
- *DB
+ *
  */
-export type DBWriteResult = { readonly isSuccess: boolean };
+export type ExecOnRelDocsFailure = {
+  readonly _failureType: 'ExecOnRelDocs';
+  readonly _getDocFailure: string;
+};
+
+export type ExecOnRelDocs<
+  F extends ExecOnRelDocsFailure = ExecOnRelDocsFailure,
+  TResult = unknown
+> = (relKey: RelKey, exec: (doc: DocSnapshot) => Promise<TResult>) => Promise<Either<F, TResult>>;
 
 /**
- * GetDoc
+ *
  */
 export type GetDocFailure = {
   readonly _failureType: 'GetDocFailure';
@@ -29,45 +37,48 @@ export type GetDoc<F extends GetDocFailure = GetDocFailure> = (
 ) => Promise<Either<F, Doc>>;
 
 /**
- * UpdateDoc
+ *
  */
 export type UpdateDocFailure = {
   readonly _failureType: 'GetDocFailure';
   readonly _updateDocFailure: string;
 };
 
-export type UpdateDoc<
-  F extends UpdateDocFailure = UpdateDocFailure,
-  UpdateDocResult = unknown
-> = (param: {
+export type UpdateDoc<F extends UpdateDocFailure = UpdateDocFailure, TResult = unknown> = (param: {
   readonly docData: WriteDoc;
   readonly key: DocKey;
-}) => Promise<Either<F, UpdateDocResult>>;
+}) => Promise<Either<F, TResult>>;
 
 /**
- * DeleteDoc
+ *
  */
 export type DeleteDocFailure = {
   readonly _deleteDocFailure: string;
   readonly _failureType: 'DeleteDocFailure';
 };
 
-export type DeleteDoc<F extends DeleteDocFailure = DeleteDocFailure, DeleteDocResult = unknown> = (
+export type DeleteDoc<F extends DeleteDocFailure = DeleteDocFailure, TResult = unknown> = (
   key: DocKey
-) => Promise<Either<F, DeleteDocResult>>;
+) => Promise<Either<F, TResult>>;
 
+/**
+ *
+ */
 export type DocChange = {
   readonly after: Doc;
   readonly before: Doc;
   readonly id: string;
 };
 
+/**
+ *
+ */
 export type TriggerSnapshot = DocSnapshot | DocChange;
 
 /**
- *Draft
+ *
  */
-export type DraftMakerContext = {
+export type DraftBuilderContext = {
   readonly colName: string;
   readonly fieldName: string;
 };
@@ -76,14 +87,6 @@ export type DraftMakerContext = {
  *
  */
 export type DraftGetTransactionCommitFailure = InvalidFieldTypeFailure | GetDocFailure;
-
-/**
- *
- */
-export type ExecOnRelDocs<T = unknown> = (p: {
-  readonly exec: (doc: DocSnapshot) => Promise<T>;
-  readonly relKey: RelKey;
-}) => Promise<T>;
 
 /**
  *
@@ -128,11 +131,14 @@ export type TransactionCommit = Dict<ColTransactionCommit>;
 /**
  *
  */
-export type DraftGetTransactionCommit<S extends TriggerSnapshot> = (param: {
+export type GetTransactionCommit<S extends TriggerSnapshot> = (param: {
   readonly getDoc: GetDoc;
   readonly snapshot: S;
 }) => Promise<Either<DraftGetTransactionCommitFailure, TransactionCommit>>;
 
+/**
+ *
+ */
 export type MayFailOp<S extends TriggerSnapshot, V = unknown> = (param: {
   readonly deleteDoc: DeleteDoc;
   readonly execOnRelDocs: ExecOnRelDocs;
@@ -145,7 +151,7 @@ export type MayFailOp<S extends TriggerSnapshot, V = unknown> = (param: {
  *
  */
 export type ColDraft<S extends TriggerSnapshot> = {
-  readonly getTransactionCommit?: DraftGetTransactionCommit<S>;
+  readonly getTransactionCommit?: GetTransactionCommit<S>;
   readonly mayFailOp?: MayFailOp<S>;
 };
 
@@ -166,7 +172,7 @@ export type Draft = {
 /**
  *
  */
-export type SpecToDraft = (param: {
+export type DraftBuilder = (param: {
   readonly context: {
     readonly colName: string;
     readonly fieldName: string;
@@ -178,7 +184,7 @@ export type SpecToDraft = (param: {
  *
  */
 export type ActionTrigger<S extends TriggerSnapshot> = {
-  readonly getTransactionCommits: readonly DraftGetTransactionCommit<S>[];
+  readonly getTransactionCommits: readonly GetTransactionCommit<S>[];
   readonly mayFailOps: readonly MayFailOp<S>[];
 };
 
@@ -197,7 +203,7 @@ export type ColTrigger = {
 export type Trigger = Dict<ColTrigger>;
 
 /**
- * IncompatibleOcOpFailure
+ *
  */
 export type IncompatibleDocOpFailure = {
   readonly _failureType: 'IncompatibleDocOp';

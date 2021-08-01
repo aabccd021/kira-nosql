@@ -7,11 +7,11 @@ import {
   ColTransactionCommit,
   DeleteDoc,
   DeleteDocCommit,
+  DraftBuilder,
   ExecOnRelDocs,
   GetDoc,
   GetTransactionCommitFailure,
   IncompatibleDocOpFailure,
-  SpecToDraft,
   TransactionCommit,
   Trigger,
   TriggerSnapshot,
@@ -33,7 +33,7 @@ export function getTrigger({
   specToDraft,
 }: {
   readonly spec: Spec;
-  readonly specToDraft: SpecToDraft;
+  readonly specToDraft: DraftBuilder;
 }): Trigger {
   const drafts = Object.entries(spec).flatMap(([colName, docFieldSpecs]) =>
     Object.entries(docFieldSpecs).map(([fieldName, spec]) =>

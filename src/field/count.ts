@@ -1,20 +1,20 @@
 import { CountFieldSpec, IncrementField, InvalidFieldTypeFailure, NumberField } from 'kira-core';
 import { Failed, Value } from 'trimop';
 
-import { Draft, DraftMakerContext, UpdateDocCommit } from '../type';
+import { Draft, DraftBuilderContext, UpdateDocCommit } from '../type';
 
 export function makeCountDraft({
   context: { colName, fieldName },
   spec,
 }: {
-  readonly context: DraftMakerContext;
+  readonly context: DraftBuilderContext;
   readonly spec: CountFieldSpec;
 }): Draft {
   return {
     onCreate: {
       [colName]: {
-        getTransactionCommit: async ({ snapshot }) => {
-          return Value({
+        getTransactionCommit: async ({ snapshot }) =>
+          Value({
             [colName]: {
               [snapshot.id]: UpdateDocCommit({
                 data: {
@@ -23,8 +23,7 @@ export function makeCountDraft({
                 onDocAbsent: 'doNotUpdate',
               }),
             },
-          });
-        },
+          }),
       },
       [spec.countedCol]: {
         getTransactionCommit: async ({ snapshot }) => {

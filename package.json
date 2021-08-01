@@ -149,7 +149,7 @@
       "import/no-namespace": "warn",
       "import/no-useless-path-segments": "warn",
       "import/no-unused-modules": [
-        1,
+        "warn",
         {
           "unusedExports": true
         }
