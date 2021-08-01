@@ -14,15 +14,10 @@ export type RelKey = {
 /**
  *
  */
-export type ExecOnRelDocsFailure = {
-  readonly _failureType: 'ExecOnRelDocs';
-  readonly _getDocFailure: string;
-};
-
-export type ExecOnRelDocs<
-  F extends ExecOnRelDocsFailure = ExecOnRelDocsFailure,
-  TResult = unknown
-> = (relKey: RelKey, exec: (doc: DocSnapshot) => Promise<TResult>) => Promise<Either<F, TResult>>;
+export type ExecOnRelDocs = (
+  relKey: RelKey,
+  exec: (doc: DocSnapshot) => Promise<unknown>
+) => Promise<unknown>;
 
 /**
  *
@@ -140,12 +135,12 @@ export type GetTransactionCommit<S extends TriggerSnapshot> = (param: {
 /**
  *
  */
-export type PropagationOp<S extends TriggerSnapshot, V = unknown> = (param: {
+export type PropagationOp<S extends TriggerSnapshot> = (param: {
   readonly deleteDoc: DeleteDoc;
   readonly execOnRelDocs: ExecOnRelDocs;
   readonly snapshot: S;
   readonly updateDoc: UpdateDoc;
-}) => Promise<V>;
+}) => Promise<unknown>;
 
 /**
  *

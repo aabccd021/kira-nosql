@@ -29,11 +29,11 @@ describe('Count trigger', () => {
     const onCreateArticleTrigger = trigger['article']?.onCreate;
     const onCreateBookmarkTrigger = trigger['bookmark']?.onCreate;
 
-    it('article trigger is defined', async () => {
+    it('article trigger is defined', () => {
       expect(onCreateArticleTrigger).toBeDefined();
     });
 
-    it('bookmark trigger is defined', async () => {
+    it('bookmark trigger is defined', () => {
       expect(onCreateBookmarkTrigger).toBeDefined();
     });
 
@@ -142,11 +142,11 @@ describe('Count trigger', () => {
     const onUpdateArticleTrigger = trigger['article']?.onUpdate;
     const onUpdateBookmarkTrigger = trigger['bookmark']?.onUpdate;
 
-    it('article trigger is undefined', async () => {
+    it('article trigger is undefined', () => {
       expect(onUpdateArticleTrigger).toBeUndefined();
     });
 
-    it('bookmark trigger is undefined', async () => {
+    it('bookmark trigger is undefined', () => {
       expect(onUpdateBookmarkTrigger).toBeUndefined();
     });
   });
@@ -155,11 +155,11 @@ describe('Count trigger', () => {
     const onDeleteArticleTrigger = trigger['article']?.onDelete;
     const onDeleteBookmarkTrigger = trigger['bookmark']?.onDelete;
 
-    it('article trigger is undefined', async () => {
+    it('article trigger is undefined', () => {
       expect(onDeleteArticleTrigger).toBeUndefined();
     });
 
-    it('bookmark trigger is defined', async () => {
+    it('bookmark trigger is defined', () => {
       expect(onDeleteBookmarkTrigger).toBeDefined();
     });
 

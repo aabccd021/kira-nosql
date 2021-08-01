@@ -8,14 +8,13 @@ import {
   RefUpdateField,
   SyncedFields,
 } from 'kira-core';
-import { Either, Failed, foldValue, isDefined, Value } from 'trimop';
+import { Failed, foldValue, isDefined, Value } from 'trimop';
 
 import {
   DocChange,
   Draft,
   DraftBuilderContext,
   ExecOnRelDocs,
-  ExecOnRelDocsFailure,
   UpdateDoc,
   UpdateDocCommit,
 } from '../type';
@@ -38,9 +37,7 @@ async function propagateRefUpdate({
     readonly thisColRefers: readonly ColRefer[];
   };
   readonly updateDoc: UpdateDoc;
-}): Promise<
-  Either<InvalidFieldTypeFailure, Promise<Either<ExecOnRelDocsFailure, unknown>> | undefined>
-> {
+}): Promise<unknown> {
   return foldValue(
     filterSyncedFields({
       doc: Object.fromEntries(
@@ -120,44 +117,42 @@ export function makeRefDraft({
             getTransactionCommit: async ({ getDoc, snapshot }) => {
               const refField = snapshot.doc?.[fieldName];
 
-              if (refField?._type !== 'Ref') {
-                return Failed(
-                  InvalidFieldTypeFailure({
-                    expectedFieldTypes: ['Ref'],
-                    field: refField,
-                  })
-                );
-              }
-
-              return foldValue(
-                await getDoc({ col: spec.refedCol, id: refField.snapshot.id }),
-                (refedDoc) => {
-                  const syncedFieldNames = Object.keys(spec.syncedFields);
-                  return Value({
-                    [colName]: {
-                      [snapshot.id]: UpdateDocCommit({
-                        onDocAbsent: 'doNotUpdate',
-                        writeDoc: {
-                          [fieldName]: RefUpdateField(
-                            Object.fromEntries(
-                              Object.entries(refedDoc).filter(([fieldName]) =>
-                                syncedFieldNames.includes(fieldName)
-                              )
-                            )
-                          ),
+              return refField?._type !== 'Ref'
+                ? Failed(
+                    InvalidFieldTypeFailure({
+                      expectedFieldTypes: ['Ref'],
+                      field: refField,
+                    })
+                  )
+                : foldValue(
+                    await getDoc({ col: spec.refedCol, id: refField.snapshot.id }),
+                    (refedDoc) => {
+                      const syncedFieldNames = Object.keys(spec.syncedFields);
+                      return Value({
+                        [colName]: {
+                          [snapshot.id]: UpdateDocCommit({
+                            onDocAbsent: 'doNotUpdate',
+                            writeDoc: {
+                              [fieldName]: RefUpdateField(
+                                Object.fromEntries(
+                                  Object.entries(refedDoc).filter(([fieldName]) =>
+                                    syncedFieldNames.includes(fieldName)
+                                  )
+                                )
+                              ),
+                            },
+                          }),
                         },
-                      }),
-                    },
-                  });
-                }
-              );
+                      });
+                    }
+                  );
             },
           },
         }
       : undefined,
     onDelete: {
       [spec.refedCol]: {
-        propagationOp: async ({ execOnRelDocs, deleteDoc, snapshot: refed }) =>
+        propagationOp: ({ execOnRelDocs, deleteDoc, snapshot: refed }) =>
           execOnRelDocs(
             {
               refedCol: spec.refedCol,
@@ -172,7 +167,7 @@ export function makeRefDraft({
     onUpdate: needSync
       ? {
           [spec.refedCol]: {
-            propagationOp: async ({ execOnRelDocs, updateDoc, snapshot }) =>
+            propagationOp: ({ execOnRelDocs, updateDoc, snapshot }) =>
               propagateRefUpdate({
                 execOnRelDocs,
                 refedDoc: snapshot,

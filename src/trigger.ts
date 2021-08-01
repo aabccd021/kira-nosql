@@ -57,7 +57,7 @@ export function getTrigger({
   );
 }
 
-export async function getTransactionCommit<S extends TriggerSnapshot>({
+export function getTransactionCommit<S extends TriggerSnapshot>({
   actionTrigger,
   snapshot,
   getDoc,
@@ -136,7 +136,7 @@ export async function getTransactionCommit<S extends TriggerSnapshot>({
   );
 }
 
-export async function execPropagationOps<S extends TriggerSnapshot>({
+export function execPropagationOps<S extends TriggerSnapshot>({
   actionTrigger,
   snapshot,
   updateDoc,
@@ -148,8 +148,8 @@ export async function execPropagationOps<S extends TriggerSnapshot>({
   readonly execOnRelDocs: ExecOnRelDocs;
   readonly snapshot: S;
   readonly updateDoc: UpdateDoc;
-}): Promise<void> {
-  await Promise.all(
+}): Promise<unknown> {
+  return Promise.all(
     actionTrigger.propagationOps.map((propagationOp) =>
       propagationOp({ deleteDoc, execOnRelDocs, snapshot, updateDoc })
     )
