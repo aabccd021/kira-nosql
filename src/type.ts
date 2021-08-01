@@ -91,11 +91,11 @@ export type DraftGetTransactionCommitFailure = InvalidFieldTypeFailure | GetDocF
 /**
  *
  */
-export function DeleteDocCommit(): DeleteDocCommit {
-  return { _op: 'Delete' };
-}
+// export function DeleteDocCommit(): DeleteDocCommit {
+//   return { _op: 'Delete' };
+// }
 
-export type DeleteDocCommit = { readonly _op: 'Delete' };
+// export type DeleteDocCommit = { readonly _op: 'Delete' };
 
 /**
  *
@@ -116,7 +116,8 @@ export function UpdateDocCommit(value: Omit<UpdateDocCommit, '_op'>): UpdateDocC
 /**
  *
  */
-export type DocCommit = UpdateDocCommit | DeleteDocCommit;
+export type DocCommit = UpdateDocCommit;
+//  | DeleteDocCommit;
 
 /**
  *

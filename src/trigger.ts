@@ -7,7 +7,6 @@ import {
   ColDraft,
   ColTransactionCommit,
   DeleteDoc,
-  DeleteDocCommit,
   ExecOnRelDocs,
   GetDoc,
   GetTransactionCommitFailure,
@@ -93,12 +92,12 @@ export async function getTransactionCommit<S extends TriggerSnapshot>({
                               if (prevCommit === undefined) {
                                 return Value({ ...prevColTC, [docId]: docCommit });
                               }
-                              if (docCommit._op === 'Delete' && prevCommit?._op === 'Delete') {
-                                return Value({
-                                  ...prevColTC,
-                                  [docId]: DeleteDocCommit(),
-                                });
-                              }
+                              // if (docCommit._op === 'Delete' && prevCommit?._op === 'Delete') {
+                              //   return Value({
+                              //     ...prevColTC,
+                              //     [docId]: DeleteDocCommit(),
+                              //   });
+                              // }
                               if (
                                 docCommit._op === 'Update' &&
                                 prevCommit?._op === 'Update' &&
