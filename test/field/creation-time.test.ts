@@ -4,21 +4,27 @@ import { Value } from 'trimop';
 import { ActionTrigger, getTransactionCommit, getTrigger, UpdateDocCommit } from '../../src';
 import { buildDraft, GetDocParam, GetDocReturn } from '../util';
 
-describe('makeCountTimeTrigger', () => {
-  describe('onCreate', () => {
-    it('create creationTime field when article created', async () => {
-      const trigger = getTrigger({
-        buildDraft,
-        spec: {
-          article: {
-            creationTime: CreationTimeField(),
-          },
+describe('CreationTime trigger', () => {
+  const trigger = getTrigger({
+    buildDraft,
+    spec: {
+      article: {
+        creationTime: {
+          _type: 'CreationTime',
         },
-      });
+      },
+    },
+  });
 
-      const onCreateTrigger = trigger['article']?.onCreate;
+  describe('onCreate', () => {
+    const onCreateTrigger = trigger['article']?.onCreate;
+
+    it('trigger is defined', async () => {
       expect(onCreateTrigger).toBeDefined();
+    });
 
+    // TODO: mayFailOps
+    it('create creationTime field when article created', async () => {
       const mockedGetDoc = jest.fn<GetDocReturn, GetDocParam>();
       const onCreateTransactionCommit = await getTransactionCommit({
         actionTrigger: onCreateTrigger as ActionTrigger<DocSnapshot>,
@@ -44,14 +50,6 @@ describe('makeCountTimeTrigger', () => {
 
   describe('onUpdate', () => {
     it('trigger is undefined', () => {
-      const trigger = getTrigger({
-        buildDraft,
-        spec: {
-          article: {
-            creationTime: CreationTimeField(),
-          },
-        },
-      });
       const onUpdateTrigger = trigger['article']?.onUpdate;
       expect(onUpdateTrigger).toBeUndefined();
     });
@@ -59,15 +57,6 @@ describe('makeCountTimeTrigger', () => {
 
   describe('onDelete', () => {
     it('trigger is undefined', () => {
-      const trigger = getTrigger({
-        buildDraft,
-        spec: {
-          article: {
-            creationTime: CreationTimeField(),
-          },
-        },
-      });
-
       const onDeleteTrigger = trigger['article']?.onDelete;
       expect(onDeleteTrigger).toBeUndefined();
     });

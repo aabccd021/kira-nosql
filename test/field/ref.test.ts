@@ -13,7 +13,7 @@ describe('makeRefTrigger', () => {
           fieldName: 'commentedArticle',
         },
         spec: {
-          _type: 'ref',
+          _type: 'Ref',
           isOwner: false,
           refedCol: 'article',
           syncedFields: { category: true, title: true },
@@ -33,7 +33,7 @@ describe('makeRefTrigger', () => {
       expect(actionResult).toStrictEqual(
         Failed(
           InvalidFieldTypeFailure({
-            expectedFieldTypes: ['ref'],
+            expectedFieldTypes: ['Ref'],
             field: undefined,
           })
         )
@@ -47,7 +47,7 @@ describe('makeRefTrigger', () => {
           fieldName: 'commentedArticle',
         },
         spec: {
-          _type: 'ref',
+          _type: 'Ref',
           isOwner: false,
           refedCol: 'article',
           syncedFields: { category: true, title: true },
@@ -71,7 +71,7 @@ describe('makeRefTrigger', () => {
       expect(actionResult).toStrictEqual(
         Failed(
           InvalidFieldTypeFailure({
-            expectedFieldTypes: ['ref'],
+            expectedFieldTypes: ['Ref'],
             field: undefined,
           })
         )
@@ -85,7 +85,7 @@ describe('makeRefTrigger', () => {
     //       fieldName: 'commentedArticle',
     //     },
     //     spec: {
-    //       _type: 'ref',
+    //       _type: 'Ref',
     //       isOwner: false,
     //       refedCol: 'article',
     //       syncedFields: { category: true, title: true },
@@ -138,7 +138,7 @@ describe('makeRefTrigger', () => {
           fieldName: 'commentedArticle',
         },
         spec: {
-          _type: 'ref',
+          _type: 'Ref',
           isOwner: false,
           refedCol: 'article',
           syncedFields: { category: true, title: true },
@@ -202,7 +202,7 @@ describe('makeRefTrigger', () => {
     //       colName: 'comment',
     //       fieldName: 'commentedArticle',
     //       spec: {
-    //         type: 'ref',
+    //         type: 'Ref',
     //         refedCol: 'article',
     //         syncedFields: { title: true, readMinute: true },
     //         isOwner: false,
@@ -238,7 +238,7 @@ describe('makeRefTrigger', () => {
     //       colName: 'comment',
     //       fieldName: 'commentedArticle',
     //       spec: {
-    //         type: 'ref',
+    //         type: 'Ref',
     //         refedCol: 'article',
     //         syncedFields: { title: true, readMinute: true },
     //         isOwner: false,
@@ -275,7 +275,7 @@ describe('makeRefTrigger', () => {
     //             runTrigger: true,
     //             doc: {
     //               commentedArticle: {
-    //                 type: 'ref',
+    //                 type: 'Ref',
     //                 value: {
     //                   title: StringField('Keyakizaka46 renamed to Sakurazaka46' },
     //                 },
@@ -287,7 +287,7 @@ describe('makeRefTrigger', () => {
     //             runTrigger: true,
     //             doc: {
     //               commentedArticle: {
-    //                 type: 'ref',
+    //                 type: 'Ref',
     //                 value: {
     //                   title: StringField('Keyakizaka46 renamed to Sakurazaka46' },
     //                 },
@@ -308,7 +308,7 @@ describe('makeRefTrigger', () => {
     //         fieldName: 'commentedArticle',
     //       },
     //       spec: {
-    //         _type: 'ref',
+    //         _type: 'Ref',
     //         isOwner: false,
     //         refedCol: 'article',
     //         syncedFields: {},

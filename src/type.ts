@@ -142,7 +142,6 @@ export type GetTransactionCommit<S extends TriggerSnapshot> = (param: {
 export type MayFailOp<S extends TriggerSnapshot, V = unknown> = (param: {
   readonly deleteDoc: DeleteDoc;
   readonly execOnRelDocs: ExecOnRelDocs;
-  readonly getDoc: GetDoc;
   readonly snapshot: S;
   readonly updateDoc: UpdateDoc;
 }) => Promise<V>;

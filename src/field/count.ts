@@ -27,12 +27,12 @@ export function makeCountDraft({
       },
       [spec.countedCol]: {
         getTransactionCommit: async ({ snapshot }) => {
-          const counterDoc = snapshot.doc?.[spec.groupByRef];
+          const counterDoc = snapshot.doc[spec.groupByRef];
 
-          if (counterDoc?._type !== 'ref') {
+          if (counterDoc?._type !== 'Ref') {
             return Failed(
               InvalidFieldTypeFailure({
-                expectedFieldTypes: ['ref'],
+                expectedFieldTypes: ['Ref'],
                 field: counterDoc,
               })
             );
@@ -54,12 +54,12 @@ export function makeCountDraft({
     onDelete: {
       [spec.countedCol]: {
         getTransactionCommit: async ({ snapshot }) => {
-          const counterDoc = snapshot.doc?.[spec.groupByRef];
+          const counterDoc = snapshot.doc[spec.groupByRef];
 
-          if (counterDoc?._type !== 'ref') {
+          if (counterDoc?._type !== 'Ref') {
             return Failed(
               InvalidFieldTypeFailure({
-                expectedFieldTypes: ['ref'],
+                expectedFieldTypes: ['Ref'],
                 field: counterDoc,
               })
             );

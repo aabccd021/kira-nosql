@@ -120,10 +120,10 @@ export function makeRefDraft({
             getTransactionCommit: async ({ getDoc, snapshot }) => {
               const refField = snapshot.doc?.[fieldName];
 
-              if (refField?._type !== 'ref') {
+              if (refField?._type !== 'Ref') {
                 return Failed(
                   InvalidFieldTypeFailure({
-                    expectedFieldTypes: ['ref'],
+                    expectedFieldTypes: ['Ref'],
                     field: refField,
                   })
                 );

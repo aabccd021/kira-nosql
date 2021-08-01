@@ -16,13 +16,13 @@ export type DeleteDocReturn = ReturnType<DeleteDoc>;
 export type DeleteDocParam = Parameters<DeleteDoc>;
 
 export const buildDraft: BuildDraft = ({ context, spec }) => {
-  if (spec._type === 'creationTime') {
+  if (spec._type === 'CreationTime') {
     return makeCreationTimeDraft({ context, spec });
   }
-  if (spec._type === 'count') {
+  if (spec._type === 'Count') {
     return makeCountDraft({ context, spec });
   }
-  if (spec._type === 'ref') {
+  if (spec._type === 'Ref') {
     return makeRefDraft({ context, spec });
   }
   return {};

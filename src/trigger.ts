@@ -137,7 +137,6 @@ export async function getTransactionCommit<S extends TriggerSnapshot>({
 export async function runMayFailOps<S extends TriggerSnapshot>({
   actionTrigger,
   snapshot,
-  getDoc,
   updateDoc,
   deleteDoc,
   execOnRelDocs,
@@ -145,13 +144,12 @@ export async function runMayFailOps<S extends TriggerSnapshot>({
   readonly actionTrigger: ActionTrigger<S>;
   readonly deleteDoc: DeleteDoc;
   readonly execOnRelDocs: ExecOnRelDocs;
-  readonly getDoc: GetDoc;
   readonly snapshot: S;
   readonly updateDoc: UpdateDoc;
 }): Promise<void> {
   await Promise.all(
     actionTrigger.mayFailOps.map((mayFailOp) =>
-      mayFailOp({ deleteDoc, execOnRelDocs, getDoc, snapshot, updateDoc })
+      mayFailOp({ deleteDoc, execOnRelDocs, snapshot, updateDoc })
     )
   );
 }
