@@ -100,8 +100,8 @@ export async function getTransactionCommit<S extends TriggerSnapshot>({
                           return Value({
                             ...prevColTC,
                             [docId]: UpdateDocCommit({
-                              data: { ...docCommit.data, ...prevCommit.data },
                               onDocAbsent: docCommit.onDocAbsent,
+                              writeDoc: { ...docCommit.writeDoc, ...prevCommit.writeDoc },
                             }),
                           });
                         }

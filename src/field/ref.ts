@@ -50,61 +50,58 @@ async function propagateRefUpdate({
       ),
       syncedFields,
     }),
-    (syncData) => {
-      if (!isDefined(syncData)) {
-        return Value(undefined);
-      }
-
-      return Value(
-        execOnRelDocs(
-          {
-            refedCol,
-            refedId: refedDoc.id,
-            referCol,
-            referField,
-          },
-          async ({ id }) =>
-            foldValue(
-              await updateDoc({
-                docData: {
-                  [referField]: RefUpdateField(syncData),
-                },
-                key: { col: referCol, id },
-              }),
-              () =>
-                Value(
-                  Promise.all(
-                    thisColRefers.flatMap((thisColRefer) =>
-                      thisColRefer.fields.map((thisColReferField) =>
-                        propagateRefUpdate({
-                          execOnRelDocs,
-                          refedDoc: {
-                            after: {
-                              [referField]: RefField({
-                                doc: syncData,
-                                id: refedDoc.id,
-                              }),
-                            },
-                            before: {},
-                            id,
-                          },
-                          referCol: thisColRefer.colName,
-                          referField: thisColReferField.name,
-                          spec: {
-                            refedCol: referCol,
-                            syncedFields: thisColReferField.syncedFields,
-                            thisColRefers: thisColRefer.thisColRefers,
-                          },
-                          updateDoc,
-                        })
+    (syncData) =>
+      Value(
+        !isDefined(syncData)
+          ? undefined
+          : execOnRelDocs(
+              {
+                refedCol,
+                refedId: refedDoc.id,
+                referCol,
+                referField,
+              },
+              async ({ id }) =>
+                foldValue(
+                  await updateDoc({
+                    key: { col: referCol, id },
+                    writeDoc: {
+                      [referField]: RefUpdateField(syncData),
+                    },
+                  }),
+                  () =>
+                    Value(
+                      Promise.all(
+                        thisColRefers.flatMap((thisColRefer) =>
+                          thisColRefer.fields.map((thisColReferField) =>
+                            propagateRefUpdate({
+                              execOnRelDocs,
+                              refedDoc: {
+                                after: {
+                                  [referField]: RefField({
+                                    doc: syncData,
+                                    id: refedDoc.id,
+                                  }),
+                                },
+                                before: {},
+                                id,
+                              },
+                              referCol: thisColRefer.colName,
+                              referField: thisColReferField.name,
+                              spec: {
+                                refedCol: referCol,
+                                syncedFields: thisColReferField.syncedFields,
+                                thisColRefers: thisColRefer.thisColRefers,
+                              },
+                              updateDoc,
+                            })
+                          )
+                        )
                       )
                     )
-                  )
                 )
             )
-        )
-      );
-    }
+      )
   );
 }
 
@@ -139,7 +136,8 @@ export function makeRefDraft({
                   return Value({
                     [colName]: {
                       [snapshot.id]: UpdateDocCommit({
-                        data: {
+                        onDocAbsent: 'doNotUpdate',
+                        writeDoc: {
                           [fieldName]: RefUpdateField(
                             Object.fromEntries(
                               Object.entries(refedDoc).filter(([fieldName]) =>
@@ -148,7 +146,6 @@ export function makeRefDraft({
                             )
                           ),
                         },
-                        onDocAbsent: 'doNotUpdate',
                       }),
                     },
                   });

@@ -17,10 +17,10 @@ export function makeCountDraft({
           Value({
             [colName]: {
               [snapshot.id]: UpdateDocCommit({
-                data: {
+                onDocAbsent: 'doNotUpdate',
+                writeDoc: {
                   [fieldName]: NumberField(0),
                 },
-                onDocAbsent: 'doNotUpdate',
               }),
             },
           }),
@@ -41,10 +41,10 @@ export function makeCountDraft({
           return Value({
             [colName]: {
               [counterDoc.snapshot.id]: UpdateDocCommit({
-                data: {
+                onDocAbsent: 'doNotUpdate',
+                writeDoc: {
                   [fieldName]: IncrementField(1),
                 },
-                onDocAbsent: 'doNotUpdate',
               }),
             },
           });
@@ -68,10 +68,10 @@ export function makeCountDraft({
           return Value({
             [colName]: {
               [counterDoc.snapshot.id]: UpdateDocCommit({
-                data: {
+                onDocAbsent: 'doNotUpdate',
+                writeDoc: {
                   [fieldName]: IncrementField(-1),
                 },
-                onDocAbsent: 'doNotUpdate',
               }),
             },
           });

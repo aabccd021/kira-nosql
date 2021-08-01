@@ -45,8 +45,8 @@ export type UpdateDocFailure = {
 };
 
 export type UpdateDoc<F extends UpdateDocFailure = UpdateDocFailure, TResult = unknown> = (param: {
-  readonly docData: WriteDoc;
   readonly key: DocKey;
+  readonly writeDoc: WriteDoc;
 }) => Promise<Either<F, TResult>>;
 
 /**
@@ -102,8 +102,8 @@ export type DeleteDocCommit = { readonly _op: 'Delete' };
  */
 export type UpdateDocCommit = {
   readonly _op: 'Update';
-  readonly data: WriteDoc;
   readonly onDocAbsent: 'createDoc' | 'doNotUpdate';
+  readonly writeDoc: WriteDoc;
 };
 
 /**
