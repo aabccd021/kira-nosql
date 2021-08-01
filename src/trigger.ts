@@ -1,29 +1,25 @@
 import { Spec } from 'kira-core';
+import { Either, Failed, foldValue, isDefined, Value } from 'trimop';
 
 import {
   ActionTrigger,
   ColDraft,
   ColTransactionCommit,
-  DB,
+  DeleteDoc,
   DeleteDocCommit,
-  Either,
+  ExecOnRelDocs,
   GetDoc,
-  GetTransactionCommitError,
-  IncompatibleDocOpError,
-  Left,
-  Right,
-  Snapshot,
+  GetTransactionCommitFailure,
+  IncompatibleDocOpFailure,
+  TriggerSnapshot,
   SpecToDraft,
   TransactionCommit,
   Trigger,
+  UpdateDoc,
   UpdateDocCommit,
 } from './type';
 
-function isDefined<T>(t: T | undefined): t is T {
-  return t !== undefined;
-}
-
-function colDraftsToActionTrigger<S extends Snapshot>(
+function colDraftsToActionTrigger<S extends TriggerSnapshot>(
   colDraft: readonly (ColDraft<S> | undefined)[]
 ): ActionTrigger<S> {
   return {
@@ -41,7 +37,7 @@ export function getTrigger({
 }): Trigger {
   const drafts = Object.entries(spec).flatMap(([colName, docFieldSpecs]) =>
     Object.entries(docFieldSpecs).map(([fieldName, spec]) =>
-      specToDraft({ colName, fieldName, spec })
+      specToDraft({ context: { colName, fieldName }, spec })
     )
   );
   return Object.fromEntries(
@@ -58,90 +54,105 @@ export function getTrigger({
   );
 }
 
-export async function getTransactionCommit<S extends Snapshot>({
+export async function getTransactionCommit<S extends TriggerSnapshot>({
   actionTrigger,
   snapshot,
-  db,
+  getDoc,
 }: {
   readonly actionTrigger: ActionTrigger<S>;
   readonly snapshot: S;
-  readonly db: {
-    readonly getDoc: GetDoc;
-  };
-}): Promise<Either<GetTransactionCommitError, TransactionCommit>> {
-  return Promise.all(actionTrigger.getTransactionCommits.map((gtc) => gtc({ db, snapshot }))).then(
-    (transactionCommits) =>
-      transactionCommits.reduce<Either<GetTransactionCommitError, TransactionCommit>>(
-        (prevTC, curTC) => {
-          if (prevTC._tag === 'left') return prevTC;
-          if (curTC._tag === 'left') return curTC;
-          return Object.entries(curTC.value).reduce<
-            Either<IncompatibleDocOpError, TransactionCommit>
-          >((prevTC, [curColName, curColTC]) => {
-            if (prevTC._tag === 'left') return prevTC;
-
-            const prevColTc = prevTC.value[curColName];
-            if (prevColTc === undefined) {
-              return Right({ ...prevTC.value, [curColName]: curColTC });
-            }
-            const updatedColTC = Object.entries(curColTC).reduce<
-              Either<IncompatibleDocOpError, ColTransactionCommit>
-            >((prevColTC, [docId, docCommit]) => {
-              if (prevColTC._tag === 'left') return prevColTC;
-
-              const prevCommit = prevColTC.value[docId];
-              if (prevCommit === undefined) {
-                return Right({ ...prevColTC.value, [docId]: docCommit });
-              }
-              if (docCommit._op === 'delete' && prevCommit?._op === 'delete') {
-                return Right({
-                  ...prevColTC.value,
-                  [docId]: DeleteDocCommit(),
-                });
-              }
-              if (
-                docCommit._op === 'update' &&
-                prevCommit?._op === 'update' &&
-                docCommit.onDocAbsent === prevCommit.onDocAbsent
-              ) {
-                return Right({
-                  ...prevColTC.value,
-                  [docId]: UpdateDocCommit({
-                    onDocAbsent: docCommit.onDocAbsent,
-                    data: { ...docCommit.data, ...prevCommit.data },
-                  }),
-                });
-              }
-              return Left(
-                IncompatibleDocOpError({ docCommit1: prevCommit, docCommit2: docCommit })
-              );
-            }, Right(prevColTc));
-
-            if (updatedColTC._tag === 'left') return updatedColTC;
-
-            return Right({
-              ...prevTC.value,
-              [curColName]: updatedColTC.value,
-            });
-          }, Right(prevTC.value));
-        },
-        Right({})
-      )
+  readonly getDoc: GetDoc;
+}): Promise<Either<GetTransactionCommitFailure, TransactionCommit>> {
+  return Promise.all(
+    actionTrigger.getTransactionCommits.map((gtc) => gtc({ getDoc, snapshot }))
+  ).then((transactionCommits) =>
+    transactionCommits.reduce<Either<GetTransactionCommitFailure, TransactionCommit>>(
+      (prevTC, curTC) => {
+        return foldValue(prevTC, (prevTC) =>
+          foldValue(curTC, (curTC) =>
+            Object.entries(curTC).reduce<Either<GetTransactionCommitFailure, TransactionCommit>>(
+              (prevTC, [curColName, curColTC]) =>
+                foldValue(prevTC, (prevTC) => {
+                  const prevColTC = prevTC[curColName];
+                  if (prevColTC === undefined) {
+                    return Value({ ...prevTC, [curColName]: curColTC });
+                  }
+                  return foldValue(
+                    Object.entries(curColTC).reduce<
+                      Either<IncompatibleDocOpFailure, ColTransactionCommit>
+                    >((prevColTC, [docId, docCommit]) => {
+                      return foldValue(prevColTC, (prevColTC) => {
+                        const prevCommit = prevColTC[docId];
+                        if (prevCommit === undefined) {
+                          return Value({ ...prevColTC, [docId]: docCommit });
+                        }
+                        if (docCommit._op === 'delete' && prevCommit?._op === 'delete') {
+                          return Value({
+                            ...prevColTC,
+                            [docId]: DeleteDocCommit(),
+                          });
+                        }
+                        if (
+                          docCommit._op === 'update' &&
+                          prevCommit?._op === 'update' &&
+                          docCommit.onDocAbsent === prevCommit.onDocAbsent
+                        ) {
+                          return Value({
+                            ...prevColTC,
+                            [docId]: UpdateDocCommit({
+                              onDocAbsent: docCommit.onDocAbsent,
+                              data: { ...docCommit.data, ...prevCommit.data },
+                            }),
+                          });
+                        }
+                        return Failed(
+                          IncompatibleDocOpFailure({
+                            docCommit1: prevCommit,
+                            docCommit2: docCommit,
+                          })
+                        );
+                      });
+                    }, Value(prevColTC)),
+                    (updatedColTC) => {
+                      return Value({
+                        ...prevTC,
+                        [curColName]: updatedColTC,
+                      });
+                    }
+                  );
+                }),
+              Value(prevTC)
+            )
+          )
+        );
+      },
+      Value({})
+    )
   );
 }
 
-export async function runMayFailOps<S extends Snapshot>({
+export async function runMayFailOps<S extends TriggerSnapshot>({
   actionTrigger,
   snapshot,
-  db,
+  getDoc,
+  updateDoc,
+  deleteDoc,
+  execOnRelDocs,
 }: {
   readonly actionTrigger: ActionTrigger<S>;
   readonly snapshot: S;
-  readonly db: DB;
+  readonly getDoc: GetDoc;
+  readonly updateDoc: UpdateDoc;
+  readonly deleteDoc: DeleteDoc;
+  readonly execOnRelDocs: ExecOnRelDocs;
 }): Promise<void> {
-  await Promise.all(actionTrigger.mayFailOps.map((mayFailOp) => mayFailOp({ db, snapshot })));
+  await Promise.all(
+    actionTrigger.mayFailOps.map((mayFailOp) =>
+      mayFailOp({ getDoc, updateDoc, deleteDoc, execOnRelDocs, snapshot })
+    )
+  );
 }
 
-export function isTriggerRequired<S extends Snapshot>(actionTrigger: ActionTrigger<S>): boolean {
+export function isTriggerRequired<S extends TriggerSnapshot>(actionTrigger: ActionTrigger<S>): boolean {
   return actionTrigger.getTransactionCommits.length > 0 || actionTrigger.mayFailOps.length > 0;
 }

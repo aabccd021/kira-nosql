@@ -1,15 +1,7 @@
-import { CountFieldSpec } from 'kira-core';
+import { CountFieldSpec, IncrementField, InvalidFieldTypeFailure, NumberField } from 'kira-core';
+import { Failed, Value } from 'trimop';
 
-import {
-  Draft,
-  DraftMakerContext,
-  IncrementField,
-  InvalidFieldTypeError,
-  Left,
-  NumberField,
-  Right,
-  UpdateDocCommit,
-} from '../type';
+import { Draft, DraftMakerContext, UpdateDocCommit } from '../type';
 
 export function makeCountDraft({
   context: { colName, fieldName },
@@ -22,7 +14,7 @@ export function makeCountDraft({
     onCreate: {
       [colName]: {
         getTransactionCommit: async ({ snapshot }) => {
-          return Right({
+          return Value({
             [colName]: {
               [snapshot.id]: UpdateDocCommit({
                 onDocAbsent: 'doNotUpdate',
@@ -36,22 +28,20 @@ export function makeCountDraft({
       },
       [spec.countedCol]: {
         getTransactionCommit: async ({ snapshot }) => {
-          const counterDoc = snapshot.data?.[spec.groupByRef];
+          const counterDoc = snapshot.doc?.[spec.groupByRef];
 
           if (counterDoc?._type !== 'ref') {
-            return Left(
-              InvalidFieldTypeError({
-                colName,
-                fieldName,
-                expectedFieldType: 'ref',
-                doc: snapshot.data,
+            return Failed(
+              InvalidFieldTypeFailure({
+                expectedFieldTypes: ['ref'],
+                field: counterDoc,
               })
             );
           }
 
-          return Right({
+          return Value({
             [colName]: {
-              [counterDoc.value.id]: UpdateDocCommit({
+              [counterDoc.snapshot.id]: UpdateDocCommit({
                 onDocAbsent: 'doNotUpdate',
                 data: {
                   [fieldName]: IncrementField(1),
@@ -65,22 +55,20 @@ export function makeCountDraft({
     onDelete: {
       [spec.countedCol]: {
         getTransactionCommit: async ({ snapshot }) => {
-          const counterDoc = snapshot.data?.[spec.groupByRef];
+          const counterDoc = snapshot.doc?.[spec.groupByRef];
 
           if (counterDoc?._type !== 'ref') {
-            return Left(
-              InvalidFieldTypeError({
-                colName,
-                fieldName,
-                expectedFieldType: 'ref',
-                doc: snapshot.data,
+            return Failed(
+              InvalidFieldTypeFailure({
+                expectedFieldTypes: ['ref'],
+                field: counterDoc,
               })
             );
           }
 
-          return Right({
+          return Value({
             [colName]: {
-              [counterDoc.value.id]: UpdateDocCommit({
+              [counterDoc.snapshot.id]: UpdateDocCommit({
                 onDocAbsent: 'doNotUpdate',
                 data: {
                   [fieldName]: IncrementField(-1),

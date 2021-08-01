@@ -1,14 +1,14 @@
-import { Dictionary, FieldSpec } from 'kira-core';
+import { DocSnapshot, FieldSpec, InvalidFieldTypeFailure, WriteDoc } from 'kira-core';
+import { Dict, Either } from 'trimop';
 
-import { Either } from '../util';
-import { DeleteDoc, GetDoc, GetDocError, UpdateDoc } from './db';
-import { DocChange, DocSnapshot, Snapshot, WriteDoc } from './doc';
-import { InvalidFieldTypeError } from './error';
+import { RelKey } from '../util';
+import { DeleteDoc, GetDoc, GetDocFailure, UpdateDoc } from './db';
+import { DocChange, TriggerSnapshot } from './doc';
 
 /**
  *Trigger
  */
-export type Trigger = Dictionary<ColTrigger>;
+export type Trigger = Dict<ColTrigger>;
 
 export type ColTrigger = {
   readonly onCreate?: ActionTrigger<DocSnapshot>;
@@ -16,7 +16,7 @@ export type ColTrigger = {
   readonly onDelete?: ActionTrigger<DocSnapshot>;
 };
 
-export type ActionTrigger<S extends Snapshot> = {
+export type ActionTrigger<S extends TriggerSnapshot> = {
   readonly getTransactionCommits: readonly DraftGetTransactionCommit<S>[];
   readonly mayFailOps: readonly MayFailOp<S>[];
 };
@@ -35,9 +35,9 @@ export type Draft = {
   readonly onDelete?: ActionDraft<DocSnapshot>;
 };
 
-export type ActionDraft<S extends Snapshot> = Dictionary<ColDraft<S>>;
+export type ActionDraft<S extends TriggerSnapshot> = Dict<ColDraft<S>>;
 
-export type ColDraft<S extends Snapshot> = {
+export type ColDraft<S extends TriggerSnapshot> = {
   readonly getTransactionCommit?: DraftGetTransactionCommit<S>;
   readonly mayFailOp?: MayFailOp<S>;
 };
@@ -45,39 +45,46 @@ export type ColDraft<S extends Snapshot> = {
 /**
  * DraftGetTransactionCommit
  */
-export type DraftGetTransactionCommitError = InvalidFieldTypeError | GetDocError;
+export type DraftGetTransactionCommitFailure = InvalidFieldTypeFailure | GetDocFailure;
 
-export type DraftGetTransactionCommit<S extends Snapshot> = (param: {
+export type DraftGetTransactionCommit<S extends TriggerSnapshot> = (param: {
   readonly snapshot: S;
-  readonly db: {
-    readonly getDoc: GetDoc;
-  };
-}) => Promise<Either<DraftGetTransactionCommitError, TransactionCommit>>;
+  readonly getDoc: GetDoc;
+}) => Promise<Either<DraftGetTransactionCommitFailure, TransactionCommit>>;
 
 /**
  * SpecToDraft
  */
 export type SpecToDraft = (param: {
-  readonly colName: string;
-  readonly fieldName: string;
+  readonly context: {
+    readonly colName: string;
+    readonly fieldName: string;
+  };
   readonly spec: FieldSpec;
 }) => Draft;
 
 /**
+ *
+ */
+export type ExecOnRelDocs<T = unknown> = (p: {
+  readonly relKey: RelKey;
+  readonly exec: (doc: DocSnapshot) => Promise<T>;
+}) => Promise<T>;
+
+/**
  *Commit
  */
-export type TransactionCommit = Dictionary<ColTransactionCommit>;
+export type TransactionCommit = Dict<ColTransactionCommit>;
 
-export type ColTransactionCommit = Dictionary<DocCommit>;
+export type ColTransactionCommit = Dict<DocCommit>;
 
-export type MayFailOp<S extends Snapshot> = (param: {
+export type MayFailOp<S extends TriggerSnapshot, V = unknown> = (param: {
   readonly snapshot: S;
-  readonly db: {
-    readonly getDoc: GetDoc;
-    readonly updateDoc: UpdateDoc;
-    readonly deleteDoc: DeleteDoc;
-  };
-}) => Promise<void>;
+  readonly getDoc: GetDoc;
+  readonly updateDoc: UpdateDoc;
+  readonly deleteDoc: DeleteDoc;
+  readonly execOnRelDocs: ExecOnRelDocs;
+}) => Promise<V>;
 
 /**
  * DocCommit
@@ -110,25 +117,25 @@ export type UpdateDocCommit = {
 } & UpdateDocCommitValue;
 
 /**
- * IncompatibleDocOpError
+ * IncompatibleOcOpFailure
  */
-export function IncompatibleDocOpError(value: IncompatibleDocOpValue): IncompatibleDocOpError {
-  return { _type: 'IncompatibleDocOpError', ...value };
-}
-
-export type IncompatibleDocOpValue = {
+export type IncompatibleDocOpFailure = {
+  readonly _failureType: 'IncompatibleDocOp';
   readonly docCommit1: DocCommit;
   readonly docCommit2: DocCommit;
 };
 
-export type IncompatibleDocOpError = IncompatibleDocOpValue & {
-  readonly _type: 'IncompatibleDocOpError';
-};
+export const IncompatibleDocOpFailure: (
+  p: Omit<IncompatibleDocOpFailure, '_failureType'>
+) => IncompatibleDocOpFailure = (p) => ({
+  ...p,
+  _failureType: 'IncompatibleDocOp',
+});
 
 /**
- * GetTransactionCommitError
+ * GetTransactionCommitFailure
  */
-export type GetTransactionCommitError =
-  | IncompatibleDocOpError
-  | InvalidFieldTypeError
-  | DraftGetTransactionCommitError;
+export type GetTransactionCommitFailure =
+  | IncompatibleDocOpFailure
+  | InvalidFieldTypeFailure
+  | DraftGetTransactionCommitFailure;

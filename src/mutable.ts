@@ -10,6 +10,6 @@ export function testTeardown(): void {
   errorStackString = undefined;
 }
 
-export function getErrorStackString(): string | undefined {
+export function getFailureStackString(): string | undefined {
   return errorStackString;
 }
