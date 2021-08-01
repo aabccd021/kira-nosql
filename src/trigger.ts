@@ -67,8 +67,8 @@ export async function getTransactionCommit<S extends TriggerSnapshot>({
     actionTrigger.getTransactionCommits.map((gtc) => gtc({ getDoc, snapshot }))
   ).then((transactionCommits) =>
     transactionCommits.reduce<Either<GetTransactionCommitFailure, TransactionCommit>>(
-      (prevTC, curTC) => {
-        return foldValue(prevTC, (prevTC) =>
+      (prevTC, curTC) =>
+        foldValue(prevTC, (prevTC) =>
           foldValue(curTC, (curTC) =>
             Object.entries(curTC).reduce<Either<GetTransactionCommitFailure, TransactionCommit>>(
               (prevTC, [curColName, curColTC]) =>
@@ -124,8 +124,7 @@ export async function getTransactionCommit<S extends TriggerSnapshot>({
               Value(prevTC)
             )
           )
-        );
-      },
+        ),
       Value({})
     )
   );
