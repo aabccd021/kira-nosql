@@ -16,10 +16,10 @@ export function makeCreationTimeDraft({
           return Value({
             [colName]: {
               [snapshot.id]: UpdateDocCommit({
-                onDocAbsent: 'doNotUpdate',
                 data: {
                   [fieldName]: CreationTimeField(),
                 },
+                onDocAbsent: 'doNotUpdate',
               }),
             },
           });

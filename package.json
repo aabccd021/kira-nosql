@@ -43,6 +43,8 @@
     "eslint-plugin-only-warn": "^1.0.3",
     "eslint-plugin-prettier": "^3.3.1",
     "eslint-plugin-simple-import-sort": "^7.0.0",
+    "eslint-plugin-sort-keys-fix": "^1.1.1",
+    "eslint-plugin-typescript-sort-keys": "^1.7.0",
     "eslint-plugin-unused-imports": "^1.1.2",
     "jest": "^27.0.6",
     "open-cli": "^7.0.0",
@@ -58,16 +60,21 @@
     ]
   },
   "eslintConfig": {
+    "ignorePatterns": [
+      "lib/**",
+      "dist/**"
+    ],
     "parser": "@typescript-eslint/parser",
     "plugins": [
       "@typescript-eslint",
-      "filenames",
       "functional",
       "import",
       "jest",
       "no-null",
       "only-warn",
       "simple-import-sort",
+      "sort-keys-fix",
+      "typescript-sort-keys",
       "unused-imports"
     ],
     "extends": [
@@ -80,10 +87,8 @@
       "plugin:jest/recommended",
       "plugin:jest/style",
       "plugin:prettier/recommended",
+      "plugin:typescript-sort-keys/recommended",
       "prettier"
-    ],
-    "ignorePatterns": [
-      "lib/**"
     ],
     "overrides": [
       {
@@ -91,22 +96,24 @@
           "test/**/*.ts"
         ],
         "rules": {
-          "functional/no-return-void": "off"
+          "no-null/no-null": "off",
+          "functional/prefer-readonly-type": "off",
+          "import/no-unused-modules": "off"
         }
       }
     ],
     "rules": {
-      "@typescript-eslint/no-unused-vars": "off",
+      "no-unsafe-optional-chaining": "warn",
+      "no-use-before-define": "warn",
+      "no-else-return": "warn",
+      "no-useless-return": "warn",
+      "no-undef-init": "warn",
+      "no-useless-rename": "warn",
+      "object-shorthand": "warn",
+      "prefer-arrow-callback": "warn",
+      "prefer-destructuring": "warn",
+      "prefer-template": "warn",
       "eqeqeq": "warn",
-      "functional/no-conditional-statement": "off",
-      "functional/no-expression-statement": "off",
-      "functional/functional-parameters": "off",
-      "import/no-cycle": "warn",
-      "no-null/no-null": "warn",
-      "no-unused-expressions": "off",
-      "simple-import-sort/exports": "warn",
-      "simple-import-sort/imports": "warn",
-      "unused-imports/no-unused-imports-ts": "warn",
       "max-len": [
         "warn",
         {
@@ -116,16 +123,46 @@
           "ignoreTemplateLiterals": true
         }
       ],
+      "curly": [
+        "warn",
+        "all"
+      ],
+      "@typescript-eslint/no-unused-vars": "off",
+      "unused-imports/no-unused-imports-ts": "warn",
+      "functional/no-expression-statement": "off",
+      "functional/functional-parameters": "off",
+      "functional/no-conditional-statement": "off",
+      "sort-keys-fix/sort-keys-fix": "warn",
+      "unused-imports/no-unused-vars": [
+        "warn",
+        {
+          "vars": "all",
+          "varsIgnorePattern": "^_",
+          "args": "after-used",
+          "argsIgnorePattern": "^_"
+        }
+      ],
+      "import/no-cycle": "warn",
+      "import/exports-last": "warn",
+      "import/first": "warn",
+      "import/no-named-default": "warn",
+      "import/no-namespace": "warn",
+      "import/no-useless-path-segments": "warn",
+      "import/no-unused-modules": [
+        1,
+        {
+          "unusedExports": true
+        }
+      ],
+      "no-null/no-null": "warn",
+      "simple-import-sort/exports": "warn",
+      "simple-import-sort/imports": "warn",
       "prettier/prettier": [
         "warn",
         {
           "singleQuote": true,
           "printWidth": 100
         }
-      ],
-      "max-params": [
-        "warn",
-        3
       ]
     }
   }

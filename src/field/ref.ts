@@ -27,16 +27,16 @@ async function propagateRefUpdate({
   referCol,
   spec: { syncedFields, refedCol, thisColRefers },
 }: {
-  readonly updateDoc: UpdateDoc;
   readonly execOnRelDocs: ExecOnRelDocs;
   readonly refedDoc: DocChange;
-  readonly referField: string;
   readonly referCol: string;
+  readonly referField: string;
   readonly spec: {
     readonly refedCol: string;
     readonly syncedFields: SyncedFields;
     readonly thisColRefers: readonly ColRefer[];
   };
+  readonly updateDoc: UpdateDoc;
 }): Promise<void> {
   const updateDiff = Object.fromEntries(
     Object.entries(refedDoc.after).filter(
@@ -51,45 +51,45 @@ async function propagateRefUpdate({
 
     return Value(
       execOnRelDocs({
-        relKey: {
-          refedId: refedDoc.id,
-          refedCol,
-          referField,
-          referCol,
-        },
         exec: async ({ id }) => {
           await updateDoc({
-            key: { col: referCol, id },
             docData: {
               [referField]: RefUpdateField(syncData),
             },
+            key: { col: referCol, id },
           });
 
           thisColRefers.forEach((thisColRefer) => {
             thisColRefer.fields.forEach((thisColReferField) => {
               propagateRefUpdate({
-                updateDoc,
                 execOnRelDocs,
+                refedDoc: {
+                  after: {
+                    [referField]: RefField({
+                      doc: syncData,
+                      id: refedDoc.id,
+                    }),
+                  },
+                  before: {},
+                  id,
+                },
+                referCol: thisColRefer.colName,
+                referField: thisColReferField.name,
                 spec: {
                   refedCol: referCol,
                   syncedFields: thisColReferField.syncedFields,
                   thisColRefers: thisColRefer.thisColRefers,
                 },
-                referCol: thisColRefer.colName,
-                referField: thisColReferField.name,
-                refedDoc: {
-                  id,
-                  before: {},
-                  after: {
-                    [referField]: RefField({
-                      id: refedDoc.id,
-                      doc: syncData,
-                    }),
-                  },
-                },
+                updateDoc,
               });
             });
           });
+        },
+        relKey: {
+          refedCol,
+          refedId: refedDoc.id,
+          referCol,
+          referField,
         },
       })
     );
@@ -127,7 +127,6 @@ export function makeRefDraft({
                   return Value({
                     [colName]: {
                       [snapshot.id]: UpdateDocCommit({
-                        onDocAbsent: 'doNotUpdate',
                         data: {
                           [fieldName]: RefUpdateField(
                             Object.fromEntries(
@@ -137,6 +136,7 @@ export function makeRefDraft({
                             )
                           ),
                         },
+                        onDocAbsent: 'doNotUpdate',
                       }),
                     },
                   });
@@ -146,35 +146,35 @@ export function makeRefDraft({
           },
         }
       : undefined,
+    onDelete: {
+      [spec.refedCol]: {
+        mayFailOp: async ({ execOnRelDocs, deleteDoc, snapshot: refed }) =>
+          execOnRelDocs({
+            exec: (doc) => deleteDoc({ col: colName, id: doc.id }),
+            relKey: {
+              refedCol: spec.refedCol,
+              refedId: refed.id,
+              referCol: colName,
+              referField: fieldName,
+            },
+          }),
+      },
+    },
     onUpdate: needSync
       ? {
           [spec.refedCol]: {
             mayFailOp: async ({ execOnRelDocs, updateDoc, snapshot }) => {
               await propagateRefUpdate({
                 execOnRelDocs,
-                updateDoc,
-                spec,
                 refedDoc: snapshot,
                 referCol: colName,
                 referField: fieldName,
+                spec,
+                updateDoc,
               });
             },
           },
         }
       : undefined,
-    onDelete: {
-      [spec.refedCol]: {
-        mayFailOp: async ({ execOnRelDocs, deleteDoc, snapshot: refed }) =>
-          execOnRelDocs({
-            relKey: {
-              refedId: refed.id,
-              referField: fieldName,
-              referCol: colName,
-              refedCol: spec.refedCol,
-            },
-            exec: (doc) => deleteDoc({ id: doc.id, col: colName }),
-          }),
-      },
-    },
   };
 }

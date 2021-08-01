@@ -11,10 +11,10 @@ import {
   GetDoc,
   GetTransactionCommitFailure,
   IncompatibleDocOpFailure,
-  TriggerSnapshot,
   SpecToDraft,
   TransactionCommit,
   Trigger,
+  TriggerSnapshot,
   UpdateDoc,
   UpdateDocCommit,
 } from './type';
@@ -46,8 +46,8 @@ export function getTrigger({
         colName,
         {
           onCreate: colDraftsToActionTrigger(drafts.map((draft) => draft.onCreate?.[colName])),
-          onUpdate: colDraftsToActionTrigger(drafts.map((draft) => draft.onUpdate?.[colName])),
           onDelete: colDraftsToActionTrigger(drafts.map((draft) => draft.onDelete?.[colName])),
+          onUpdate: colDraftsToActionTrigger(drafts.map((draft) => draft.onUpdate?.[colName])),
         },
       ];
     })
@@ -60,8 +60,8 @@ export async function getTransactionCommit<S extends TriggerSnapshot>({
   getDoc,
 }: {
   readonly actionTrigger: ActionTrigger<S>;
-  readonly snapshot: S;
   readonly getDoc: GetDoc;
+  readonly snapshot: S;
 }): Promise<Either<GetTransactionCommitFailure, TransactionCommit>> {
   return Promise.all(
     actionTrigger.getTransactionCommits.map((gtc) => gtc({ getDoc, snapshot }))
@@ -86,22 +86,22 @@ export async function getTransactionCommit<S extends TriggerSnapshot>({
                         if (prevCommit === undefined) {
                           return Value({ ...prevColTC, [docId]: docCommit });
                         }
-                        if (docCommit._op === 'delete' && prevCommit?._op === 'delete') {
+                        if (docCommit._op === 'Delete' && prevCommit?._op === 'Delete') {
                           return Value({
                             ...prevColTC,
                             [docId]: DeleteDocCommit(),
                           });
                         }
                         if (
-                          docCommit._op === 'update' &&
-                          prevCommit?._op === 'update' &&
+                          docCommit._op === 'Update' &&
+                          prevCommit?._op === 'Update' &&
                           docCommit.onDocAbsent === prevCommit.onDocAbsent
                         ) {
                           return Value({
                             ...prevColTC,
                             [docId]: UpdateDocCommit({
-                              onDocAbsent: docCommit.onDocAbsent,
                               data: { ...docCommit.data, ...prevCommit.data },
+                              onDocAbsent: docCommit.onDocAbsent,
                             }),
                           });
                         }
@@ -140,19 +140,21 @@ export async function runMayFailOps<S extends TriggerSnapshot>({
   execOnRelDocs,
 }: {
   readonly actionTrigger: ActionTrigger<S>;
-  readonly snapshot: S;
-  readonly getDoc: GetDoc;
-  readonly updateDoc: UpdateDoc;
   readonly deleteDoc: DeleteDoc;
   readonly execOnRelDocs: ExecOnRelDocs;
+  readonly getDoc: GetDoc;
+  readonly snapshot: S;
+  readonly updateDoc: UpdateDoc;
 }): Promise<void> {
   await Promise.all(
     actionTrigger.mayFailOps.map((mayFailOp) =>
-      mayFailOp({ getDoc, updateDoc, deleteDoc, execOnRelDocs, snapshot })
+      mayFailOp({ deleteDoc, execOnRelDocs, getDoc, snapshot, updateDoc })
     )
   );
 }
 
-export function isTriggerRequired<S extends TriggerSnapshot>(actionTrigger: ActionTrigger<S>): boolean {
+export function isTriggerRequired<S extends TriggerSnapshot>(
+  actionTrigger: ActionTrigger<S>
+): boolean {
   return actionTrigger.getTransactionCommits.length > 0 || actionTrigger.mayFailOps.length > 0;
 }
