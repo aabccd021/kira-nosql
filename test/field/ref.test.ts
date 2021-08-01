@@ -7,8 +7,24 @@ import {
 } from 'kira-core';
 import { Failed, Value } from 'trimop';
 
-import { ActionTrigger, getTransactionCommit, getTrigger, UpdateDocCommit } from '../../src';
-import { GetDocParam, GetDocReturn, testBuildDraft } from '../util';
+import {
+  ActionTrigger,
+  execPropagationOps,
+  getTransactionCommit,
+  getTrigger,
+  UpdateDocCommit,
+} from '../../src';
+import {
+  DeleteDocParam,
+  DeleteDocReturn,
+  ExecOnRelDocsParam,
+  ExecOnRelDocsReturn,
+  GetDocParam,
+  GetDocReturn,
+  testBuildDraft,
+  UpdateDocParam,
+  UpdateDocReturn,
+} from '../util';
 
 describe('Ref Trigger', () => {
   const trigger = getTrigger({
@@ -154,6 +170,32 @@ describe('Ref Trigger', () => {
             },
           })
         );
+      });
+    });
+
+    describe('execPropagationOps', () => {
+      it('never run on comment', async () => {
+        const mockedDeleteDoc = jest.fn<DeleteDocReturn, DeleteDocParam>();
+        const mockedUpdateDoc = jest.fn<UpdateDocReturn, UpdateDocParam>();
+        const mockedExecOnRelDocs = jest.fn<ExecOnRelDocsReturn, ExecOnRelDocsParam>();
+        await execPropagationOps({
+          actionTrigger: onCreateCommentTrigger as ActionTrigger<DocSnapshot>,
+          deleteDoc: mockedDeleteDoc,
+          execOnRelDocs: mockedExecOnRelDocs,
+          snapshot: {
+            doc: {
+              commentedArticle: RefField({
+                doc: {},
+                id: 'article0',
+              }),
+            },
+            id: 'comment0',
+          },
+          updateDoc: mockedUpdateDoc,
+        });
+        expect(mockedDeleteDoc).not.toHaveBeenCalled();
+        expect(mockedUpdateDoc).not.toHaveBeenCalled();
+        expect(mockedExecOnRelDocs).not.toHaveBeenCalled();
       });
     });
   });

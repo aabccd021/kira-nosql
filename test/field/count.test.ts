@@ -15,13 +15,13 @@ import {
   UpdateDocCommit,
 } from '../../src';
 import {
-  testBuildDraft,
   DeleteDocParam,
   DeleteDocReturn,
   ExecOnRelDocsParam,
   ExecOnRelDocsReturn,
   GetDocParam,
   GetDocReturn,
+  testBuildDraft,
   UpdateDocParam,
   UpdateDocReturn,
 } from '../util';
