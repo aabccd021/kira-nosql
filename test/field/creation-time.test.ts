@@ -1,30 +1,33 @@
-import { CreationTimeField } from 'kira-core';
+import { CreationTimeField, DocSnapshot } from 'kira-core';
 import { Value } from 'trimop';
 
-import { makeCreationTimeDraft, UpdateDocCommit } from '../../src';
-import { GetDocParam, GetDocReturn } from '../util';
+import { ActionTrigger, getTransactionCommit, getTrigger, UpdateDocCommit } from '../../src';
+import { buildDraft, GetDocParam, GetDocReturn } from '../util';
 
 describe('makeCountTimeTrigger', () => {
   describe('onCreate', () => {
     it('create creationTime field when article created', async () => {
-      const draft = makeCreationTimeDraft({
-        context: {
-          colName: 'article',
-          fieldName: 'creationTime',
+      const trigger = getTrigger({
+        buildDraft,
+        spec: {
+          article: {
+            creationTime: CreationTimeField(),
+          },
         },
-        spec: { _type: 'creationTime' },
       });
+
+      const onCreateTrigger = trigger['article']?.onCreate;
+      expect(onCreateTrigger).toBeDefined();
+
       const mockedGetDoc = jest.fn<GetDocReturn, GetDocParam>();
-
-      const actionResult = await draft.onCreate?.['article']?.getTransactionCommit?.({
+      const onCreateTransactionCommit = await getTransactionCommit({
+        actionTrigger: onCreateTrigger as ActionTrigger<DocSnapshot>,
         getDoc: mockedGetDoc,
-
         snapshot: { doc: {}, id: 'article0' },
       });
 
-      expect(Object.keys(draft.onCreate ?? {})).toStrictEqual(['article']);
       expect(mockedGetDoc).not.toHaveBeenCalled();
-      expect(actionResult).toStrictEqual(
+      expect(onCreateTransactionCommit).toStrictEqual(
         Value({
           article: {
             article0: UpdateDocCommit({
@@ -40,28 +43,33 @@ describe('makeCountTimeTrigger', () => {
   });
 
   describe('onUpdate', () => {
-    it('does not return action', () => {
-      const draft = makeCreationTimeDraft({
-        context: {
-          colName: 'article',
-          fieldName: 'creationTime',
+    it('trigger is undefined', () => {
+      const trigger = getTrigger({
+        buildDraft,
+        spec: {
+          article: {
+            creationTime: CreationTimeField(),
+          },
         },
-        spec: { _type: 'creationTime' },
       });
-      expect(draft.onUpdate).toBeUndefined();
+      const onUpdateTrigger = trigger['article']?.onUpdate;
+      expect(onUpdateTrigger).toBeUndefined();
     });
   });
 
   describe('onDelete', () => {
-    it('does not return action', () => {
-      const draft = makeCreationTimeDraft({
-        context: {
-          colName: 'article',
-          fieldName: 'creationTime',
+    it('trigger is undefined', () => {
+      const trigger = getTrigger({
+        buildDraft,
+        spec: {
+          article: {
+            creationTime: CreationTimeField(),
+          },
         },
-        spec: { _type: 'creationTime' },
       });
-      expect(draft.onDelete).toBeUndefined();
+
+      const onDeleteTrigger = trigger['article']?.onDelete;
+      expect(onDeleteTrigger).toBeUndefined();
     });
   });
 });

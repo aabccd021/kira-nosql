@@ -57,6 +57,9 @@
     "testEnvironment": "node",
     "testMatch": [
       "**/test/**/*.test.ts"
+    ],
+    "coveragePathIgnorePatterns": [
+      "src/type.ts"
     ]
   },
   "eslintConfig": {
@@ -148,12 +151,6 @@
       "import/no-named-default": "warn",
       "import/no-namespace": "warn",
       "import/no-useless-path-segments": "warn",
-      "import/no-unused-modules": [
-        "warn",
-        {
-          "unusedExports": true
-        }
-      ],
       "no-null/no-null": "warn",
       "simple-import-sort/exports": "warn",
       "simple-import-sort/imports": "warn",

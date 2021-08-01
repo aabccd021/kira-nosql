@@ -172,7 +172,7 @@ export type Draft = {
 /**
  *
  */
-export type DraftBuilder = (param: {
+export type BuildDraft = (param: {
   readonly context: {
     readonly colName: string;
     readonly fieldName: string;

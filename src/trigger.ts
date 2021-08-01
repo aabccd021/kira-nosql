@@ -3,11 +3,11 @@ import { Either, Failed, foldValue, isDefined, Value } from 'trimop';
 
 import {
   ActionTrigger,
+  BuildDraft,
   ColDraft,
   ColTransactionCommit,
   DeleteDoc,
   DeleteDocCommit,
-  DraftBuilder,
   ExecOnRelDocs,
   GetDoc,
   GetTransactionCommitFailure,
@@ -21,23 +21,27 @@ import {
 
 function colDraftsToActionTrigger<S extends TriggerSnapshot>(
   colDraft: readonly (ColDraft<S> | undefined)[]
-): ActionTrigger<S> {
+): ActionTrigger<S> | undefined {
+  const definedColDraft = colDraft.filter(isDefined);
+  if (definedColDraft.length === 0) {
+    return undefined;
+  }
   return {
-    getTransactionCommits: colDraft.map((x) => x?.getTransactionCommit).filter(isDefined),
-    mayFailOps: colDraft.map((x) => x?.mayFailOp).filter(isDefined),
+    getTransactionCommits: definedColDraft.map((x) => x.getTransactionCommit).filter(isDefined),
+    mayFailOps: definedColDraft.map((x) => x.mayFailOp).filter(isDefined),
   };
 }
 
 export function getTrigger({
   spec,
-  specToDraft,
+  buildDraft,
 }: {
+  readonly buildDraft: BuildDraft;
   readonly spec: Spec;
-  readonly specToDraft: DraftBuilder;
 }): Trigger {
   const drafts = Object.entries(spec).flatMap(([colName, docFieldSpecs]) =>
     Object.entries(docFieldSpecs).map(([fieldName, spec]) =>
-      specToDraft({ context: { colName, fieldName }, spec })
+      buildDraft({ context: { colName, fieldName }, spec })
     )
   );
   return Object.fromEntries(
