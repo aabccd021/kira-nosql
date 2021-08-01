@@ -39,7 +39,7 @@ describe('Count trigger', () => {
 
     it('set bookmarkCount to 0 when article created', async () => {
       const mockedGetDoc = jest.fn<GetDocReturn, GetDocParam>();
-      const onCreateTransactionCommit = await getTransactionCommit({
+      const onCreateArticleTC = await getTransactionCommit({
         actionTrigger: onCreateArticleTrigger as ActionTrigger<DocSnapshot>,
         getDoc: mockedGetDoc,
         snapshot: {
@@ -49,7 +49,7 @@ describe('Count trigger', () => {
       });
 
       expect(mockedGetDoc).not.toHaveBeenCalled();
-      expect(onCreateTransactionCommit).toStrictEqual(
+      expect(onCreateArticleTC).toStrictEqual(
         Value({
           article: {
             article0: UpdateDocCommit({
@@ -65,7 +65,7 @@ describe('Count trigger', () => {
 
     it('increase bookmarkCount if new bookmark added', async () => {
       const mockedGetDoc = jest.fn<GetDocReturn, GetDocParam>();
-      const onCreateTransactionCommit = await getTransactionCommit({
+      const onCreateBookmarkTC = await getTransactionCommit({
         actionTrigger: onCreateBookmarkTrigger as ActionTrigger<DocSnapshot>,
         getDoc: mockedGetDoc,
         snapshot: {
@@ -77,7 +77,7 @@ describe('Count trigger', () => {
       });
 
       expect(mockedGetDoc).not.toHaveBeenCalled();
-      expect(onCreateTransactionCommit).toStrictEqual(
+      expect(onCreateBookmarkTC).toStrictEqual(
         Value({
           article: {
             article0: UpdateDocCommit({
@@ -93,7 +93,7 @@ describe('Count trigger', () => {
 
     it('returns InvalidFieldTypeFailure if counterDoc is not ref field', async () => {
       const mockedGetDoc = jest.fn<GetDocReturn, GetDocParam>();
-      const onCreateTransactionCommit = await getTransactionCommit({
+      const onCreateBookmarkTC = await getTransactionCommit({
         actionTrigger: onCreateBookmarkTrigger as ActionTrigger<DocSnapshot>,
         getDoc: mockedGetDoc,
         snapshot: {
@@ -105,7 +105,7 @@ describe('Count trigger', () => {
       });
 
       expect(mockedGetDoc).not.toHaveBeenCalled();
-      expect(onCreateTransactionCommit).toStrictEqual(
+      expect(onCreateBookmarkTC).toStrictEqual(
         Failed(
           InvalidFieldTypeFailure({
             expectedFieldTypes: ['Ref'],
@@ -115,9 +115,9 @@ describe('Count trigger', () => {
       );
     });
 
-    it('returns error if counterDoc is empty', async () => {
+    it('returns failure if counterDoc is empty', async () => {
       const mockedGetDoc = jest.fn<GetDocReturn, GetDocParam>();
-      const onCreateTransactionCommit = await getTransactionCommit({
+      const onCreateBookmarkTC = await getTransactionCommit({
         actionTrigger: onCreateBookmarkTrigger as ActionTrigger<DocSnapshot>,
         getDoc: mockedGetDoc,
         snapshot: {
@@ -127,7 +127,7 @@ describe('Count trigger', () => {
       });
 
       expect(mockedGetDoc).not.toHaveBeenCalled();
-      expect(onCreateTransactionCommit).toStrictEqual(
+      expect(onCreateBookmarkTC).toStrictEqual(
         Failed(
           InvalidFieldTypeFailure({
             expectedFieldTypes: ['Ref'],
@@ -165,7 +165,7 @@ describe('Count trigger', () => {
 
     it('decrease bookmarkCount by 1 if new bookmark added', async () => {
       const mockedGetDoc = jest.fn<GetDocReturn, GetDocParam>();
-      const onDeleteTransactionCommit = await getTransactionCommit({
+      const onDeleteBookmarkTC = await getTransactionCommit({
         actionTrigger: onDeleteBookmarkTrigger as ActionTrigger<DocSnapshot>,
         getDoc: mockedGetDoc,
         snapshot: {
@@ -177,7 +177,7 @@ describe('Count trigger', () => {
       });
 
       expect(mockedGetDoc).not.toHaveBeenCalled();
-      expect(onDeleteTransactionCommit).toStrictEqual(
+      expect(onDeleteBookmarkTC).toStrictEqual(
         Value({
           article: {
             article0: UpdateDocCommit({
@@ -191,9 +191,9 @@ describe('Count trigger', () => {
       );
     });
 
-    it('returns error if counterDoc is not ref field', async () => {
+    it('returns failure if counterDoc is not ref field', async () => {
       const mockedGetDoc = jest.fn<GetDocReturn, GetDocParam>();
-      const onDeleteTransactionCommit = await getTransactionCommit({
+      const onDeleteBookmarkTC = await getTransactionCommit({
         actionTrigger: onDeleteBookmarkTrigger as ActionTrigger<DocSnapshot>,
         getDoc: mockedGetDoc,
         snapshot: {
@@ -205,7 +205,7 @@ describe('Count trigger', () => {
       });
 
       expect(mockedGetDoc).not.toHaveBeenCalled();
-      expect(onDeleteTransactionCommit).toStrictEqual(
+      expect(onDeleteBookmarkTC).toStrictEqual(
         Failed(
           InvalidFieldTypeFailure({
             expectedFieldTypes: ['Ref'],
@@ -215,16 +215,16 @@ describe('Count trigger', () => {
       );
     });
 
-    it('returns error if counterDoc is empty', async () => {
+    it('returns failure if counterDoc is empty', async () => {
       const mockedGetDoc = jest.fn<GetDocReturn, GetDocParam>();
-      const onDeleteTransactionCommit = await getTransactionCommit({
+      const onDeleteBookmarkTC = await getTransactionCommit({
         actionTrigger: onDeleteBookmarkTrigger as ActionTrigger<DocSnapshot>,
         getDoc: mockedGetDoc,
         snapshot: { doc: {}, id: 'bookmark0' },
       });
 
       expect(mockedGetDoc).not.toHaveBeenCalled();
-      expect(onDeleteTransactionCommit).toStrictEqual(
+      expect(onDeleteBookmarkTC).toStrictEqual(
         Failed(
           InvalidFieldTypeFailure({
             expectedFieldTypes: ['Ref'],

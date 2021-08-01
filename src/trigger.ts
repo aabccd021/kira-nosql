@@ -78,52 +78,55 @@ export async function getTransactionCommit<S extends TriggerSnapshot>({
               (prevTC, [curColName, curColTC]) =>
                 foldValue(prevTC, (prevTC) => {
                   const prevColTC = prevTC[curColName];
-                  if (prevColTC === undefined) {
-                    return Value({ ...prevTC, [curColName]: curColTC });
-                  }
-                  return foldValue(
-                    Object.entries(curColTC).reduce<
-                      Either<IncompatibleDocOpFailure, ColTransactionCommit>
-                    >((prevColTC, [docId, docCommit]) => {
-                      return foldValue(prevColTC, (prevColTC) => {
-                        const prevCommit = prevColTC[docId];
-                        if (prevCommit === undefined) {
-                          return Value({ ...prevColTC, [docId]: docCommit });
-                        }
-                        if (docCommit._op === 'Delete' && prevCommit?._op === 'Delete') {
-                          return Value({
-                            ...prevColTC,
-                            [docId]: DeleteDocCommit(),
-                          });
-                        }
-                        if (
-                          docCommit._op === 'Update' &&
-                          prevCommit?._op === 'Update' &&
-                          docCommit.onDocAbsent === prevCommit.onDocAbsent
-                        ) {
-                          return Value({
-                            ...prevColTC,
-                            [docId]: UpdateDocCommit({
-                              onDocAbsent: docCommit.onDocAbsent,
-                              writeDoc: { ...docCommit.writeDoc, ...prevCommit.writeDoc },
-                            }),
-                          });
-                        }
-                        return Failed(
-                          IncompatibleDocOpFailure({
-                            docCommit1: prevCommit,
-                            docCommit2: docCommit,
-                          })
-                        );
-                      });
-                    }, Value(prevColTC)),
-                    (updatedColTC) => {
-                      return Value({
+                  return prevColTC === undefined
+                    ? Value({
                         ...prevTC,
-                        [curColName]: updatedColTC,
-                      });
-                    }
-                  );
+                        [curColName]: curColTC,
+                      })
+                    : foldValue(
+                        Object.entries(curColTC).reduce<
+                          Either<IncompatibleDocOpFailure, ColTransactionCommit>
+                        >(
+                          (prevColTC, [docId, docCommit]) =>
+                            foldValue(prevColTC, (prevColTC) => {
+                              const prevCommit = prevColTC[docId];
+                              if (prevCommit === undefined) {
+                                return Value({ ...prevColTC, [docId]: docCommit });
+                              }
+                              if (docCommit._op === 'Delete' && prevCommit?._op === 'Delete') {
+                                return Value({
+                                  ...prevColTC,
+                                  [docId]: DeleteDocCommit(),
+                                });
+                              }
+                              if (
+                                docCommit._op === 'Update' &&
+                                prevCommit?._op === 'Update' &&
+                                docCommit.onDocAbsent === prevCommit.onDocAbsent
+                              ) {
+                                return Value({
+                                  ...prevColTC,
+                                  [docId]: UpdateDocCommit({
+                                    onDocAbsent: docCommit.onDocAbsent,
+                                    writeDoc: { ...docCommit.writeDoc, ...prevCommit.writeDoc },
+                                  }),
+                                });
+                              }
+                              return Failed(
+                                IncompatibleDocOpFailure({
+                                  docCommit1: prevCommit,
+                                  docCommit2: docCommit,
+                                })
+                              );
+                            }),
+                          Value(prevColTC)
+                        ),
+                        (updatedColTC) =>
+                          Value({
+                            ...prevTC,
+                            [curColName]: updatedColTC,
+                          })
+                      );
                 }),
               Value(prevTC)
             )

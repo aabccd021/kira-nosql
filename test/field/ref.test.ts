@@ -6,7 +6,7 @@ import { GetDocParam, GetDocReturn } from '../util';
 
 describe('makeRefTrigger', () => {
   describe('onCreate', () => {
-    it('return error if refField is empty', async () => {
+    it('return failure if refField is empty', async () => {
       const draft = makeRefDraft({
         context: {
           colName: 'comment',
@@ -40,7 +40,7 @@ describe('makeRefTrigger', () => {
       );
     });
 
-    it('return error if refField is not type of ref field', async () => {
+    it('return failure if refField is not type of ref field', async () => {
       const draft = makeRefDraft({
         context: {
           colName: 'comment',
@@ -78,7 +78,7 @@ describe('makeRefTrigger', () => {
       );
     });
 
-    // it('return error if get doc is error', async () => {
+    // it('return failure if get doc is failure ', async () => {
     //   const draft = makeRefDraft({
     //     context: {
     //       colName: 'comment',
