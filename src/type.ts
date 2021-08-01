@@ -139,7 +139,7 @@ export type GetTransactionCommit<S extends TriggerSnapshot> = (param: {
 /**
  *
  */
-export type MayFailOp<S extends TriggerSnapshot, V = unknown> = (param: {
+export type PropagationOp<S extends TriggerSnapshot, V = unknown> = (param: {
   readonly deleteDoc: DeleteDoc;
   readonly execOnRelDocs: ExecOnRelDocs;
   readonly snapshot: S;
@@ -151,7 +151,7 @@ export type MayFailOp<S extends TriggerSnapshot, V = unknown> = (param: {
  */
 export type ColDraft<S extends TriggerSnapshot> = {
   readonly getTransactionCommit?: GetTransactionCommit<S>;
-  readonly mayFailOp?: MayFailOp<S>;
+  readonly propagationOp?: PropagationOp<S>;
 };
 
 /**
@@ -184,7 +184,7 @@ export type BuildDraft = (param: {
  */
 export type ActionTrigger<S extends TriggerSnapshot> = {
   readonly getTransactionCommits: readonly GetTransactionCommit<S>[];
-  readonly mayFailOps: readonly MayFailOp<S>[];
+  readonly propagationOps: readonly PropagationOp<S>[];
 };
 
 /**

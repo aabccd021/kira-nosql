@@ -28,7 +28,7 @@ function colDraftsToActionTrigger<S extends TriggerSnapshot>(
   }
   return {
     getTransactionCommits: definedColDraft.map((x) => x.getTransactionCommit).filter(isDefined),
-    mayFailOps: definedColDraft.map((x) => x.mayFailOp).filter(isDefined),
+    propagationOps: definedColDraft.map((x) => x.propagationOp).filter(isDefined),
   };
 }
 
@@ -137,7 +137,7 @@ export async function getTransactionCommit<S extends TriggerSnapshot>({
   );
 }
 
-export async function runMayFailOps<S extends TriggerSnapshot>({
+export async function execPropagationOps<S extends TriggerSnapshot>({
   actionTrigger,
   snapshot,
   updateDoc,
@@ -151,8 +151,8 @@ export async function runMayFailOps<S extends TriggerSnapshot>({
   readonly updateDoc: UpdateDoc;
 }): Promise<void> {
   await Promise.all(
-    actionTrigger.mayFailOps.map((mayFailOp) =>
-      mayFailOp({ deleteDoc, execOnRelDocs, snapshot, updateDoc })
+    actionTrigger.propagationOps.map((propagationOp) =>
+      propagationOp({ deleteDoc, execOnRelDocs, snapshot, updateDoc })
     )
   );
 }
@@ -160,5 +160,5 @@ export async function runMayFailOps<S extends TriggerSnapshot>({
 export function isTriggerRequired<S extends TriggerSnapshot>(
   actionTrigger: ActionTrigger<S>
 ): boolean {
-  return actionTrigger.getTransactionCommits.length > 0 || actionTrigger.mayFailOps.length > 0;
+  return actionTrigger.getTransactionCommits.length > 0 || actionTrigger.propagationOps.length > 0;
 }

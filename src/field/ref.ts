@@ -157,7 +157,7 @@ export function makeRefDraft({
       : undefined,
     onDelete: {
       [spec.refedCol]: {
-        mayFailOp: async ({ execOnRelDocs, deleteDoc, snapshot: refed }) =>
+        propagationOp: async ({ execOnRelDocs, deleteDoc, snapshot: refed }) =>
           execOnRelDocs(
             {
               refedCol: spec.refedCol,
@@ -172,7 +172,7 @@ export function makeRefDraft({
     onUpdate: needSync
       ? {
           [spec.refedCol]: {
-            mayFailOp: async ({ execOnRelDocs, updateDoc, snapshot }) =>
+            propagationOp: async ({ execOnRelDocs, updateDoc, snapshot }) =>
               propagateRefUpdate({
                 execOnRelDocs,
                 refedDoc: snapshot,
