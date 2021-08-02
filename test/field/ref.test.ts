@@ -270,7 +270,11 @@ describe('Ref Trigger', () => {
       it('copy article field', async () => {
         const mockedDeleteDoc = jest.fn<DeleteDocReturn, DeleteDocParam>();
         const mockedUpdateDoc = jest.fn<UpdateDocReturn, UpdateDocParam>();
-        const mockedExecOnRelDocs = jest.fn<ExecOnRelDocsReturn, ExecOnRelDocsParam>();
+        const mockedExecOnRelDocs = jest
+          .fn<ExecOnRelDocsReturn, ExecOnRelDocsParam>()
+          .mockImplementation((_, updateDoc) => {
+            return updateDoc({ doc: {}, id: '123' });
+          });
         await execPropagationOps({
           actionTrigger: onUpdateArticleTrigger as ActionTrigger<DocChange>,
           deleteDoc: mockedDeleteDoc,
@@ -295,7 +299,7 @@ describe('Ref Trigger', () => {
         // expect(result).toStrictEqual(Value(undefined));
 
         expect(mockedExecOnRelDocs).toHaveBeenCalled();
-        // expect(mockedUpdateDoc).toHaveBeenCalled();
+        expect(mockedUpdateDoc).toHaveBeenCalled();
         expect(mockedDeleteDoc).not.toHaveBeenCalled();
         // expect(mockedGetDoc).not.toHaveBeenCalled();
         // expect(onUpdateArticleTC).toStrictEqual(
