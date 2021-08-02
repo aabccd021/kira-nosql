@@ -9,7 +9,7 @@ import {
   RefUpdateField,
   SyncedFields,
 } from 'kira-core';
-import { Either, Failed, foldValue, isDefined, ShouldBeUnreachableFailure, Value } from 'trimop';
+import { Dict, Either, Failed, Failure, foldValue, isDefined, Value } from 'trimop';
 
 import {
   DocChange,
@@ -19,6 +19,36 @@ import {
   UpdateDoc,
   UpdateDocCommit,
 } from '../type';
+
+function filter<F extends Failure = Failure, T = unknown>(
+  obj: Dict<T>,
+  mapper: (t: T, fieldName: string) => Either<F, boolean>
+): Either<F, Dict<T>> {
+  return Object.entries(obj).reduce<Either<F, Dict<T>>>(
+    (acc, [fieldName, field]) =>
+      foldValue(acc, (acc) =>
+        foldValue(mapper(field, fieldName), (isEqual) =>
+          Value(isEqual ? { ...acc, [fieldName]: field } : acc)
+        )
+      ),
+    Value({})
+  );
+}
+
+function map<TResult = unknown, F extends Failure = Failure, T = unknown>(
+  obj: Dict<T>,
+  mapper: (t: T, fieldName: string) => Either<F, TResult>
+): Either<F, Dict<TResult>> {
+  return Object.entries(obj).reduce<Either<F, Dict<TResult>>>(
+    (acc, [fieldName, field]) =>
+      foldValue(acc, (acc) =>
+        foldValue(mapper(field, fieldName), (mapResult) =>
+          Value({ ...acc, [fieldName]: mapResult })
+        )
+      ),
+    Value({})
+  );
+}
 
 async function propagateRefUpdate({
   updateDoc,
@@ -39,21 +69,13 @@ async function propagateRefUpdate({
   };
   readonly updateDoc: UpdateDoc;
 }): Promise<unknown> {
-  return foldValue(
-    Object.entries(refedDoc.after).reduce<
-      Either<ShouldBeUnreachableFailure | InvalidFieldTypeFailure, Doc>
-    >(
-      (acc, [fieldName, afterField]) =>
-        foldValue(acc, (acc) =>
-          foldValue(isFieldEqual(afterField, refedDoc.before[fieldName]), (isEqual) =>
-            Value(isEqual ? acc : { ...acc, [fieldName]: afterField })
-          )
-        ),
-      Value({})
+  return foldValue<unknown, Failure, Doc>(
+    filter(refedDoc.after, (afterField, fieldName) =>
+      foldValue(isFieldEqual(afterField, refedDoc.before[fieldName]), (isEqual) => Value(!isEqual))
     ),
     (filteredSyncedFieldsDoc) =>
-      foldValue(filterSyncedFields({ doc: filteredSyncedFieldsDoc, syncedFields }), (syncData) => {
-        return Value(
+      foldValue(filterSyncedFields({ doc: filteredSyncedFieldsDoc, syncedFields }), (syncData) =>
+        Value(
           !isDefined(syncData)
             ? undefined
             : execOnRelDocs(
@@ -63,8 +85,8 @@ async function propagateRefUpdate({
                   referCol,
                   referField,
                 },
-                (id) => {
-                  return Promise.all([
+                (id) =>
+                  Promise.all([
                     updateDoc({
                       key: { col: referCol, id },
                       writeDoc: {
@@ -96,11 +118,10 @@ async function propagateRefUpdate({
                         })
                       )
                     ),
-                  ]);
-                }
+                  ])
               )
-        );
-      })
+        )
+      )
   );
 }
 
