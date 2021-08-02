@@ -16,7 +16,7 @@ export type RelKey = {
  */
 export type ExecOnRelDocs = (
   relKey: RelKey,
-  exec: (doc: DocSnapshot) => Promise<unknown>
+  exec: (id: string) => Promise<unknown>
 ) => Promise<unknown>;
 
 /**
@@ -97,7 +97,8 @@ export type DraftGetTransactionCommitFailure = InvalidFieldTypeFailure | GetDocF
  */
 export type UpdateDocCommit = {
   readonly _op: 'Update';
-  readonly onDocAbsent: 'createDoc' | 'doNotUpdate';
+  readonly onDocAbsent: 'doNotUpdate';
+  //| 'createDoc';
   readonly writeDoc: WriteDoc;
 };
 

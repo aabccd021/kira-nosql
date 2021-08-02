@@ -1,5 +1,5 @@
 import { Spec } from 'kira-core';
-import { Either, Failed, foldValue, isDefined, Value } from 'trimop';
+import { Either, foldValue, isDefined, Value } from 'trimop';
 
 import {
   ActionTrigger,
@@ -92,31 +92,35 @@ export function getTransactionCommit<S extends TriggerSnapshot>({
                               if (prevCommit === undefined) {
                                 return Value({ ...prevColTC, [docId]: docCommit });
                               }
+                              /**
+                               * can handle doc delete and multiple doc update options, commented
+                               * because no field uses it
+                               */
                               // if (docCommit._op === 'Delete' && prevCommit?._op === 'Delete') {
                               //   return Value({
                               //     ...prevColTC,
                               //     [docId]: DeleteDocCommit(),
                               //   });
                               // }
-                              if (
-                                docCommit._op === 'Update' &&
-                                prevCommit?._op === 'Update' &&
-                                docCommit.onDocAbsent === prevCommit.onDocAbsent
-                              ) {
-                                return Value({
-                                  ...prevColTC,
-                                  [docId]: UpdateDocCommit({
-                                    onDocAbsent: docCommit.onDocAbsent,
-                                    writeDoc: { ...docCommit.writeDoc, ...prevCommit.writeDoc },
-                                  }),
-                                });
-                              }
-                              return Failed(
-                                IncompatibleDocOpFailure({
-                                  docCommit1: prevCommit,
-                                  docCommit2: docCommit,
-                                })
-                              );
+                              // if (
+                              //   docCommit._op === 'Update' &&
+                              //   prevCommit?._op === 'Update' &&
+                              //   docCommit.onDocAbsent === prevCommit.onDocAbsent
+                              // ) {
+                              return Value({
+                                ...prevColTC,
+                                [docId]: UpdateDocCommit({
+                                  onDocAbsent: docCommit.onDocAbsent,
+                                  writeDoc: { ...docCommit.writeDoc, ...prevCommit.writeDoc },
+                                }),
+                              });
+                              // }
+                              // return Failed(
+                              //   IncompatibleDocOpFailure({
+                              //     docCommit1: prevCommit,
+                              //     docCommit2: docCommit,
+                              //   })
+                              // );
                             }),
                           Value(prevColTC)
                         ),

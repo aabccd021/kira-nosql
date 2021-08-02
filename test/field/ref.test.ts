@@ -215,175 +215,180 @@ describe('Ref Trigger', () => {
       expect(onUpdateCommentTrigger).toBeUndefined();
     });
 
-    describe('getTransactionCommit', () => {
-      it('returns empty transaction commit', async () => {
-        const mockedGetDoc = jest.fn<GetDocReturn, GetDocParam>();
-        const onUpdateArticleTC = await getTransactionCommit({
-          actionTrigger: onUpdateArticleTrigger as ActionTrigger<DocChange>,
-          getDoc: mockedGetDoc,
-          snapshot: {
-            after: {
-              content: StringField('Its renamed sir'),
-              publishTime: DateField(new Date('2020-09-13T00:00:00Z')),
-              readMinute: NumberField(10),
-              title: StringField('Keyakizaka46 renamed to Sakurazaka46'),
-            },
-            before: {
-              content: StringField('Its renamed'),
-              publishTime: DateField(new Date('2020-09-13T00:00:00Z')),
-              readMinute: NumberField(10),
-              title: StringField('Keyakizaka renamed to Sakurazaka'),
-            },
-            id: 'article0',
-          },
-        });
-        expect(mockedGetDoc).not.toHaveBeenCalled();
-        expect(onUpdateArticleTC).toStrictEqual(Value({}));
-      });
-    });
+    describe('when doc does not change', () => {
+      const articleNotChangedSnapshot = {
+        after: {
+          content: StringField('Its renamed'),
+          publishTime: DateField(new Date('2020-09-13T00:00:00Z')),
+          readMinute: NumberField(10),
+          title: StringField('Keyakizaka renamed to Sakurazaka'),
+        },
+        before: {
+          content: StringField('Its renamed'),
+          publishTime: DateField(new Date('2020-09-13T00:00:00Z')),
+          readMinute: NumberField(10),
+          title: StringField('Keyakizaka renamed to Sakurazaka'),
+        },
+        id: 'article0',
+      };
 
-    describe('execPropagationOps', () => {
-      // it('return empty trigger if no comment data changed', async () => {
-      //   const mockedGetDoc = jest.fn<GetDocReturn, GetDocParam>();
-      //   const onUpdateArticleTC = await getTransactionCommit({
-      //     actionTrigger: onUpdateArticleTrigger as ActionTrigger<DocChange>,
-      //     getDoc: mockedGetDoc,
-      //     snapshot: {
-      //       after: {
-      //         content: StringField('Its renamed'),
-      //         publishTime: DateField(new Date('2020-09-13T00:00:00Z')),
-      //         readMinute: NumberField(10),
-      //         title: StringField('Keyakizaka renamed to Sakurazaka'),
-      //       },
-      //       before: {
-      //         content: StringField('Its renamed'),
-      //         publishTime: DateField(new Date('2020-09-13T00:00:00Z')),
-      //         readMinute: NumberField(10),
-      //         title: StringField('Keyakizaka renamed to Sakurazaka'),
-      //       },
-      //       id: 'article0',
-      //     },
-      //   });
-      //   expect(mockedGetDoc).not.toHaveBeenCalled();
-      //   expect(onUpdateArticleTC).toStrictEqual(Value({}));
-      // });
-      it('copy article field', async () => {
-        const mockedDeleteDoc = jest.fn<DeleteDocReturn, DeleteDocParam>();
-        const mockedUpdateDoc = jest.fn<UpdateDocReturn, UpdateDocParam>();
-        const mockedExecOnRelDocs = jest
-          .fn<ExecOnRelDocsReturn, ExecOnRelDocsParam>()
-          .mockImplementation((_, updateDoc) => {
-            return updateDoc({ doc: {}, id: '123' });
+      describe('getTransactionCommit', () => {
+        it('returns empty transaction commit', async () => {
+          const mockedGetDoc = jest.fn<GetDocReturn, GetDocParam>();
+          const onUpdateArticleTC = await getTransactionCommit({
+            actionTrigger: onUpdateArticleTrigger as ActionTrigger<DocChange>,
+            getDoc: mockedGetDoc,
+            snapshot: articleNotChangedSnapshot,
           });
-        await execPropagationOps({
-          actionTrigger: onUpdateArticleTrigger as ActionTrigger<DocChange>,
-          deleteDoc: mockedDeleteDoc,
-          execOnRelDocs: mockedExecOnRelDocs,
-          snapshot: {
-            after: {
-              content: StringField('Its renamed sir'),
-              publishTime: DateField(new Date('2020-09-13T00:00:00Z')),
-              readMinute: NumberField(10),
-              title: StringField('Keyakizaka46 renamed to Sakurazaka46'),
-            },
-            before: {
-              content: StringField('Its renamed'),
-              publishTime: DateField(new Date('2020-09-13T00:00:00Z')),
-              readMinute: NumberField(10),
-              title: StringField('Keyakizaka renamed to Sakurazaka'),
-            },
-            id: 'article0',
-          },
-          updateDoc: mockedUpdateDoc,
+          expect(mockedGetDoc).not.toHaveBeenCalled();
+          expect(onUpdateArticleTC).toStrictEqual(Value({}));
         });
-        // expect(result).toStrictEqual(Value(undefined));
+      });
 
-        expect(mockedExecOnRelDocs).toHaveBeenCalled();
-        expect(mockedUpdateDoc).toHaveBeenCalled();
-        expect(mockedDeleteDoc).not.toHaveBeenCalled();
-        // expect(mockedGetDoc).not.toHaveBeenCalled();
-        // expect(onUpdateArticleTC).toStrictEqual(
-        //   Value({
-        //     comment: {
-        //       comment21: {
-        //         doc: {
-        //           commentedArticle: {
-        //             type: 'Ref',
-        //             value: {
-        //               title: StringField('Keyakizaka46 renamed to Sakurazaka46'),
-        //             },
-        //           },
-        //         },
-        //         op: 'update',
-        //         runTrigger: true,
-        //       },
-        //       comment46: {
-        //         doc: {
-        //           commentedArticle: {
-        //             type: 'Ref',
-        //             value: {
-        //               title: StringField('Keyakizaka46 renamed to Sakurazaka46'),
-        //             },
-        //           },
-        //         },
-        //         op: 'update',
-        //         runTrigger: true,
-        //       },
-        //     },
-        //   })
-        // );
+      describe('does not run update or delete anything', () => {
+        it('copy article field', async () => {
+          const mockedDeleteDoc = jest.fn<DeleteDocReturn, DeleteDocParam>();
+          const mockedUpdateDoc = jest.fn<UpdateDocReturn, UpdateDocParam>();
+          const mockedExecOnRelDocs = jest
+            .fn<ExecOnRelDocsReturn, ExecOnRelDocsParam>()
+            .mockImplementation((_, execOnDoc) =>
+              Promise.all(['comment21', 'comment46'].map(execOnDoc))
+            );
+          await execPropagationOps({
+            actionTrigger: onUpdateArticleTrigger as ActionTrigger<DocChange>,
+            deleteDoc: mockedDeleteDoc,
+            execOnRelDocs: mockedExecOnRelDocs,
+            snapshot: articleNotChangedSnapshot,
+            updateDoc: mockedUpdateDoc,
+          });
+          expect(mockedExecOnRelDocs).not.toHaveBeenCalled();
+          expect(mockedUpdateDoc).not.toHaveBeenCalled();
+          expect(mockedDeleteDoc).not.toHaveBeenCalled();
+        });
       });
     });
 
-    // describe('onDelete', () => {
-    //   it('delete referencer comment doc', async () => {
-    //     const draft = makeRefDraft({
-    //       context: {
-    //         colName: 'comment',
-    //         fieldName: 'commentedArticle',
-    //       },
-    //       spec: {
-    //         _type: 'Ref',
-    //         isOwner: false,
-    //         refedCol: 'article',
-    //         syncedFields: {},
-    //         thisColRefers: [],
-    //       },
-    //     });
-    //     const mockedGetDoc = jest.fn<GetDocReturn, GetDocParam>().mockResolvedValueOnce(
-    //       Value({
-    //         docIds: StringArrayField(['comment0', 'comment46']),
-    //       })
-    //     );
+    describe('when doc changes', () => {
+      const articleChangedSnapshot = {
+        after: {
+          content: StringField('Its renamed sir'),
+          publishTime: DateField(new Date('2020-09-13T00:00:00Z')),
+          readMinute: NumberField(10),
+          title: StringField('Keyakizaka46 renamed to Sakurazaka46'),
+        },
+        before: {
+          content: StringField('Its renamed'),
+          publishTime: DateField(new Date('2020-09-13T00:00:00Z')),
+          readMinute: NumberField(10),
+          title: StringField('Keyakizaka renamed to Sakurazaka'),
+        },
+        id: 'article0',
+      };
 
-    //     const mockedDeleteDoc = jest.fn<DeleteDocReturn, DeleteDocParam>();
-    //     const mockedUpdateDoc = jest.fn<UpdateDocReturn, UpdateDocParam>();
-    //     await draft.onDelete?.['article']?.mayFailOp?.({
-    //       deleteDoc: mockedDeleteDoc,
-    //       getDoc: mockedGetDoc,
-    //       snapshot: {
-    //         doc: {
-    //           title: StringField('ARTICLE ZERO TITLE'),
-    //         },
-    //         id: 'article0',
-    //       },
-    //       updateDoc: mockedUpdateDoc,
-    //     });
+      describe('getTransactionCommit', () => {
+        it('returns empty transaction commit', async () => {
+          const mockedGetDoc = jest.fn<GetDocReturn, GetDocParam>();
+          const onUpdateArticleTC = await getTransactionCommit({
+            actionTrigger: onUpdateArticleTrigger as ActionTrigger<DocChange>,
+            getDoc: mockedGetDoc,
+            snapshot: articleChangedSnapshot,
+          });
+          expect(mockedGetDoc).not.toHaveBeenCalled();
+          expect(onUpdateArticleTC).toStrictEqual(Value({}));
+        });
+      });
 
-    //     expect(Object.keys(draft.onDelete ?? {})).toStrictEqual(['comment', 'article']);
-    //     expect(mockedUpdateDoc).not.toHaveBeenCalled();
-    //     expect(mockedGetDoc).toHaveBeenCalledTimes(1);
-    //     expect(mockedGetDoc).toHaveBeenCalledWith({
-    //       col: '_relation',
-    //       id: 'comment_commentedArticle_article_article0',
-    //     });
-    //     expect(mockedDeleteDoc).toHaveBeenCalledTimes(3);
-    //     expect(mockedDeleteDoc).toHaveBeenNthCalledWith(1, {
-    //       col: '_relation',
-    //       id: 'comment_commentedArticle_article_article0',
-    //     });
-    //     expect(mockedDeleteDoc).toHaveBeenNthCalledWith(2, { col: 'comment', id: 'comment0' });
-    //     expect(mockedDeleteDoc).toHaveBeenNthCalledWith(3, { col: 'comment', id: 'comment46' });
-    //   });
+      describe('execPropagationOps', () => {
+        it('copy article field', async () => {
+          const mockedDeleteDoc = jest.fn<DeleteDocReturn, DeleteDocParam>();
+          const mockedUpdateDoc = jest.fn<UpdateDocReturn, UpdateDocParam>();
+          const mockedExecOnRelDocs = jest
+            .fn<ExecOnRelDocsReturn, ExecOnRelDocsParam>()
+            .mockImplementation((_, execOnDoc) =>
+              Promise.all(['comment21', 'comment46'].map(execOnDoc))
+            );
+          await execPropagationOps({
+            actionTrigger: onUpdateArticleTrigger as ActionTrigger<DocChange>,
+            deleteDoc: mockedDeleteDoc,
+            execOnRelDocs: mockedExecOnRelDocs,
+            snapshot: articleChangedSnapshot,
+            updateDoc: mockedUpdateDoc,
+          });
+          // TODO: called with
+          expect(mockedExecOnRelDocs).toHaveBeenCalledTimes(1);
+          expect(mockedUpdateDoc).toHaveBeenCalledTimes(2);
+          expect(mockedUpdateDoc).toHaveBeenNthCalledWith(1, {
+            key: { col: 'comment', id: 'comment21' },
+            writeDoc: {
+              commentedArticle: {
+                _type: 'RefUpdate',
+                doc: { title: { _type: 'String', value: 'Keyakizaka46 renamed to Sakurazaka46' } },
+              },
+            },
+          });
+          expect(mockedUpdateDoc).toHaveBeenNthCalledWith(2, {
+            key: { col: 'comment', id: 'comment46' },
+            writeDoc: {
+              commentedArticle: {
+                _type: 'RefUpdate',
+                doc: { title: { _type: 'String', value: 'Keyakizaka46 renamed to Sakurazaka46' } },
+              },
+            },
+          });
+          expect(mockedDeleteDoc).not.toHaveBeenCalled();
+        });
+      });
+
+      // describe('onDelete', () => {
+      //   it('delete referencer comment doc', async () => {
+      //     const draft = makeRefDraft({
+      //       context: {
+      //         colName: 'comment',
+      //         fieldName: 'commentedArticle',
+      //       },
+      //       spec: {
+      //         _type: 'Ref',
+      //         isOwner: false,
+      //         refedCol: 'article',
+      //         syncedFields: {},
+      //         thisColRefers: [],
+      //       },
+      //     });
+      //     const mockedGetDoc = jest.fn<GetDocReturn, GetDocParam>().mockResolvedValueOnce(
+      //       Value({
+      //         docIds: StringArrayField(['comment0', 'comment46']),
+      //       })
+      //     );
+
+      //     const mockedDeleteDoc = jest.fn<DeleteDocReturn, DeleteDocParam>();
+      //     const mockedUpdateDoc = jest.fn<UpdateDocReturn, UpdateDocParam>();
+      //     await draft.onDelete?.['article']?.mayFailOp?.({
+      //       deleteDoc: mockedDeleteDoc,
+      //       getDoc: mockedGetDoc,
+      //       snapshot: {
+      //         doc: {
+      //           title: StringField('ARTICLE ZERO TITLE'),
+      //         },
+      //         id: 'article0',
+      //       },
+      //       updateDoc: mockedUpdateDoc,
+      //     });
+
+      //     expect(Object.keys(draft.onDelete ?? {})).toStrictEqual(['comment', 'article']);
+      //     expect(mockedUpdateDoc).not.toHaveBeenCalled();
+      //     expect(mockedGetDoc).toHaveBeenCalledTimes(1);
+      //     expect(mockedGetDoc).toHaveBeenCalledWith({
+      //       col: '_relation',
+      //       id: 'comment_commentedArticle_article_article0',
+      //     });
+      //     expect(mockedDeleteDoc).toHaveBeenCalledTimes(3);
+      //     expect(mockedDeleteDoc).toHaveBeenNthCalledWith(1, {
+      //       col: '_relation',
+      //       id: 'comment_commentedArticle_article_article0',
+      //     });
+      //     expect(mockedDeleteDoc).toHaveBeenNthCalledWith(2, { col: 'comment', id: 'comment0' });
+      //     expect(mockedDeleteDoc).toHaveBeenNthCalledWith(3, { col: 'comment', id: 'comment46' });
+      //   });
+    });
   });
 });

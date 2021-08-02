@@ -1,5 +1,6 @@
 import {
   ColRefer,
+  Doc,
   filterSyncedFields,
   InvalidFieldTypeFailure,
   isFieldEqual,
@@ -8,7 +9,7 @@ import {
   RefUpdateField,
   SyncedFields,
 } from 'kira-core';
-import { Failed, foldValue, isDefined, Value } from 'trimop';
+import { Either, Failed, foldValue, isDefined, ShouldBeUnreachableFailure, Value } from 'trimop';
 
 import {
   DocChange,
@@ -39,63 +40,67 @@ async function propagateRefUpdate({
   readonly updateDoc: UpdateDoc;
 }): Promise<unknown> {
   return foldValue(
-    filterSyncedFields({
-      doc: Object.fromEntries(
-        Object.entries(refedDoc.after).filter(([fieldName, afterField]) =>
-          isFieldEqual(afterField, refedDoc.before[fieldName])
-        )
-      ),
-      syncedFields,
-    }),
-    (syncData) => {
-      return Value(
-        !isDefined(syncData)
-          ? undefined
-          : execOnRelDocs(
-              {
-                refedCol,
-                refedId: refedDoc.id,
-                referCol,
-                referField,
-              },
-              ({ id }) => {
-                return Promise.all([
-                  updateDoc({
-                    key: { col: referCol, id },
-                    writeDoc: {
-                      [referField]: RefUpdateField(syncData),
-                    },
-                  }),
-                  ...thisColRefers.flatMap((thisColRefer) =>
-                    thisColRefer.fields.map((thisColReferField) =>
-                      propagateRefUpdate({
-                        execOnRelDocs,
-                        refedDoc: {
-                          after: {
-                            [referField]: RefField({
-                              doc: syncData,
-                              id: refedDoc.id,
-                            }),
+    Object.entries(refedDoc.after).reduce<
+      Either<ShouldBeUnreachableFailure | InvalidFieldTypeFailure, Doc>
+    >(
+      (acc, [fieldName, afterField]) =>
+        foldValue(acc, (acc) =>
+          foldValue(isFieldEqual(afterField, refedDoc.before[fieldName]), (isEqual) =>
+            Value(isEqual ? acc : { ...acc, [fieldName]: afterField })
+          )
+        ),
+      Value({})
+    ),
+    (filteredSyncedFieldsDoc) =>
+      foldValue(filterSyncedFields({ doc: filteredSyncedFieldsDoc, syncedFields }), (syncData) => {
+        return Value(
+          !isDefined(syncData)
+            ? undefined
+            : execOnRelDocs(
+                {
+                  refedCol,
+                  refedId: refedDoc.id,
+                  referCol,
+                  referField,
+                },
+                (id) => {
+                  return Promise.all([
+                    updateDoc({
+                      key: { col: referCol, id },
+                      writeDoc: {
+                        [referField]: RefUpdateField(syncData),
+                      },
+                    }),
+                    ...thisColRefers.flatMap((thisColRefer) =>
+                      thisColRefer.fields.map((thisColReferField) =>
+                        propagateRefUpdate({
+                          execOnRelDocs,
+                          refedDoc: {
+                            after: {
+                              [referField]: RefField({
+                                doc: syncData,
+                                id: refedDoc.id,
+                              }),
+                            },
+                            before: {},
+                            id,
                           },
-                          before: {},
-                          id,
-                        },
-                        referCol: thisColRefer.colName,
-                        referField: thisColReferField.name,
-                        spec: {
-                          refedCol: referCol,
-                          syncedFields: thisColReferField.syncedFields,
-                          thisColRefers: thisColRefer.thisColRefers,
-                        },
-                        updateDoc,
-                      })
-                    )
-                  ),
-                ]);
-              }
-            )
-      );
-    }
+                          referCol: thisColRefer.colName,
+                          referField: thisColReferField.name,
+                          spec: {
+                            refedCol: referCol,
+                            syncedFields: thisColReferField.syncedFields,
+                            thisColRefers: thisColRefer.thisColRefers,
+                          },
+                          updateDoc,
+                        })
+                      )
+                    ),
+                  ]);
+                }
+              )
+        );
+      })
   );
 }
 
@@ -157,7 +162,7 @@ export function makeRefDraft({
               referCol: colName,
               referField: fieldName,
             },
-            (doc) => deleteDoc({ col: colName, id: doc.id })
+            (id) => deleteDoc({ col: colName, id })
           ),
       },
     },
