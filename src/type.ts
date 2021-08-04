@@ -215,20 +215,24 @@ export type Trigger = Dict<ColTrigger>;
 /**
  *
  */
-export type IncompatibleDocOpError = {
-  readonly _errorType: 'IncompatibleDocOp';
-  readonly docCommit1: DocCommit;
-  readonly docCommit2: DocCommit;
-};
+// export type IncompatibleDocOpError = {
+//   readonly _errorType: 'IncompatibleDocOp';
+//   readonly docCommit1: DocCommit;
+//   readonly docCommit2: DocCommit;
+// };
 
-export const IncompatibleDocOpError: (
-  p: Omit<IncompatibleDocOpError, '_errorType'>
-) => IncompatibleDocOpError = (p) => ({
-  ...p,
-  _errorType: 'IncompatibleDocOp',
-});
+// export function IncompatibleDocOpError(
+//   p: Omit<IncompatibleDocOpError, '_errorType'>
+// ): IncompatibleDocOpError {
+//   return {
+//     ...p,
+//     _errorType: 'IncompatibleDocOp',
+//   };
+// }
 
 /**
  *
  */
-export type GetTransactionCommitError = IncompatibleDocOpError | DraftGetTransactionCommitError;
+export type GetTransactionCommitError =
+  // IncompatibleDocOpError |
+  DraftGetTransactionCommitError;
