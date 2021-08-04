@@ -40,19 +40,23 @@ describe('Ref Trigger', () => {
           refedCol: 'user',
           syncedFields: { displayName: true, role: true },
           thisColRefers: [
-            // {
-            //   colName: 'user',
-            //   fields: [
-            //     {
-            //       name: 'string',
-            //       syncedFields: {},
-            //     },
-            //   ],
-            //   thisColRefers: [],
-            // },
+            {
+              colName: 'comment',
+              fields: [
+                {
+                  name: 'commentedArticle',
+                  syncedFields: { title: true },
+                },
+              ],
+              thisColRefers: [],
+            },
           ],
         },
+        title: {
+          _type: 'String',
+        },
       },
+      comment: {},
       user: {},
     },
   });
@@ -60,6 +64,7 @@ describe('Ref Trigger', () => {
   describe('onCreate', () => {
     const onCreateUserTrigger = trigger['user']?.onCreate;
     const onCreateArticleTrigger = trigger['article']?.onCreate;
+    const onCreateCommentTrigger = trigger['comment']?.onCreate;
 
     it('user trigger is undefined', () => {
       expect(onCreateUserTrigger).toBeUndefined();
@@ -67,6 +72,10 @@ describe('Ref Trigger', () => {
 
     it('article trigger is defined', () => {
       expect(onCreateArticleTrigger).toBeDefined();
+    });
+
+    it('comment trigger is undefined', () => {
+      expect(onCreateCommentTrigger).toBeUndefined();
     });
 
     describe('getTransactionCommit', () => {
@@ -208,6 +217,7 @@ describe('Ref Trigger', () => {
   describe('onUpdate', () => {
     const onUpdateUserTrigger = trigger['user']?.onUpdate;
     const onUpdateArticleTrigger = trigger['article']?.onUpdate;
+    const onUpdateCommentTrigger = trigger['comment']?.onUpdate;
 
     it('user trigger is defined', () => {
       expect(onUpdateUserTrigger).toBeDefined();
@@ -215,6 +225,10 @@ describe('Ref Trigger', () => {
 
     it('article trigger is undefined', () => {
       expect(onUpdateArticleTrigger).toBeUndefined();
+    });
+
+    it('comment trigger is undefined', () => {
+      expect(onUpdateCommentTrigger).toBeUndefined();
     });
 
     describe('when doc does not change', () => {
@@ -357,6 +371,7 @@ describe('Ref Trigger', () => {
   describe('onDelete', () => {
     const onDeleteUserTrigger = trigger['user']?.onDelete;
     const onDeleteArticleTrigger = trigger['article']?.onDelete;
+    const onDeleteCommentTrigger = trigger['comment']?.onDelete;
 
     it('user trigger is defined', () => {
       expect(onDeleteUserTrigger).toBeDefined();
@@ -364,6 +379,10 @@ describe('Ref Trigger', () => {
 
     it('article trigger is undefined', () => {
       expect(onDeleteArticleTrigger).toBeUndefined();
+    });
+
+    it('comment trigger is undefined', () => {
+      expect(onDeleteCommentTrigger).toBeUndefined();
     });
 
     const deleteUserSnapshot = {
