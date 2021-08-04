@@ -5,11 +5,11 @@ import {
   ActionTrigger,
   ColTrigger,
   DocChange,
-  execPropagationOps,
   getTransactionCommit,
-  getTrigger,
   UpdateDocCommit,
 } from '../../src';
+import { execPropagationOps } from '../../src/exec-propagation-ops';
+import { getTrigger } from '../../src/get-trigger';
 import {
   DeleteDocParam,
   DeleteDocReturn,
