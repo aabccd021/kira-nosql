@@ -38,14 +38,22 @@ describe('Ref Trigger', () => {
           _type: 'Ref',
           isOwner: false,
           refedCol: 'user',
-          syncedFields: { displayName: true, role: true },
+          syncedFields: {
+            age: true,
+            displayName: true,
+            role: true,
+          },
           thisColRefers: [
             {
               colName: 'comment',
               fields: [
                 {
                   name: 'commentedArticle',
-                  syncedFields: { title: true },
+                  syncedFields: {
+                    articleOwner: {
+                      displayName: true,
+                    },
+                  },
                 },
               ],
               thisColRefers: [],
@@ -133,6 +141,7 @@ describe('Ref Trigger', () => {
           snapshot: {
             doc: {
               articleOwner: RefField({ doc: {}, id: 'user0' }),
+              title: StringField('Foo Title'),
             },
             id: 'article0',
           },
@@ -148,12 +157,12 @@ describe('Ref Trigger', () => {
         );
       });
 
-      it('copy ref doc field', async () => {
+      it('copy user fields to article field', async () => {
         const mockedGetDoc = jest.fn<GetDocReturn, GetDocParam>().mockResolvedValueOnce(
           Value({
             displayName: StringField('Article Zero Title'),
             publishedMedia: StringField('book'),
-            role: StringField('Animal'),
+            role: StringField('Normal User'),
           })
         );
         const onCreateArticleTC = await getTransactionCommit({
@@ -162,6 +171,7 @@ describe('Ref Trigger', () => {
           snapshot: {
             doc: {
               articleOwner: RefField({ doc: {}, id: 'user0' }),
+              title: StringField('Foo Title'),
             },
             id: 'article0',
           },
@@ -177,7 +187,7 @@ describe('Ref Trigger', () => {
                 writeDoc: {
                   articleOwner: RefUpdateField({
                     displayName: StringField('Article Zero Title'),
-                    role: StringField('Animal'),
+                    role: StringField('Normal User'),
                   }),
                 },
               }),
@@ -234,16 +244,16 @@ describe('Ref Trigger', () => {
     describe('when doc does not change', () => {
       const userNotChangedSnapshot = {
         after: {
-          content: StringField('Its renamed'),
-          displayName: StringField('Keyakizaka renamed to Sakurazaka'),
-          publishTime: DateField(new Date('2020-09-13T00:00:00Z')),
-          readMinute: NumberField(10),
+          age: NumberField(18),
+          displayName: StringField('Dorokatsu'),
+          publishTime: DateField(new Date('2020-04-13T00:00:00Z')),
+          role: StringField('Normal User'),
         },
         before: {
-          content: StringField('Its renamed'),
-          displayName: StringField('Keyakizaka renamed to Sakurazaka'),
-          publishTime: DateField(new Date('2020-09-13T00:00:00Z')),
-          readMinute: NumberField(10),
+          age: NumberField(18),
+          displayName: StringField('Dorokatsu'),
+          publishTime: DateField(new Date('2020-04-13T00:00:00Z')),
+          role: StringField('Normal User'),
         },
         id: 'user0',
       };
@@ -287,16 +297,16 @@ describe('Ref Trigger', () => {
     describe('when doc changes', () => {
       const userChangedSnapshot = {
         after: {
-          content: StringField('Its renamed sir'),
-          displayName: StringField('Keyakizaka46 renamed to Sakurazaka46'),
-          publishTime: DateField(new Date('2020-09-13T00:00:00Z')),
-          readMinute: NumberField(10),
+          age: NumberField(18),
+          displayName: StringField('Kira Masumoto'),
+          publishTime: DateField(new Date('2020-04-13T00:00:00Z')),
+          role: StringField('Super User'),
         },
         before: {
-          content: StringField('Its renamed'),
-          displayName: StringField('Keyakizaka renamed to Sakurazaka'),
-          publishTime: DateField(new Date('2020-09-13T00:00:00Z')),
-          readMinute: NumberField(10),
+          age: NumberField(18),
+          displayName: StringField('Dorokatsu'),
+          publishTime: DateField(new Date('2020-04-13T00:00:00Z')),
+          role: StringField('Normal User'),
         },
         id: 'user0',
       };
@@ -320,9 +330,21 @@ describe('Ref Trigger', () => {
           const mockedUpdateDoc = jest.fn<UpdateDocReturn, UpdateDocParam>();
           const mockedExecOnRelDocs = jest
             .fn<ExecOnRelDocsReturn, ExecOnRelDocsParam>()
-            .mockImplementation((_, execOnDoc) =>
-              Promise.all(['article21', 'article46'].map(execOnDoc))
-            );
+            .mockImplementation(({ refedCol, refedId }, execOnDoc) => {
+              if (refedCol === 'user') {
+                return Promise.all(['article21', 'article46'].map(execOnDoc));
+              }
+              if (refedCol === 'article') {
+                if (refedId === 'article21') {
+                  return Promise.all(['comment42'].map(execOnDoc));
+                }
+                if (refedId === 'article46') {
+                  return Promise.all(['comment92'].map(execOnDoc));
+                }
+              }
+              // eslint-disable-next-line functional/no-throw-statement
+              throw Error();
+            });
           await execPropagationOps({
             actionTrigger: onUpdateUserTrigger as ActionTrigger<DocChange>,
             deleteDoc: mockedDeleteDoc,
@@ -330,8 +352,9 @@ describe('Ref Trigger', () => {
             snapshot: userChangedSnapshot,
             updateDoc: mockedUpdateDoc,
           });
-          expect(mockedExecOnRelDocs).toHaveBeenCalledTimes(1);
-          expect(mockedExecOnRelDocs).toHaveBeenCalledWith(
+          expect(mockedExecOnRelDocs).toHaveBeenCalledTimes(3);
+          expect(mockedExecOnRelDocs).toHaveBeenNthCalledWith(
+            1,
             {
               refedCol: 'user',
               refedId: 'user0',
@@ -340,25 +363,79 @@ describe('Ref Trigger', () => {
             },
             expect.any(Function)
           );
-          expect(mockedUpdateDoc).toHaveBeenCalledTimes(2);
+          expect(mockedExecOnRelDocs).toHaveBeenNthCalledWith(
+            2,
+            {
+              refedCol: 'article',
+              refedId: 'article21',
+              referCol: 'comment',
+              referField: 'commentedArticle',
+            },
+            expect.any(Function)
+          );
+          expect(mockedExecOnRelDocs).toHaveBeenNthCalledWith(
+            3,
+            {
+              refedCol: 'article',
+              refedId: 'article46',
+              referCol: 'comment',
+              referField: 'commentedArticle',
+            },
+            expect.any(Function)
+          );
+          expect(mockedUpdateDoc).toHaveBeenCalledTimes(4);
           expect(mockedUpdateDoc).toHaveBeenNthCalledWith(1, {
             key: { col: 'article', id: 'article21' },
             writeDoc: {
               articleOwner: {
                 _type: 'RefUpdate',
                 doc: {
-                  displayName: { _type: 'String', value: 'Keyakizaka46 renamed to Sakurazaka46' },
+                  displayName: StringField('Kira Masumoto'),
+                  role: StringField('Super User'),
                 },
               },
             },
           });
           expect(mockedUpdateDoc).toHaveBeenNthCalledWith(2, {
+            key: { col: 'comment', id: 'comment42' },
+            writeDoc: {
+              commentedArticle: {
+                _type: 'RefUpdate',
+                doc: {
+                  articleOwner: RefField({
+                    doc: {
+                      displayName: StringField('Kira Masumoto'),
+                    },
+                    id: 'user0',
+                  }),
+                },
+              },
+            },
+          });
+          expect(mockedUpdateDoc).toHaveBeenNthCalledWith(3, {
             key: { col: 'article', id: 'article46' },
             writeDoc: {
               articleOwner: {
                 _type: 'RefUpdate',
                 doc: {
-                  displayName: { _type: 'String', value: 'Keyakizaka46 renamed to Sakurazaka46' },
+                  displayName: StringField('Kira Masumoto'),
+                  role: StringField('Super User'),
+                },
+              },
+            },
+          });
+          expect(mockedUpdateDoc).toHaveBeenNthCalledWith(4, {
+            key: { col: 'comment', id: 'comment92' },
+            writeDoc: {
+              commentedArticle: {
+                _type: 'RefUpdate',
+                doc: {
+                  articleOwner: RefField({
+                    doc: {
+                      displayName: StringField('Kira Masumoto'),
+                    },
+                    id: 'user0',
+                  }),
                 },
               },
             },
