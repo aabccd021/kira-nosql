@@ -35,20 +35,20 @@ function filter<F extends Failure = Failure, T = unknown>(
   );
 }
 
-function map<TResult = unknown, F extends Failure = Failure, T = unknown>(
-  obj: Dict<T>,
-  mapper: (t: T, fieldName: string) => Either<F, TResult>
-): Either<F, Dict<TResult>> {
-  return Object.entries(obj).reduce<Either<F, Dict<TResult>>>(
-    (acc, [fieldName, field]) =>
-      foldValue(acc, (acc) =>
-        foldValue(mapper(field, fieldName), (mapResult) =>
-          Value({ ...acc, [fieldName]: mapResult })
-        )
-      ),
-    Value({})
-  );
-}
+// function map<TResult = unknown, F extends Failure = Failure, T = unknown>(
+//   obj: Dict<T>,
+//   mapper: (t: T, fieldName: string) => Either<F, TResult>
+// ): Either<F, Dict<TResult>> {
+//   return Object.entries(obj).reduce<Either<F, Dict<TResult>>>(
+//     (acc, [fieldName, field]) =>
+//       foldValue(acc, (acc) =>
+//         foldValue(mapper(field, fieldName), (mapResult) =>
+//           Value({ ...acc, [fieldName]: mapResult })
+//         )
+//       ),
+//     Value({})
+//   );
+// }
 
 async function propagateRefUpdate({
   updateDoc,
