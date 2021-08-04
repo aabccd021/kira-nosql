@@ -299,7 +299,7 @@ describe('Ref Trigger', () => {
       });
 
       describe('execPropagationOps', () => {
-        it('copy article field', async () => {
+        it('copy article fields to referencing comments', async () => {
           const mockedDeleteDoc = jest.fn<DeleteDocReturn, DeleteDocParam>();
           const mockedUpdateDoc = jest.fn<UpdateDocReturn, UpdateDocParam>();
           const mockedExecOnRelDocs = jest
@@ -338,57 +338,66 @@ describe('Ref Trigger', () => {
           expect(mockedDeleteDoc).not.toHaveBeenCalled();
         });
       });
+    });
+  });
+  describe('onDelete', () => {
+    const onDeleteArticleTrigger = trigger['article']?.onDelete;
+    const onDeleteCommentTrigger = trigger['comment']?.onDelete;
 
-      // describe('onDelete', () => {
-      //   it('delete referencer comment doc', async () => {
-      //     const draft = makeRefDraft({
-      //       context: {
-      //         colName: 'comment',
-      //         fieldName: 'commentedArticle',
-      //       },
-      //       spec: {
-      //         _type: 'Ref',
-      //         isOwner: false,
-      //         refedCol: 'article',
-      //         syncedFields: {},
-      //         thisColRefers: [],
-      //       },
-      //     });
-      //     const mockedGetDoc = jest.fn<GetDocReturn, GetDocParam>().mockResolvedValueOnce(
-      //       Value({
-      //         docIds: StringArrayField(['comment0', 'comment46']),
-      //       })
-      //     );
+    it('article trigger is defined', () => {
+      expect(onDeleteArticleTrigger).toBeDefined();
+    });
 
-      //     const mockedDeleteDoc = jest.fn<DeleteDocReturn, DeleteDocParam>();
-      //     const mockedUpdateDoc = jest.fn<UpdateDocReturn, UpdateDocParam>();
-      //     await draft.onDelete?.['article']?.mayFailOp?.({
-      //       deleteDoc: mockedDeleteDoc,
-      //       getDoc: mockedGetDoc,
-      //       snapshot: {
-      //         doc: {
-      //           title: StringField('ARTICLE ZERO TITLE'),
-      //         },
-      //         id: 'article0',
-      //       },
-      //       updateDoc: mockedUpdateDoc,
-      //     });
+    it('comment trigger is undefined', () => {
+      expect(onDeleteCommentTrigger).toBeUndefined();
+    });
 
-      //     expect(Object.keys(draft.onDelete ?? {})).toStrictEqual(['comment', 'article']);
-      //     expect(mockedUpdateDoc).not.toHaveBeenCalled();
-      //     expect(mockedGetDoc).toHaveBeenCalledTimes(1);
-      //     expect(mockedGetDoc).toHaveBeenCalledWith({
-      //       col: '_relation',
-      //       id: 'comment_commentedArticle_article_article0',
-      //     });
-      //     expect(mockedDeleteDoc).toHaveBeenCalledTimes(3);
-      //     expect(mockedDeleteDoc).toHaveBeenNthCalledWith(1, {
-      //       col: '_relation',
-      //       id: 'comment_commentedArticle_article_article0',
-      //     });
-      //     expect(mockedDeleteDoc).toHaveBeenNthCalledWith(2, { col: 'comment', id: 'comment0' });
-      //     expect(mockedDeleteDoc).toHaveBeenNthCalledWith(3, { col: 'comment', id: 'comment46' });
-      //   });
+    const deletedArticleSnapshot = {
+      doc: {
+        content: StringField('Its renamed sir'),
+        publishTime: DateField(new Date('2020-09-13T00:00:00Z')),
+        readMinute: NumberField(10),
+        title: StringField('Keyakizaka46 renamed to Sakurazaka46'),
+      },
+      id: 'article0',
+    };
+
+    describe('getTransactionCommit', () => {
+      it('returns empty transaction commit', async () => {
+        const mockedGetDoc = jest.fn<GetDocReturn, GetDocParam>();
+        const onUpdateArticleTC = await getTransactionCommit({
+          actionTrigger: onDeleteArticleTrigger as ActionTrigger<DocSnapshot>,
+          getDoc: mockedGetDoc,
+          snapshot: deletedArticleSnapshot,
+        });
+        expect(mockedGetDoc).not.toHaveBeenCalled();
+        expect(onUpdateArticleTC).toStrictEqual(Value({}));
+      });
+    });
+
+    describe('execPropagationOps', () => {
+      it('delete referencing comments', async () => {
+        const mockedDeleteDoc = jest.fn<DeleteDocReturn, DeleteDocParam>();
+        const mockedUpdateDoc = jest.fn<UpdateDocReturn, UpdateDocParam>();
+        const mockedExecOnRelDocs = jest
+          .fn<ExecOnRelDocsReturn, ExecOnRelDocsParam>()
+          .mockImplementation((_, execOnDoc) =>
+            Promise.all(['comment21', 'comment46'].map(execOnDoc))
+          );
+        await execPropagationOps({
+          actionTrigger: onDeleteArticleTrigger as ActionTrigger<DocSnapshot>,
+          deleteDoc: mockedDeleteDoc,
+          execOnRelDocs: mockedExecOnRelDocs,
+          snapshot: deletedArticleSnapshot,
+          updateDoc: mockedUpdateDoc,
+        });
+        // TODO: called with
+        expect(mockedExecOnRelDocs).toHaveBeenCalledTimes(1);
+        expect(mockedDeleteDoc).toHaveBeenCalledTimes(2);
+        expect(mockedDeleteDoc).toHaveBeenNthCalledWith(1, { col: 'comment', id: 'comment21' });
+        expect(mockedDeleteDoc).toHaveBeenNthCalledWith(2, { col: 'comment', id: 'comment46' });
+        expect(mockedUpdateDoc).not.toHaveBeenCalled();
+      });
     });
   });
 });
