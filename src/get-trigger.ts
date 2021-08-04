@@ -1,26 +1,19 @@
 import { Spec } from 'kira-core';
-import { isSome, none, Option, optionFromNullable, optionMapSome, some } from 'trimop';
+import { none, Option, optionArrayMapSome, optionFromNullable, optionMapSome, some } from 'trimop';
 
 import { ActionTrigger, BuildDraft, ColDraft, Trigger, TriggerSnapshot } from './type';
 
 function colDraftsToActionTrigger<S extends TriggerSnapshot>(
   colDraft: readonly Option<ColDraft<S>>[]
 ): Option<ActionTrigger<S>> {
-  const definedColDraft = colDraft.filter(isSome);
-  if (definedColDraft.length === 0) {
-    return none();
-  }
-  // definedColDraft.map((x) => x.value)
-  return some({
-    getTransactionCommits: definedColDraft
-      .map((el) => el.value.getTransactionCommit)
-      .filter(isSome)
-      .map((el) => el.value),
-    propagationOps: definedColDraft
-      .map((el) => el.value.propagationOp)
-      .filter(isSome)
-      .map((el) => el.value),
-  });
+  const definedColDraft = optionArrayMapSome(colDraft);
+  const getTransactionCommits = optionArrayMapSome(
+    definedColDraft.map((el) => el.getTransactionCommit)
+  );
+  const propagationOps = optionArrayMapSome(definedColDraft.map((el) => el.propagationOp));
+  return getTransactionCommits.length === 0 && propagationOps.length === 0
+    ? none()
+    : some({ getTransactionCommits, propagationOps });
 }
 
 export function getTrigger({
@@ -36,33 +29,25 @@ export function getTrigger({
     )
   );
   return Object.fromEntries(
-    Object.entries(spec).map(([colName]) => {
-      return [
-        colName,
-        {
-          onCreate: colDraftsToActionTrigger(
-            drafts.map((draft) =>
-              optionMapSome(draft.onCreate, (actionDraft) =>
-                optionFromNullable(actionDraft[colName])
-              )
-            )
-          ),
-          onDelete: colDraftsToActionTrigger(
-            drafts.map((draft) =>
-              optionMapSome(draft.onDelete, (actionDraft) =>
-                optionFromNullable(actionDraft[colName])
-              )
-            )
-          ),
-          onUpdate: colDraftsToActionTrigger(
-            drafts.map((draft) =>
-              optionMapSome(draft.onUpdate, (actionDraft) =>
-                optionFromNullable(actionDraft[colName])
-              )
-            )
-          ),
-        },
-      ];
-    })
+    Object.entries(spec).map(([colName]) => [
+      colName,
+      {
+        onCreate: colDraftsToActionTrigger(
+          drafts.map((draft) =>
+            optionMapSome(draft.onCreate, (actionDraft) => optionFromNullable(actionDraft[colName]))
+          )
+        ),
+        onDelete: colDraftsToActionTrigger(
+          drafts.map((draft) =>
+            optionMapSome(draft.onDelete, (actionDraft) => optionFromNullable(actionDraft[colName]))
+          )
+        ),
+        onUpdate: colDraftsToActionTrigger(
+          drafts.map((draft) =>
+            optionMapSome(draft.onUpdate, (actionDraft) => optionFromNullable(actionDraft[colName]))
+          )
+        ),
+      },
+    ])
   );
 }
