@@ -93,6 +93,11 @@ export function getTrigger({
   );
 }
 
+/**
+ * Magic HAHA!
+ * @param param0
+ * @returns
+ */
 export function getTransactionCommit<S extends TriggerSnapshot>({
   actionTrigger,
   snapshot,
@@ -113,14 +118,16 @@ export function getTransactionCommit<S extends TriggerSnapshot>({
             TransactionCommit,
             GetTransactionCommitError,
             readonly [string, ColTransactionCommit]
-          >(Object.entries(curTC), right(acc), (prevTC, [curColName, curColTC]) => {
-            const prevColTC = prevTC[curColName];
-            return prevColTC === undefined
-              ? right<TransactionCommit>({
+          >(Object.entries(curTC), right(acc), (prevTC, [curColName, curColTC]) =>
+            optionFold<Either<GetTransactionCommitError, TransactionCommit>, ColTransactionCommit>(
+              optionFromNullable(prevTC[curColName]),
+              () =>
+                right<TransactionCommit>({
                   ...prevTC,
                   [curColName]: curColTC,
-                })
-              : eitherMapRight(
+                }),
+              (prevColTC) =>
+                eitherMapRight(
                   eitherArrayReduce(
                     Object.entries(curColTC),
                     right(prevColTC),
@@ -166,13 +173,19 @@ export function getTransactionCommit<S extends TriggerSnapshot>({
                       ...prevTC,
                       [curColName]: updatedColTC,
                     })
-                );
-          })
+                )
+            )
+          )
       )
     )
   );
 }
 
+/**
+ *
+ * @param param0
+ * @returns
+ */
 export function execPropagationOps<S extends TriggerSnapshot>({
   actionTrigger,
   snapshot,
@@ -193,6 +206,11 @@ export function execPropagationOps<S extends TriggerSnapshot>({
   );
 }
 
+/**
+ *
+ * @param actionTrigger
+ * @returns
+ */
 export function isTriggerRequired<S extends TriggerSnapshot>(
   actionTrigger: ActionTrigger<S>
 ): boolean {
