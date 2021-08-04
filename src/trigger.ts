@@ -6,6 +6,7 @@ import {
   isSome,
   none,
   Option,
+  optionFold,
   optionFromNullable,
   optionMapSome,
   right,
@@ -124,39 +125,41 @@ export function getTransactionCommit<S extends TriggerSnapshot>({
                     Object.entries(curColTC),
                     right(prevColTC),
                     (prevColTC, [docId, docCommit]) => {
-                      const prevCommit = prevColTC[docId];
-                      if (prevCommit === undefined) {
-                        return right({ ...prevColTC, [docId]: docCommit });
-                      }
-                      /**
-                       * can handle doc delete and multiple doc update options, commented
-                       * because no field uses it
-                       */
-                      // if (docCommit._op === 'Delete' && prevCommit?._op === 'Delete') {
-                      //   return right({
-                      //     ...prevColTC,
-                      //     [docId]: DeleteDocCommit(),
-                      //   });
-                      // }
-                      // if (
-                      //   docCommit._op === 'Update' &&
-                      //   prevCommit?._op === 'Update' &&
-                      //   docCommit.onDocAbsent === prevCommit.onDocAbsent
-                      // ) {
-                      return right({
-                        ...prevColTC,
-                        [docId]: UpdateDocCommit({
-                          onDocAbsent: docCommit.onDocAbsent,
-                          writeDoc: { ...docCommit.writeDoc, ...prevCommit.writeDoc },
-                        }),
-                      });
-                      // }
-                      // return left(
-                      //   IncompatibleDocOpError({
-                      //     docCommit1: prevCommit,
-                      //     docCommit2: docCommit,
-                      //   })
-                      // );
+                      return optionFold(
+                        optionFromNullable(prevColTC[docId]),
+                        () => right({ ...prevColTC, [docId]: docCommit }),
+                        (prevCommit) => {
+                          /**
+                           * can handle doc delete and multiple doc update options, commented
+                           * because no field uses it
+                           */
+                          // if (docCommit._op === 'Delete' && prevCommit?._op === 'Delete') {
+                          //   return right({
+                          //     ...prevColTC,
+                          //     [docId]: DeleteDocCommit(),
+                          //   });
+                          // }
+                          // if (
+                          //   docCommit._op === 'Update' &&
+                          //   prevCommit?._op === 'Update' &&
+                          //   docCommit.onDocAbsent === prevCommit.onDocAbsent
+                          // ) {
+                          return right({
+                            ...prevColTC,
+                            [docId]: UpdateDocCommit({
+                              onDocAbsent: docCommit.onDocAbsent,
+                              writeDoc: { ...docCommit.writeDoc, ...prevCommit.writeDoc },
+                            }),
+                          });
+                          // }
+                          // return left(
+                          //   IncompatibleDocOpError({
+                          //     docCommit1: prevCommit,
+                          //     docCommit2: docCommit,
+                          //   })
+                          // );
+                        }
+                      );
                     }
                   ),
                   (updatedColTC) =>
