@@ -6,7 +6,7 @@ import {
   RefUpdateField,
   StringField,
 } from 'kira-core';
-import { isNone, isSome, left, optionFromNullable, right, Some } from 'trimop';
+import { isNone, isSome, Left, optionFromNullable, Right, Some } from 'trimop';
 
 import {
   ActionTrigger,
@@ -84,15 +84,15 @@ describe('Ref Trigger', () => {
         ActionTrigger<DocSnapshot>
       >;
 
-      it('user trigger is none', () => {
+      it('user trigger is None', () => {
         expect(isNone(onCreateUserTrigger)).toStrictEqual(true);
       });
 
-      it('article trigger is some', () => {
+      it('article trigger is Some', () => {
         expect(isSome(onCreateArticleTrigger)).toStrictEqual(true);
       });
 
-      it('comment trigger is none', () => {
+      it('comment trigger is None', () => {
         expect(isNone(onCreateCommentTrigger)).toStrictEqual(true);
       });
 
@@ -107,7 +107,7 @@ describe('Ref Trigger', () => {
 
           expect(mockedGetDoc).not.toHaveBeenCalled();
           expect(onCreateArticleTC).toStrictEqual(
-            left(
+            Left(
               InvalidFieldTypeError({
                 expectedFieldTypes: ['Ref'],
                 field: undefined,
@@ -129,7 +129,7 @@ describe('Ref Trigger', () => {
 
           expect(mockedGetDoc).not.toHaveBeenCalled();
           expect(onCreateArticleTC).toStrictEqual(
-            left(
+            Left(
               InvalidFieldTypeError({
                 expectedFieldTypes: ['Ref'],
                 field: StringField('kira'),
@@ -140,7 +140,7 @@ describe('Ref Trigger', () => {
 
         it('return error if get doc is error', async () => {
           const mockedGetDoc = jest.fn<GetDocReturn, GetDocParam>().mockResolvedValueOnce(
-            left({
+            Left({
               _errorType: 'GetDocError',
               _getDocError: 'testGetDocError',
             })
@@ -160,7 +160,7 @@ describe('Ref Trigger', () => {
           expect(mockedGetDoc).toHaveBeenCalledTimes(1);
           expect(mockedGetDoc).toHaveBeenCalledWith({ col: 'user', id: 'user0' });
           expect(onCreateArticleTC).toStrictEqual(
-            left({
+            Left({
               _errorType: 'GetDocError',
               _getDocError: 'testGetDocError',
             })
@@ -169,7 +169,7 @@ describe('Ref Trigger', () => {
 
         it('copy user fields to article field', async () => {
           const mockedGetDoc = jest.fn<GetDocReturn, GetDocParam>().mockResolvedValueOnce(
-            right({
+            Right({
               displayName: StringField('Article Zero Title'),
               publishedMedia: StringField('book'),
               role: StringField('Normal User'),
@@ -190,7 +190,7 @@ describe('Ref Trigger', () => {
           expect(mockedGetDoc).toHaveBeenCalledTimes(1);
           expect(mockedGetDoc).toHaveBeenCalledWith({ col: 'user', id: 'user0' });
           expect(onCreateArticleTC).toStrictEqual(
-            right({
+            Right({
               article: {
                 article0: UpdateDocCommit({
                   onDocAbsent: 'doNotUpdate',
@@ -243,15 +243,15 @@ describe('Ref Trigger', () => {
         ActionTrigger<DocChange>
       >;
 
-      it('user trigger is some', () => {
+      it('user trigger is Some', () => {
         expect(isSome(onUpdateUserTrigger)).toStrictEqual(true);
       });
 
-      it('article trigger is none', () => {
+      it('article trigger is None', () => {
         expect(isNone(onUpdateArticleTrigger)).toStrictEqual(true);
       });
 
-      it('comment trigger is none', () => {
+      it('comment trigger is None', () => {
         expect(isNone(onUpdateCommentTrigger)).toStrictEqual(true);
       });
 
@@ -281,7 +281,7 @@ describe('Ref Trigger', () => {
               snapshot: userNotChangedSnapshot,
             });
             expect(mockedGetDoc).not.toHaveBeenCalled();
-            expect(onUpdateArticleTC).toStrictEqual(right({}));
+            expect(onUpdateArticleTC).toStrictEqual(Right({}));
           });
         });
 
@@ -334,7 +334,7 @@ describe('Ref Trigger', () => {
               snapshot: userChangedSnapshot,
             });
             expect(mockedGetDoc).not.toHaveBeenCalled();
-            expect(onUpdateArticleTC).toStrictEqual(right({}));
+            expect(onUpdateArticleTC).toStrictEqual(Right({}));
           });
         });
 
@@ -468,15 +468,15 @@ describe('Ref Trigger', () => {
         ActionTrigger<DocSnapshot>
       >;
 
-      it('user trigger is some', () => {
+      it('user trigger is Some', () => {
         expect(isSome(onDeleteUserTrigger)).toStrictEqual(true);
       });
 
-      it('article trigger is none', () => {
+      it('article trigger is None', () => {
         expect(isNone(onDeleteArticleTrigger)).toStrictEqual(true);
       });
 
-      it('comment trigger is none', () => {
+      it('comment trigger is None', () => {
         expect(isNone(onDeleteCommentTrigger)).toStrictEqual(true);
       });
 
@@ -499,7 +499,7 @@ describe('Ref Trigger', () => {
             snapshot: deleteUserSnapshot,
           });
           expect(mockedGetDoc).not.toHaveBeenCalled();
-          expect(onDeleteUserTC).toStrictEqual(right({}));
+          expect(onDeleteUserTC).toStrictEqual(Right({}));
         });
       });
 
@@ -572,15 +572,15 @@ describe('Ref Trigger', () => {
         ActionTrigger<DocSnapshot>
       >;
 
-      it('user trigger is none', () => {
+      it('user trigger is None', () => {
         expect(isNone(onCreateUserTrigger)).toStrictEqual(true);
       });
 
-      it('article trigger is none', () => {
+      it('article trigger is None', () => {
         expect(isNone(onCreateArticleTrigger)).toStrictEqual(true);
       });
 
-      it('comment trigger is none', () => {
+      it('comment trigger is None', () => {
         expect(isNone(onCreateCommentTrigger)).toStrictEqual(true);
       });
     });
@@ -594,15 +594,15 @@ describe('Ref Trigger', () => {
         ActionTrigger<DocChange>
       >;
 
-      it('user trigger is none', () => {
+      it('user trigger is None', () => {
         expect(isNone(onUpdateUserTrigger)).toStrictEqual(true);
       });
 
-      it('article trigger is none', () => {
+      it('article trigger is None', () => {
         expect(isNone(onUpdateArticleTrigger)).toStrictEqual(true);
       });
 
-      it('comment trigger is none', () => {
+      it('comment trigger is None', () => {
         expect(isNone(onUpdateCommentTrigger)).toStrictEqual(true);
       });
     });

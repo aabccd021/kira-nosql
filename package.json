@@ -26,8 +26,8 @@
   },
   "dependencies": {
     "assert-never": "^1.2.1",
-    "kira-core": "^0.3.29",
-    "trimop": "^0.1.12"
+    "kira-core": "^0.3.30",
+    "trimop": "^0.1.13"
   },
   "devDependencies": {
     "@types/jest": "^26.0.24",

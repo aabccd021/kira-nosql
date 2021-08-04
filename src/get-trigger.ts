@@ -1,5 +1,5 @@
 import { Spec } from 'kira-core';
-import { none, Option, optionArrayMapSome, optionFromNullable, optionMapSome, some } from 'trimop';
+import { None, Option, optionArrayMapSome, optionFromNullable, optionMapSome, Some } from 'trimop';
 
 import { ActionTrigger, BuildDraft, ColDraft, Trigger, TriggerSnapshot } from './type';
 
@@ -12,8 +12,8 @@ function colDraftsToActionTrigger<S extends TriggerSnapshot>(
   );
   const propagationOps = optionArrayMapSome(definedColDraft.map((el) => el.propagationOp));
   return getTransactionCommits.length === 0 && propagationOps.length === 0
-    ? none()
-    : some({ getTransactionCommits, propagationOps });
+    ? None()
+    : Some({ getTransactionCommits, propagationOps });
 }
 
 export function getTrigger({

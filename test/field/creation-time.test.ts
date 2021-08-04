@@ -1,5 +1,5 @@
 import { CreationTimeField, DocSnapshot } from 'kira-core';
-import { isNone, isSome, optionFromNullable, right, Some } from 'trimop';
+import { isNone, isSome, optionFromNullable, Right, Some } from 'trimop';
 
 import {
   ActionTrigger,
@@ -36,7 +36,7 @@ describe('CreationTime trigger', () => {
 
   const articleTrigger = optionFromNullable(trigger['article']) as Some<ColTrigger>;
 
-  it('article trigger is some', () => {
+  it('article trigger is Some', () => {
     expect(isSome(articleTrigger)).toStrictEqual(true);
   });
 
@@ -45,7 +45,7 @@ describe('CreationTime trigger', () => {
       ActionTrigger<DocSnapshot>
     >;
 
-    it('trigger is some', () => {
+    it('trigger is Some', () => {
       expect(isSome(onCreateArticleTrigger)).toStrictEqual(true);
     });
 
@@ -60,7 +60,7 @@ describe('CreationTime trigger', () => {
 
         expect(mockedGetDoc).not.toHaveBeenCalled();
         expect(onCreateArticleTC).toStrictEqual(
-          right({
+          Right({
             article: {
               article0: UpdateDocCommit({
                 onDocAbsent: 'doNotUpdate',
@@ -94,7 +94,7 @@ describe('CreationTime trigger', () => {
   });
 
   describe('onUpdate', () => {
-    it('trigger is none', () => {
+    it('trigger is None', () => {
       const onUpdateArticleTrigger = articleTrigger.value.onUpdate as Some<
         ActionTrigger<DocChange>
       >;
@@ -103,7 +103,7 @@ describe('CreationTime trigger', () => {
   });
 
   describe('onDelete', () => {
-    it('trigger is none', () => {
+    it('trigger is None', () => {
       const onDeleteArticleTrigger = articleTrigger.value.onDelete as Some<
         ActionTrigger<DocSnapshot>
       >;

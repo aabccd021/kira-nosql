@@ -8,7 +8,7 @@ import {
   RefUpdateField,
   SyncedFields,
 } from 'kira-core';
-import { eitherMapRight, left, none, optionFromNullable, optionMapSome, right, some } from 'trimop';
+import { eitherMapRight, Left, None, optionFromNullable, optionMapSome, Right, Some } from 'trimop';
 
 import {
   DocChange,
@@ -46,9 +46,9 @@ async function propagateRefUpdate({
   );
 
   return eitherMapRight(filterSyncedFields({ doc: filteredDoc, syncedFields }), (syncData) =>
-    right(
+    Right(
       optionMapSome(optionFromNullable(syncData), (syncData) =>
-        some(
+        Some(
           execOnRelDocs(
             {
               refedCol,
@@ -107,13 +107,13 @@ export function makeRefDraft({
   const needSync = Object.keys(spec.syncedFields).length !== 0;
   return {
     onCreate: needSync
-      ? some({
+      ? Some({
           [colName]: {
-            getTransactionCommit: some(async ({ getDoc, snapshot }) => {
+            getTransactionCommit: Some(async ({ getDoc, snapshot }) => {
               const refField = snapshot.doc[fieldName];
 
               return refField?._type !== 'Ref'
-                ? left(
+                ? Left(
                     InvalidFieldTypeError({
                       expectedFieldTypes: ['Ref'],
                       field: refField,
@@ -123,7 +123,7 @@ export function makeRefDraft({
                     await getDoc({ col: spec.refedCol, id: refField.snapshot.id }),
                     (refedDoc) => {
                       const syncedFieldNames = Object.keys(spec.syncedFields);
-                      return right({
+                      return Right({
                         [colName]: {
                           [snapshot.id]: UpdateDocCommit({
                             onDocAbsent: 'doNotUpdate',
@@ -142,14 +142,14 @@ export function makeRefDraft({
                     }
                   );
             }),
-            propagationOp: none(),
+            propagationOp: None(),
           },
         })
-      : none(),
-    onDelete: some({
+      : None(),
+    onDelete: Some({
       [spec.refedCol]: {
-        getTransactionCommit: none(),
-        propagationOp: some(({ execOnRelDocs, deleteDoc, snapshot: refed }) =>
+        getTransactionCommit: None(),
+        propagationOp: Some(({ execOnRelDocs, deleteDoc, snapshot: refed }) =>
           execOnRelDocs(
             {
               refedCol: spec.refedCol,
@@ -163,10 +163,10 @@ export function makeRefDraft({
       },
     }),
     onUpdate: needSync
-      ? some({
+      ? Some({
           [spec.refedCol]: {
-            getTransactionCommit: none(),
-            propagationOp: some(({ execOnRelDocs, updateDoc, snapshot }) =>
+            getTransactionCommit: None(),
+            propagationOp: Some(({ execOnRelDocs, updateDoc, snapshot }) =>
               propagateRefUpdate({
                 execOnRelDocs,
                 refedDoc: snapshot,
@@ -178,6 +178,6 @@ export function makeRefDraft({
             ),
           },
         })
-      : none(),
+      : None(),
   };
 }

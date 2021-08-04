@@ -1,5 +1,5 @@
 import { DocSnapshot, IncrementField, NumberField, RefField } from 'kira-core';
-import { isNone, isSome, left, optionFromNullable, right, Some } from 'trimop';
+import { isNone, isSome, Left, optionFromNullable, Right, Some } from 'trimop';
 
 import {
   ActionTrigger,
@@ -31,7 +31,7 @@ describe('Count trigger', () => {
         bookmarkCount: {
           _type: 'Count',
           countedCol: 'bookmark',
-          groupByRef: 'bookmarkedarticle',
+          groupByRef: 'bookmarkedArticle',
         },
       },
       bookmark: {},
@@ -41,11 +41,11 @@ describe('Count trigger', () => {
   const articleTrigger = optionFromNullable(trigger['article']) as Some<ColTrigger>;
   const bookmarkTrigger = optionFromNullable(trigger['bookmark']) as Some<ColTrigger>;
 
-  it('article trigger is some', () => {
+  it('article trigger is Some', () => {
     expect(isSome(articleTrigger)).toStrictEqual(true);
   });
 
-  it('bookmark trigger is some', () => {
+  it('bookmark trigger is Some', () => {
     expect(isSome(bookmarkTrigger)).toStrictEqual(true);
   });
 
@@ -58,11 +58,11 @@ describe('Count trigger', () => {
       ActionTrigger<DocSnapshot>
     >;
 
-    it('article trigger is some', () => {
+    it('article trigger is Some', () => {
       expect(isSome(onCreateArticleTrigger)).toStrictEqual(true);
     });
 
-    it('bookmark trigger is some', () => {
+    it('bookmark trigger is Some', () => {
       expect(isSome(onCreateBookmarkTrigger)).toStrictEqual(true);
     });
 
@@ -80,7 +80,7 @@ describe('Count trigger', () => {
 
         expect(mockedGetDoc).not.toHaveBeenCalled();
         expect(onCreateArticleTC).toStrictEqual(
-          right({
+          Right({
             article: {
               article0: UpdateDocCommit({
                 onDocAbsent: 'doNotUpdate',
@@ -100,7 +100,7 @@ describe('Count trigger', () => {
           getDoc: mockedGetDoc,
           snapshot: {
             doc: {
-              bookmarkedarticle: RefField({ doc: {}, id: 'article0' }),
+              bookmarkedArticle: RefField({ doc: {}, id: 'article0' }),
             },
             id: 'bookmark0',
           },
@@ -108,7 +108,7 @@ describe('Count trigger', () => {
 
         expect(mockedGetDoc).not.toHaveBeenCalled();
         expect(onCreateBookmarkTC).toStrictEqual(
-          right({
+          Right({
             article: {
               article0: UpdateDocCommit({
                 onDocAbsent: 'doNotUpdate',
@@ -128,7 +128,7 @@ describe('Count trigger', () => {
           getDoc: mockedGetDoc,
           snapshot: {
             doc: {
-              bookmarkedarticle: NumberField(0),
+              bookmarkedArticle: NumberField(0),
             },
             id: 'bookmark0',
           },
@@ -136,7 +136,7 @@ describe('Count trigger', () => {
 
         expect(mockedGetDoc).not.toHaveBeenCalled();
         expect(onCreateBookmarkTC).toStrictEqual(
-          left(
+          Left(
             InvalidFieldTypeError({
               expectedFieldTypes: ['Ref'],
               field: NumberField(0),
@@ -158,7 +158,7 @@ describe('Count trigger', () => {
 
         expect(mockedGetDoc).not.toHaveBeenCalled();
         expect(onCreateBookmarkTC).toStrictEqual(
-          left(
+          Left(
             InvalidFieldTypeError({
               expectedFieldTypes: ['Ref'],
               field: undefined,
@@ -209,11 +209,11 @@ describe('Count trigger', () => {
       ActionTrigger<DocChange>
     >;
 
-    it('article trigger is none', () => {
+    it('article trigger is None', () => {
       expect(isNone(onUpdateArticleTrigger)).toStrictEqual(true);
     });
 
-    it('bookmark trigger is none', () => {
+    it('bookmark trigger is None', () => {
       expect(isNone(onUpdateBookmarkTrigger)).toStrictEqual(true);
     });
   });
@@ -226,11 +226,11 @@ describe('Count trigger', () => {
       ActionTrigger<DocSnapshot>
     >;
 
-    it('article trigger is none', () => {
+    it('article trigger is None', () => {
       expect(isNone(onDeleteArticleTrigger)).toStrictEqual(true);
     });
 
-    it('bookmark trigger is some', () => {
+    it('bookmark trigger is Some', () => {
       expect(isSome(onDeleteBookmarkTrigger)).toStrictEqual(true);
     });
 
@@ -242,7 +242,7 @@ describe('Count trigger', () => {
           getDoc: mockedGetDoc,
           snapshot: {
             doc: {
-              bookmarkedarticle: RefField({ doc: {}, id: 'article0' }),
+              bookmarkedArticle: RefField({ doc: {}, id: 'article0' }),
             },
             id: 'bookmark0',
           },
@@ -250,7 +250,7 @@ describe('Count trigger', () => {
 
         expect(mockedGetDoc).not.toHaveBeenCalled();
         expect(onDeleteBookmarkTC).toStrictEqual(
-          right({
+          Right({
             article: {
               article0: UpdateDocCommit({
                 onDocAbsent: 'doNotUpdate',
@@ -270,7 +270,7 @@ describe('Count trigger', () => {
           getDoc: mockedGetDoc,
           snapshot: {
             doc: {
-              bookmarkedarticle: NumberField(0),
+              bookmarkedArticle: NumberField(0),
             },
             id: 'bookmark0',
           },
@@ -278,7 +278,7 @@ describe('Count trigger', () => {
 
         expect(mockedGetDoc).not.toHaveBeenCalled();
         expect(onDeleteBookmarkTC).toStrictEqual(
-          left(
+          Left(
             InvalidFieldTypeError({
               expectedFieldTypes: ['Ref'],
               field: NumberField(0),
@@ -297,7 +297,7 @@ describe('Count trigger', () => {
 
         expect(mockedGetDoc).not.toHaveBeenCalled();
         expect(onDeleteBookmarkTC).toStrictEqual(
-          left(
+          Left(
             InvalidFieldTypeError({
               expectedFieldTypes: ['Ref'],
               field: undefined,

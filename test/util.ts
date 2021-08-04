@@ -1,4 +1,4 @@
-import { none } from 'trimop';
+import { None } from 'trimop';
 
 import {
   BuildDraft,
@@ -31,8 +31,8 @@ export const testBuildDraft: BuildDraft = ({ context, spec }) => {
     return makeRefDraft({ context, spec });
   }
   return {
-    onCreate: none(),
-    onDelete: none(),
-    onUpdate: none(),
+    onCreate: None(),
+    onDelete: None(),
+    onUpdate: None(),
   };
 };

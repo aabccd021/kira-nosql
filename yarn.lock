@@ -3155,12 +3155,12 @@ kind-of@^6.0.3:
   resolved "https://registry.yarnpkg.com/kind-of/-/kind-of-6.0.3.tgz#07c05034a6c349fa06e24fa35aa76db4580ce4dd"
   integrity sha512-dcS1ul+9tmeD95T+x28/ehLgd9mENa3LsvDTtzm3vyBEO7RPptvAD+t44WVXaUjTBRcrpFeFlC8WCruUR456hw==
 
-kira-core@^0.3.29:
-  version "0.3.29"
-  resolved "https://registry.yarnpkg.com/kira-core/-/kira-core-0.3.29.tgz#85ec4fb904bb97d1381c36ee4c6d3f035be70f80"
-  integrity sha512-Twm1TxvLkbzkx+SrNyHjlPQhNcXJJ/tQPJVwW4/pEW7S7OX50aqJImz1hNWko494PJw/sPt76JQYWMpk2wYIjw==
+kira-core@^0.3.30:
+  version "0.3.30"
+  resolved "https://registry.yarnpkg.com/kira-core/-/kira-core-0.3.30.tgz#07ff7f180fb5d0641d359394b25c07ae230d544a"
+  integrity sha512-WaQmTm/PurVoK6htz0iW2io3657FarrGKORHjQIC0+fbwBPXKQ0a3q822/CgQB6Gc8tJvWU+SDbVsXxPFXDm4Q==
   dependencies:
-    trimop "0.1.11"
+    trimop "0.1.13"
 
 kleur@^3.0.3:
   version "3.0.3"
@@ -4304,15 +4304,10 @@ trim-newlines@^4.0.2:
   resolved "https://registry.yarnpkg.com/trim-newlines/-/trim-newlines-4.0.2.tgz#d6aaaf6a0df1b4b536d183879a6b939489808c7c"
   integrity sha512-GJtWyq9InR/2HRiLZgpIKv+ufIKrVrvjQWEj7PxAXNc5dwbNJkqhAUoAGgzRmULAnoOM5EIpveYd3J2VeSAIew==
 
-trimop@0.1.11:
-  version "0.1.11"
-  resolved "https://registry.yarnpkg.com/trimop/-/trimop-0.1.11.tgz#06594b665e4b9ea94b1ce5c229060ba5deb1e398"
-  integrity sha512-n+S/PpiR21rlP/DiDnHQkTdc3ubNvdlB3wyd8om7i2sYOYVIaiQ2/lY4AAGZtALRXE7H3ZCfGrXI1PK2mJEDOA==
-
-trimop@^0.1.12:
-  version "0.1.12"
-  resolved "https://registry.yarnpkg.com/trimop/-/trimop-0.1.12.tgz#51ad4465f98bd0ec637d56a224cf7f7a84085389"
-  integrity sha512-VcpFFIsutBxDtSoSY4H1Qe1nY9sYgtQNa75GU37XJS6Jnz9af7QxcQGrB+0f/0z4USqVCmWnoxzSaqgZfA9i+g==
+trimop@0.1.13, trimop@^0.1.13:
+  version "0.1.13"
+  resolved "https://registry.yarnpkg.com/trimop/-/trimop-0.1.13.tgz#82940a7d7a7225ca15dc25b1c3fda6f2bed7ffc0"
+  integrity sha512-SQFW6bvVVrDN2B9u1UDl3XSsz7D+yiilDkgN0P4f8CfQJgvH3t8AG5gT18QkkSS+atbH1jO3ybsu7JAu/4mEDg==
 
 ts-jest@^27.0.4:
   version "27.0.4"
