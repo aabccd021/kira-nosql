@@ -1,20 +1,21 @@
 import {
   DateField,
   DocSnapshot,
-  InvalidFieldTypeFailure,
   NumberField,
   RefField,
   RefUpdateField,
   StringField,
 } from 'kira-core';
-import { Failed, Value } from 'trimop';
+import { isNone, isSome, left, optionFromNullable, right, Some } from 'trimop';
 
 import {
   ActionTrigger,
+  ColTrigger,
   DocChange,
   execPropagationOps,
   getTransactionCommit,
   getTrigger,
+  InvalidFieldTypeError,
   UpdateDocCommit,
 } from '../../src';
 import {
@@ -70,36 +71,44 @@ describe('Ref Trigger', () => {
       },
     });
 
+    const articleTrigger = optionFromNullable(trigger['article']) as Some<ColTrigger>;
+    const userTrigger = optionFromNullable(trigger['user']) as Some<ColTrigger>;
+    const commentTrigger = optionFromNullable(trigger['comment']) as Some<ColTrigger>;
+
     describe('onCreate', () => {
-      const onCreateUserTrigger = trigger['user']?.onCreate;
-      const onCreateArticleTrigger = trigger['article']?.onCreate;
-      const onCreateCommentTrigger = trigger['comment']?.onCreate;
+      const onCreateUserTrigger = userTrigger.value.onCreate as Some<ActionTrigger<DocSnapshot>>;
+      const onCreateArticleTrigger = articleTrigger.value.onCreate as Some<
+        ActionTrigger<DocSnapshot>
+      >;
+      const onCreateCommentTrigger = commentTrigger.value.onCreate as Some<
+        ActionTrigger<DocSnapshot>
+      >;
 
-      it('user trigger is undefined', () => {
-        expect(onCreateUserTrigger).toBeUndefined();
+      it('user trigger is none', () => {
+        expect(isNone(onCreateUserTrigger)).toStrictEqual(true);
       });
 
-      it('article trigger is defined', () => {
-        expect(onCreateArticleTrigger).toBeDefined();
+      it('article trigger is some', () => {
+        expect(isSome(onCreateArticleTrigger)).toStrictEqual(true);
       });
 
-      it('comment trigger is undefined', () => {
-        expect(onCreateCommentTrigger).toBeUndefined();
+      it('comment trigger is none', () => {
+        expect(isNone(onCreateCommentTrigger)).toStrictEqual(true);
       });
 
       describe('getTransactionCommit', () => {
-        it('return failure if refField is empty', async () => {
+        it('return error if refField is empty', async () => {
           const mockedGetDoc = jest.fn<GetDocReturn, GetDocParam>();
           const onCreateArticleTC = await getTransactionCommit({
-            actionTrigger: onCreateArticleTrigger as ActionTrigger<DocSnapshot>,
+            actionTrigger: onCreateArticleTrigger.value,
             getDoc: mockedGetDoc,
             snapshot: { doc: {}, id: 'article0' },
           });
 
           expect(mockedGetDoc).not.toHaveBeenCalled();
           expect(onCreateArticleTC).toStrictEqual(
-            Failed(
-              InvalidFieldTypeFailure({
+            left(
+              InvalidFieldTypeError({
                 expectedFieldTypes: ['Ref'],
                 field: undefined,
               })
@@ -107,10 +116,10 @@ describe('Ref Trigger', () => {
           );
         });
 
-        it('return failure if refField is not type of ref field', async () => {
+        it('return error if refField is not type of ref field', async () => {
           const mockedGetDoc = jest.fn<GetDocReturn, GetDocParam>();
           const onCreateArticleTC = await getTransactionCommit({
-            actionTrigger: onCreateArticleTrigger as ActionTrigger<DocSnapshot>,
+            actionTrigger: onCreateArticleTrigger.value,
             getDoc: mockedGetDoc,
             snapshot: {
               doc: { articleOwner: StringField('kira') },
@@ -120,8 +129,8 @@ describe('Ref Trigger', () => {
 
           expect(mockedGetDoc).not.toHaveBeenCalled();
           expect(onCreateArticleTC).toStrictEqual(
-            Failed(
-              InvalidFieldTypeFailure({
+            left(
+              InvalidFieldTypeError({
                 expectedFieldTypes: ['Ref'],
                 field: StringField('kira'),
               })
@@ -129,15 +138,15 @@ describe('Ref Trigger', () => {
           );
         });
 
-        it('return failure if get doc is failure', async () => {
+        it('return error if get doc is error', async () => {
           const mockedGetDoc = jest.fn<GetDocReturn, GetDocParam>().mockResolvedValueOnce(
-            Failed({
-              _failureType: 'GetDocFailure',
-              _getDocFailure: 'testGetDocFailure',
+            left({
+              _errorType: 'GetDocError',
+              _getDocError: 'testGetDocError',
             })
           );
           const onCreateArticleTC = await getTransactionCommit({
-            actionTrigger: onCreateArticleTrigger as ActionTrigger<DocSnapshot>,
+            actionTrigger: onCreateArticleTrigger.value,
             getDoc: mockedGetDoc,
             snapshot: {
               doc: {
@@ -151,23 +160,23 @@ describe('Ref Trigger', () => {
           expect(mockedGetDoc).toHaveBeenCalledTimes(1);
           expect(mockedGetDoc).toHaveBeenCalledWith({ col: 'user', id: 'user0' });
           expect(onCreateArticleTC).toStrictEqual(
-            Failed({
-              _failureType: 'GetDocFailure',
-              _getDocFailure: 'testGetDocFailure',
+            left({
+              _errorType: 'GetDocError',
+              _getDocError: 'testGetDocError',
             })
           );
         });
 
         it('copy user fields to article field', async () => {
           const mockedGetDoc = jest.fn<GetDocReturn, GetDocParam>().mockResolvedValueOnce(
-            Value({
+            right({
               displayName: StringField('Article Zero Title'),
               publishedMedia: StringField('book'),
               role: StringField('Normal User'),
             })
           );
           const onCreateArticleTC = await getTransactionCommit({
-            actionTrigger: onCreateArticleTrigger as ActionTrigger<DocSnapshot>,
+            actionTrigger: onCreateArticleTrigger.value,
             getDoc: mockedGetDoc,
             snapshot: {
               doc: {
@@ -181,7 +190,7 @@ describe('Ref Trigger', () => {
           expect(mockedGetDoc).toHaveBeenCalledTimes(1);
           expect(mockedGetDoc).toHaveBeenCalledWith({ col: 'user', id: 'user0' });
           expect(onCreateArticleTC).toStrictEqual(
-            Value({
+            right({
               article: {
                 article0: UpdateDocCommit({
                   onDocAbsent: 'doNotUpdate',
@@ -204,7 +213,7 @@ describe('Ref Trigger', () => {
           const mockedUpdateDoc = jest.fn<UpdateDocReturn, UpdateDocParam>();
           const mockedExecOnRelDocs = jest.fn<ExecOnRelDocsReturn, ExecOnRelDocsParam>();
           await execPropagationOps({
-            actionTrigger: onCreateArticleTrigger as ActionTrigger<DocSnapshot>,
+            actionTrigger: onCreateArticleTrigger.value,
             deleteDoc: mockedDeleteDoc,
             execOnRelDocs: mockedExecOnRelDocs,
             snapshot: {
@@ -226,20 +235,24 @@ describe('Ref Trigger', () => {
     });
 
     describe('onUpdate', () => {
-      const onUpdateUserTrigger = trigger['user']?.onUpdate;
-      const onUpdateArticleTrigger = trigger['article']?.onUpdate;
-      const onUpdateCommentTrigger = trigger['comment']?.onUpdate;
+      const onUpdateUserTrigger = userTrigger.value.onUpdate as Some<ActionTrigger<DocChange>>;
+      const onUpdateArticleTrigger = articleTrigger.value.onUpdate as Some<
+        ActionTrigger<DocChange>
+      >;
+      const onUpdateCommentTrigger = commentTrigger.value.onUpdate as Some<
+        ActionTrigger<DocChange>
+      >;
 
-      it('user trigger is defined', () => {
-        expect(onUpdateUserTrigger).toBeDefined();
+      it('user trigger is some', () => {
+        expect(isSome(onUpdateUserTrigger)).toStrictEqual(true);
       });
 
-      it('article trigger is undefined', () => {
-        expect(onUpdateArticleTrigger).toBeUndefined();
+      it('article trigger is none', () => {
+        expect(isNone(onUpdateArticleTrigger)).toStrictEqual(true);
       });
 
-      it('comment trigger is undefined', () => {
-        expect(onUpdateCommentTrigger).toBeUndefined();
+      it('comment trigger is none', () => {
+        expect(isNone(onUpdateCommentTrigger)).toStrictEqual(true);
       });
 
       describe('when doc does not change', () => {
@@ -263,12 +276,12 @@ describe('Ref Trigger', () => {
           it('returns empty transaction commit', async () => {
             const mockedGetDoc = jest.fn<GetDocReturn, GetDocParam>();
             const onUpdateArticleTC = await getTransactionCommit({
-              actionTrigger: onUpdateUserTrigger as ActionTrigger<DocChange>,
+              actionTrigger: onUpdateUserTrigger.value,
               getDoc: mockedGetDoc,
               snapshot: userNotChangedSnapshot,
             });
             expect(mockedGetDoc).not.toHaveBeenCalled();
-            expect(onUpdateArticleTC).toStrictEqual(Value({}));
+            expect(onUpdateArticleTC).toStrictEqual(right({}));
           });
         });
 
@@ -282,7 +295,7 @@ describe('Ref Trigger', () => {
                 Promise.all(['article21', 'article46'].map(execOnDoc))
               );
             await execPropagationOps({
-              actionTrigger: onUpdateUserTrigger as ActionTrigger<DocChange>,
+              actionTrigger: onUpdateUserTrigger.value,
               deleteDoc: mockedDeleteDoc,
               execOnRelDocs: mockedExecOnRelDocs,
               snapshot: userNotChangedSnapshot,
@@ -316,12 +329,12 @@ describe('Ref Trigger', () => {
           it('returns empty transaction commit', async () => {
             const mockedGetDoc = jest.fn<GetDocReturn, GetDocParam>();
             const onUpdateArticleTC = await getTransactionCommit({
-              actionTrigger: onUpdateUserTrigger as ActionTrigger<DocChange>,
+              actionTrigger: onUpdateUserTrigger.value,
               getDoc: mockedGetDoc,
               snapshot: userChangedSnapshot,
             });
             expect(mockedGetDoc).not.toHaveBeenCalled();
-            expect(onUpdateArticleTC).toStrictEqual(Value({}));
+            expect(onUpdateArticleTC).toStrictEqual(right({}));
           });
         });
 
@@ -347,7 +360,7 @@ describe('Ref Trigger', () => {
                 throw Error();
               });
             await execPropagationOps({
-              actionTrigger: onUpdateUserTrigger as ActionTrigger<DocChange>,
+              actionTrigger: onUpdateUserTrigger.value,
               deleteDoc: mockedDeleteDoc,
               execOnRelDocs: mockedExecOnRelDocs,
               snapshot: userChangedSnapshot,
@@ -447,20 +460,24 @@ describe('Ref Trigger', () => {
       });
     });
     describe('onDelete', () => {
-      const onDeleteUserTrigger = trigger['user']?.onDelete;
-      const onDeleteArticleTrigger = trigger['article']?.onDelete;
-      const onDeleteCommentTrigger = trigger['comment']?.onDelete;
+      const onDeleteUserTrigger = userTrigger.value.onDelete as Some<ActionTrigger<DocSnapshot>>;
+      const onDeleteArticleTrigger = articleTrigger.value.onDelete as Some<
+        ActionTrigger<DocSnapshot>
+      >;
+      const onDeleteCommentTrigger = commentTrigger.value.onDelete as Some<
+        ActionTrigger<DocSnapshot>
+      >;
 
-      it('user trigger is defined', () => {
-        expect(onDeleteUserTrigger).toBeDefined();
+      it('user trigger is some', () => {
+        expect(isSome(onDeleteUserTrigger)).toStrictEqual(true);
       });
 
-      it('article trigger is undefined', () => {
-        expect(onDeleteArticleTrigger).toBeUndefined();
+      it('article trigger is none', () => {
+        expect(isNone(onDeleteArticleTrigger)).toStrictEqual(true);
       });
 
-      it('comment trigger is undefined', () => {
-        expect(onDeleteCommentTrigger).toBeUndefined();
+      it('comment trigger is none', () => {
+        expect(isNone(onDeleteCommentTrigger)).toStrictEqual(true);
       });
 
       const deleteUserSnapshot = {
@@ -477,12 +494,12 @@ describe('Ref Trigger', () => {
         it('returns empty transaction commit', async () => {
           const mockedGetDoc = jest.fn<GetDocReturn, GetDocParam>();
           const onDeleteUserTC = await getTransactionCommit({
-            actionTrigger: onDeleteUserTrigger as ActionTrigger<DocSnapshot>,
+            actionTrigger: onDeleteUserTrigger.value,
             getDoc: mockedGetDoc,
             snapshot: deleteUserSnapshot,
           });
           expect(mockedGetDoc).not.toHaveBeenCalled();
-          expect(onDeleteUserTC).toStrictEqual(Value({}));
+          expect(onDeleteUserTC).toStrictEqual(right({}));
         });
       });
 
@@ -496,7 +513,7 @@ describe('Ref Trigger', () => {
               Promise.all(['article21', 'article46'].map(execOnDoc))
             );
           await execPropagationOps({
-            actionTrigger: onDeleteUserTrigger as ActionTrigger<DocSnapshot>,
+            actionTrigger: onDeleteUserTrigger.value,
             deleteDoc: mockedDeleteDoc,
             execOnRelDocs: mockedExecOnRelDocs,
             snapshot: deleteUserSnapshot,
@@ -542,39 +559,51 @@ describe('Ref Trigger', () => {
       },
     });
 
+    const articleTrigger = optionFromNullable(trigger['article']) as Some<ColTrigger>;
+    const userTrigger = optionFromNullable(trigger['user']) as Some<ColTrigger>;
+    const commentTrigger = optionFromNullable(trigger['comment']) as Some<ColTrigger>;
+
     describe('onCreate', () => {
-      const onCreateUserTrigger = trigger['user']?.onCreate;
-      const onCreateArticleTrigger = trigger['article']?.onCreate;
-      const onCreateCommentTrigger = trigger['comment']?.onCreate;
+      const onCreateUserTrigger = userTrigger.value.onCreate as Some<ActionTrigger<DocSnapshot>>;
+      const onCreateArticleTrigger = articleTrigger.value.onCreate as Some<
+        ActionTrigger<DocSnapshot>
+      >;
+      const onCreateCommentTrigger = commentTrigger.value.onCreate as Some<
+        ActionTrigger<DocSnapshot>
+      >;
 
-      it('user trigger is undefined', () => {
-        expect(onCreateUserTrigger).toBeUndefined();
+      it('user trigger is none', () => {
+        expect(isNone(onCreateUserTrigger)).toStrictEqual(true);
       });
 
-      it('article trigger is undefined', () => {
-        expect(onCreateArticleTrigger).toBeUndefined();
+      it('article trigger is none', () => {
+        expect(isNone(onCreateArticleTrigger)).toStrictEqual(true);
       });
 
-      it('comment trigger is undefined', () => {
-        expect(onCreateCommentTrigger).toBeUndefined();
+      it('comment trigger is none', () => {
+        expect(isNone(onCreateCommentTrigger)).toStrictEqual(true);
       });
     });
 
     describe('onUpdate', () => {
-      const onUpdateUserTrigger = trigger['user']?.onUpdate;
-      const onUpdateArticleTrigger = trigger['article']?.onUpdate;
-      const onUpdateCommentTrigger = trigger['comment']?.onUpdate;
+      const onUpdateUserTrigger = userTrigger.value.onUpdate as Some<ActionTrigger<DocChange>>;
+      const onUpdateArticleTrigger = articleTrigger.value.onUpdate as Some<
+        ActionTrigger<DocChange>
+      >;
+      const onUpdateCommentTrigger = commentTrigger.value.onUpdate as Some<
+        ActionTrigger<DocChange>
+      >;
 
-      it('user trigger is undefined', () => {
-        expect(onUpdateUserTrigger).toBeUndefined();
+      it('user trigger is none', () => {
+        expect(isNone(onUpdateUserTrigger)).toStrictEqual(true);
       });
 
-      it('article trigger is undefined', () => {
-        expect(onUpdateArticleTrigger).toBeUndefined();
+      it('article trigger is none', () => {
+        expect(isNone(onUpdateArticleTrigger)).toStrictEqual(true);
       });
 
-      it('comment trigger is undefined', () => {
-        expect(onUpdateCommentTrigger).toBeUndefined();
+      it('comment trigger is none', () => {
+        expect(isNone(onUpdateCommentTrigger)).toStrictEqual(true);
       });
     });
   });

@@ -1,5 +1,5 @@
-import { Doc, DocKey, DocSnapshot, FieldSpec, InvalidFieldTypeFailure, WriteDoc } from 'kira-core';
-import { Dict, Either } from 'trimop';
+import { Doc, DocKey, DocSnapshot, FieldSpec, WriteDoc } from 'kira-core';
+import { Dict, Either, Option } from 'trimop';
 
 /**
  *
@@ -22,24 +22,22 @@ export type ExecOnRelDocs = (
 /**
  *
  */
-export type GetDocFailure = {
-  readonly _failureType: 'GetDocFailure';
-  readonly _getDocFailure: string;
+export type GetDocError = {
+  readonly _errorType: 'GetDocError';
+  readonly _getDocError: string;
 };
 
-export type GetDoc<F extends GetDocFailure = GetDocFailure> = (
-  key: DocKey
-) => Promise<Either<F, Doc>>;
+export type GetDoc<F extends GetDocError = GetDocError> = (key: DocKey) => Promise<Either<F, Doc>>;
 
 /**
  *
  */
-export type UpdateDocFailure = {
-  readonly _failureType: 'GetDocFailure';
-  readonly _updateDocFailure: string;
+export type UpdateDocError = {
+  readonly _errorType: 'GetDocError';
+  readonly _updateDocError: string;
 };
 
-export type UpdateDoc<F extends UpdateDocFailure = UpdateDocFailure, TResult = unknown> = (param: {
+export type UpdateDoc<F extends UpdateDocError = UpdateDocError, TResult = unknown> = (param: {
   readonly key: DocKey;
   readonly writeDoc: WriteDoc;
 }) => Promise<Either<F, TResult>>;
@@ -47,12 +45,12 @@ export type UpdateDoc<F extends UpdateDocFailure = UpdateDocFailure, TResult = u
 /**
  *
  */
-export type DeleteDocFailure = {
-  readonly _deleteDocFailure: string;
-  readonly _failureType: 'DeleteDocFailure';
+export type DeleteDocError = {
+  readonly _deleteDocError: string;
+  readonly _errorType: 'DeleteDocError';
 };
 
-export type DeleteDoc<F extends DeleteDocFailure = DeleteDocFailure, TResult = unknown> = (
+export type DeleteDoc<F extends DeleteDocError = DeleteDocError, TResult = unknown> = (
   key: DocKey
 ) => Promise<Either<F, TResult>>;
 
@@ -79,9 +77,25 @@ export type DraftBuilderContext = {
 };
 
 /**
+ * InvalidFieldTypeError
+ */
+export type InvalidFieldTypeError = {
+  readonly _errorType: 'InvalidFieldType';
+};
+
+export const InvalidFieldTypeError: (
+  p: Omit<InvalidFieldTypeError, '_errorType'>
+) => InvalidFieldTypeError = (p) => ({
+  ...p,
+  _errorType: 'InvalidFieldType',
+});
+
+/**
  *
  */
-export type DraftGetTransactionCommitFailure = InvalidFieldTypeFailure | GetDocFailure;
+export type DraftGetTransactionCommitError =
+  | ({ readonly _errorType: string } & InvalidFieldTypeError)
+  | GetDocError;
 
 /**
  *
@@ -131,7 +145,7 @@ export type TransactionCommit = Dict<ColTransactionCommit>;
 export type GetTransactionCommit<S extends TriggerSnapshot> = (param: {
   readonly getDoc: GetDoc;
   readonly snapshot: S;
-}) => Promise<Either<DraftGetTransactionCommitFailure, TransactionCommit>>;
+}) => Promise<Either<DraftGetTransactionCommitError, TransactionCommit>>;
 
 /**
  *
@@ -147,8 +161,8 @@ export type PropagationOp<S extends TriggerSnapshot> = (param: {
  *
  */
 export type ColDraft<S extends TriggerSnapshot> = {
-  readonly getTransactionCommit?: GetTransactionCommit<S>;
-  readonly propagationOp?: PropagationOp<S>;
+  readonly getTransactionCommit: Option<GetTransactionCommit<S>>;
+  readonly propagationOp: Option<PropagationOp<S>>;
 };
 
 /**
@@ -160,9 +174,9 @@ export type ActionDraft<S extends TriggerSnapshot> = Dict<ColDraft<S>>;
  *
  */
 export type Draft = {
-  readonly onCreate?: ActionDraft<DocSnapshot>;
-  readonly onDelete?: ActionDraft<DocSnapshot>;
-  readonly onUpdate?: ActionDraft<DocChange>;
+  readonly onCreate: Option<ActionDraft<DocSnapshot>>;
+  readonly onDelete: Option<ActionDraft<DocSnapshot>>;
+  readonly onUpdate: Option<ActionDraft<DocChange>>;
 };
 
 /**
@@ -188,9 +202,9 @@ export type ActionTrigger<S extends TriggerSnapshot> = {
  *
  */
 export type ColTrigger = {
-  readonly onCreate?: ActionTrigger<DocSnapshot>;
-  readonly onDelete?: ActionTrigger<DocSnapshot>;
-  readonly onUpdate?: ActionTrigger<DocChange>;
+  readonly onCreate: Option<ActionTrigger<DocSnapshot>>;
+  readonly onDelete: Option<ActionTrigger<DocSnapshot>>;
+  readonly onUpdate: Option<ActionTrigger<DocChange>>;
 };
 
 /**
@@ -201,22 +215,20 @@ export type Trigger = Dict<ColTrigger>;
 /**
  *
  */
-export type IncompatibleDocOpFailure = {
-  readonly _failureType: 'IncompatibleDocOp';
+export type IncompatibleDocOpError = {
+  readonly _errorType: 'IncompatibleDocOp';
   readonly docCommit1: DocCommit;
   readonly docCommit2: DocCommit;
 };
 
-export const IncompatibleDocOpFailure: (
-  p: Omit<IncompatibleDocOpFailure, '_failureType'>
-) => IncompatibleDocOpFailure = (p) => ({
+export const IncompatibleDocOpError: (
+  p: Omit<IncompatibleDocOpError, '_errorType'>
+) => IncompatibleDocOpError = (p) => ({
   ...p,
-  _failureType: 'IncompatibleDocOp',
+  _errorType: 'IncompatibleDocOp',
 });
 
 /**
  *
  */
-export type GetTransactionCommitFailure =
-  | IncompatibleDocOpFailure
-  | DraftGetTransactionCommitFailure;
+export type GetTransactionCommitError = IncompatibleDocOpError | DraftGetTransactionCommitError;

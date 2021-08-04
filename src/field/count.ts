@@ -1,7 +1,7 @@
-import { CountFieldSpec, IncrementField, InvalidFieldTypeFailure, NumberField } from 'kira-core';
-import { Failed, Value } from 'trimop';
+import { CountFieldSpec, IncrementField, NumberField } from 'kira-core';
+import { left, none, right, some } from 'trimop';
 
-import { Draft, DraftBuilderContext, UpdateDocCommit } from '../type';
+import { Draft, DraftBuilderContext, InvalidFieldTypeError, UpdateDocCommit } from '../type';
 
 export function makeCountDraft({
   context: { colName, fieldName },
@@ -11,10 +11,10 @@ export function makeCountDraft({
   readonly spec: CountFieldSpec;
 }): Draft {
   return {
-    onCreate: {
+    onCreate: some({
       [colName]: {
-        getTransactionCommit: async ({ snapshot }) =>
-          Value({
+        getTransactionCommit: some(async ({ snapshot }) =>
+          right({
             [colName]: {
               [snapshot.id]: UpdateDocCommit({
                 onDocAbsent: 'doNotUpdate',
@@ -23,22 +23,24 @@ export function makeCountDraft({
                 },
               }),
             },
-          }),
+          })
+        ),
+        propagationOp: none(),
       },
       [spec.countedCol]: {
-        getTransactionCommit: async ({ snapshot }) => {
+        getTransactionCommit: some(async ({ snapshot }) => {
           const counterDoc = snapshot.doc[spec.groupByRef];
 
           if (counterDoc?._type !== 'Ref') {
-            return Failed(
-              InvalidFieldTypeFailure({
+            return left(
+              InvalidFieldTypeError({
                 expectedFieldTypes: ['Ref'],
                 field: counterDoc,
               })
             );
           }
 
-          return Value({
+          return right({
             [colName]: {
               [counterDoc.snapshot.id]: UpdateDocCommit({
                 onDocAbsent: 'doNotUpdate',
@@ -48,24 +50,25 @@ export function makeCountDraft({
               }),
             },
           });
-        },
+        }),
+        propagationOp: none(),
       },
-    },
-    onDelete: {
+    }),
+    onDelete: some({
       [spec.countedCol]: {
-        getTransactionCommit: async ({ snapshot }) => {
+        getTransactionCommit: some(async ({ snapshot }) => {
           const counterDoc = snapshot.doc[spec.groupByRef];
 
           if (counterDoc?._type !== 'Ref') {
-            return Failed(
-              InvalidFieldTypeFailure({
+            return left(
+              InvalidFieldTypeError({
                 expectedFieldTypes: ['Ref'],
                 field: counterDoc,
               })
             );
           }
 
-          return Value({
+          return right({
             [colName]: {
               [counterDoc.snapshot.id]: UpdateDocCommit({
                 onDocAbsent: 'doNotUpdate',
@@ -75,8 +78,10 @@ export function makeCountDraft({
               }),
             },
           });
-        },
+        }),
+        propagationOp: none(),
       },
-    },
+    }),
+    onUpdate: none(),
   };
 }

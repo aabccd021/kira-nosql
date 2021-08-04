@@ -1,3 +1,5 @@
+import { none } from 'trimop';
+
 import {
   BuildDraft,
   DeleteDoc,
@@ -28,5 +30,9 @@ export const testBuildDraft: BuildDraft = ({ context, spec }) => {
   if (spec._type === 'Ref') {
     return makeRefDraft({ context, spec });
   }
-  return {};
+  return {
+    onCreate: none(),
+    onDelete: none(),
+    onUpdate: none(),
+  };
 };

@@ -2,53 +2,23 @@ import {
   ColRefer,
   Doc,
   filterSyncedFields,
-  InvalidFieldTypeFailure,
   isFieldEqual,
   RefField,
   RefFieldSpec,
   RefUpdateField,
   SyncedFields,
 } from 'kira-core';
-import { Dict, Either, Failed, Failure, foldValue, isDefined, Value } from 'trimop';
+import { eitherMapRight, left, none, optionFromNullable, optionMapSome, right, some } from 'trimop';
 
 import {
   DocChange,
   Draft,
   DraftBuilderContext,
   ExecOnRelDocs,
+  InvalidFieldTypeError,
   UpdateDoc,
   UpdateDocCommit,
 } from '../type';
-
-function filter<F extends Failure = Failure, T = unknown>(
-  obj: Dict<T>,
-  mapper: (t: T, fieldName: string) => Either<F, boolean>
-): Either<F, Dict<T>> {
-  return Object.entries(obj).reduce<Either<F, Dict<T>>>(
-    (acc, [fieldName, field]) =>
-      foldValue(acc, (acc) =>
-        foldValue(mapper(field, fieldName), (isEqual) =>
-          Value(isEqual ? { ...acc, [fieldName]: field } : acc)
-        )
-      ),
-    Value({})
-  );
-}
-
-// function map<TResult = unknown, F extends Failure = Failure, T = unknown>(
-//   obj: Dict<T>,
-//   mapper: (t: T, fieldName: string) => Either<F, TResult>
-// ): Either<F, Dict<TResult>> {
-//   return Object.entries(obj).reduce<Either<F, Dict<TResult>>>(
-//     (acc, [fieldName, field]) =>
-//       foldValue(acc, (acc) =>
-//         foldValue(mapper(field, fieldName), (mapResult) =>
-//           Value({ ...acc, [fieldName]: mapResult })
-//         )
-//       ),
-//     Value({})
-//   );
-// }
 
 async function propagateRefUpdate({
   updateDoc,
@@ -69,59 +39,61 @@ async function propagateRefUpdate({
   };
   readonly updateDoc: UpdateDoc;
 }): Promise<unknown> {
-  return foldValue<unknown, Failure, Doc>(
-    filter(refedDoc.after, (afterField, fieldName) =>
-      foldValue(isFieldEqual(afterField, refedDoc.before[fieldName]), (isEqual) => Value(!isEqual))
-    ),
-    (filteredSyncedFieldsDoc) =>
-      foldValue(filterSyncedFields({ doc: filteredSyncedFieldsDoc, syncedFields }), (syncData) =>
-        Value(
-          !isDefined(syncData)
-            ? undefined
-            : execOnRelDocs(
-                {
-                  refedCol,
-                  refedId: refedDoc.id,
-                  referCol,
-                  referField,
-                },
-                (id) =>
-                  Promise.all([
-                    updateDoc({
-                      key: { col: referCol, id },
-                      writeDoc: {
-                        [referField]: RefUpdateField(syncData),
+  const filteredDoc: Doc = Object.fromEntries(
+    Object.entries(refedDoc.after).filter(([fieldName, afterField]) => {
+      return !isFieldEqual(afterField, refedDoc.before[fieldName]);
+    })
+  );
+
+  return eitherMapRight(filterSyncedFields({ doc: filteredDoc, syncedFields }), (syncData) =>
+    right(
+      optionMapSome(optionFromNullable(syncData), (syncData) =>
+        some(
+          execOnRelDocs(
+            {
+              refedCol,
+              refedId: refedDoc.id,
+              referCol,
+              referField,
+            },
+            (id) =>
+              Promise.all([
+                updateDoc({
+                  key: { col: referCol, id },
+                  writeDoc: {
+                    [referField]: RefUpdateField(syncData),
+                  },
+                }),
+                ...thisColRefers.flatMap((thisColRefer) =>
+                  thisColRefer.fields.map((thisColReferField) =>
+                    propagateRefUpdate({
+                      execOnRelDocs,
+                      refedDoc: {
+                        after: {
+                          [referField]: RefField({
+                            doc: syncData,
+                            id: refedDoc.id,
+                          }),
+                        },
+                        before: {},
+                        id,
                       },
-                    }),
-                    ...thisColRefers.flatMap((thisColRefer) =>
-                      thisColRefer.fields.map((thisColReferField) =>
-                        propagateRefUpdate({
-                          execOnRelDocs,
-                          refedDoc: {
-                            after: {
-                              [referField]: RefField({
-                                doc: syncData,
-                                id: refedDoc.id,
-                              }),
-                            },
-                            before: {},
-                            id,
-                          },
-                          referCol: thisColRefer.colName,
-                          referField: thisColReferField.name,
-                          spec: {
-                            refedCol: referCol,
-                            syncedFields: thisColReferField.syncedFields,
-                            thisColRefers: thisColRefer.thisColRefers,
-                          },
-                          updateDoc,
-                        })
-                      )
-                    ),
-                  ])
-              )
+                      referCol: thisColRefer.colName,
+                      referField: thisColReferField.name,
+                      spec: {
+                        refedCol: referCol,
+                        syncedFields: thisColReferField.syncedFields,
+                        thisColRefers: thisColRefer.thisColRefers,
+                      },
+                      updateDoc,
+                    })
+                  )
+                ),
+              ])
+          )
         )
       )
+    )
   );
 }
 
@@ -135,23 +107,23 @@ export function makeRefDraft({
   const needSync = Object.keys(spec.syncedFields).length !== 0;
   return {
     onCreate: needSync
-      ? {
+      ? some({
           [colName]: {
-            getTransactionCommit: async ({ getDoc, snapshot }) => {
+            getTransactionCommit: some(async ({ getDoc, snapshot }) => {
               const refField = snapshot.doc[fieldName];
 
               return refField?._type !== 'Ref'
-                ? Failed(
-                    InvalidFieldTypeFailure({
+                ? left(
+                    InvalidFieldTypeError({
                       expectedFieldTypes: ['Ref'],
                       field: refField,
                     })
                   )
-                : foldValue(
+                : eitherMapRight(
                     await getDoc({ col: spec.refedCol, id: refField.snapshot.id }),
                     (refedDoc) => {
                       const syncedFieldNames = Object.keys(spec.syncedFields);
-                      return Value({
+                      return right({
                         [colName]: {
                           [snapshot.id]: UpdateDocCommit({
                             onDocAbsent: 'doNotUpdate',
@@ -169,13 +141,15 @@ export function makeRefDraft({
                       });
                     }
                   );
-            },
+            }),
+            propagationOp: none(),
           },
-        }
-      : undefined,
-    onDelete: {
+        })
+      : none(),
+    onDelete: some({
       [spec.refedCol]: {
-        propagationOp: ({ execOnRelDocs, deleteDoc, snapshot: refed }) =>
+        getTransactionCommit: none(),
+        propagationOp: some(({ execOnRelDocs, deleteDoc, snapshot: refed }) =>
           execOnRelDocs(
             {
               refedCol: spec.refedCol,
@@ -184,13 +158,15 @@ export function makeRefDraft({
               referField: fieldName,
             },
             (id) => deleteDoc({ col: colName, id })
-          ),
+          )
+        ),
       },
-    },
+    }),
     onUpdate: needSync
-      ? {
+      ? some({
           [spec.refedCol]: {
-            propagationOp: ({ execOnRelDocs, updateDoc, snapshot }) =>
+            getTransactionCommit: none(),
+            propagationOp: some(({ execOnRelDocs, updateDoc, snapshot }) =>
               propagateRefUpdate({
                 execOnRelDocs,
                 refedDoc: snapshot,
@@ -198,9 +174,10 @@ export function makeRefDraft({
                 referField: fieldName,
                 spec,
                 updateDoc,
-              }),
+              })
+            ),
           },
-        }
-      : undefined,
+        })
+      : none(),
   };
 }

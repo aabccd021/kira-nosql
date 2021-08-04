@@ -1,5 +1,5 @@
 import { CreationTimeField, CreationTimeFieldSpec } from 'kira-core';
-import { Value } from 'trimop';
+import { none, right, some } from 'trimop';
 
 import { Draft, DraftBuilderContext, UpdateDocCommit } from '../type';
 
@@ -10,10 +10,10 @@ export function makeCreationTimeDraft({
   readonly spec: CreationTimeFieldSpec;
 }): Draft {
   return {
-    onCreate: {
+    onCreate: some({
       [colName]: {
-        getTransactionCommit: async ({ snapshot }) =>
-          Value({
+        getTransactionCommit: some(async ({ snapshot }) =>
+          right({
             [colName]: {
               [snapshot.id]: UpdateDocCommit({
                 onDocAbsent: 'doNotUpdate',
@@ -22,8 +22,12 @@ export function makeCreationTimeDraft({
                 },
               }),
             },
-          }),
+          })
+        ),
+        propagationOp: none(),
       },
-    },
+    }),
+    onDelete: none(),
+    onUpdate: none(),
   };
 }

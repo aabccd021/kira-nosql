@@ -1,8 +1,10 @@
 import { CreationTimeField, DocSnapshot } from 'kira-core';
-import { Value } from 'trimop';
+import { isNone, isSome, optionFromNullable, right, Some } from 'trimop';
 
 import {
   ActionTrigger,
+  ColTrigger,
+  DocChange,
   execPropagationOps,
   getTransactionCommit,
   getTrigger,
@@ -32,25 +34,33 @@ describe('CreationTime trigger', () => {
     },
   });
 
-  describe('onCreate', () => {
-    const onCreateArticleTrigger = trigger['article']?.onCreate;
+  const articleTrigger = optionFromNullable(trigger['article']) as Some<ColTrigger>;
 
-    it('trigger is defined', () => {
-      expect(onCreateArticleTrigger).toBeDefined();
+  it('article trigger is some', () => {
+    expect(isSome(articleTrigger)).toStrictEqual(true);
+  });
+
+  describe('onCreate', () => {
+    const onCreateArticleTrigger = articleTrigger.value.onCreate as Some<
+      ActionTrigger<DocSnapshot>
+    >;
+
+    it('trigger is some', () => {
+      expect(isSome(onCreateArticleTrigger)).toStrictEqual(true);
     });
 
     describe('getTransactionCommit', () => {
       it('create creationTime field when article created', async () => {
         const mockedGetDoc = jest.fn<GetDocReturn, GetDocParam>();
         const onCreateArticleTC = await getTransactionCommit({
-          actionTrigger: onCreateArticleTrigger as ActionTrigger<DocSnapshot>,
+          actionTrigger: onCreateArticleTrigger.value,
           getDoc: mockedGetDoc,
           snapshot: { doc: {}, id: 'article0' },
         });
 
         expect(mockedGetDoc).not.toHaveBeenCalled();
         expect(onCreateArticleTC).toStrictEqual(
-          Value({
+          right({
             article: {
               article0: UpdateDocCommit({
                 onDocAbsent: 'doNotUpdate',
@@ -70,7 +80,7 @@ describe('CreationTime trigger', () => {
         const mockedUpdateDoc = jest.fn<UpdateDocReturn, UpdateDocParam>();
         const mockedExecOnRelDocs = jest.fn<ExecOnRelDocsReturn, ExecOnRelDocsParam>();
         await execPropagationOps({
-          actionTrigger: onCreateArticleTrigger as ActionTrigger<DocSnapshot>,
+          actionTrigger: onCreateArticleTrigger.value,
           deleteDoc: mockedDeleteDoc,
           execOnRelDocs: mockedExecOnRelDocs,
           snapshot: { doc: {}, id: 'article0' },
@@ -84,16 +94,20 @@ describe('CreationTime trigger', () => {
   });
 
   describe('onUpdate', () => {
-    it('trigger is undefined', () => {
-      const onUpdateArticleTrigger = trigger['article']?.onUpdate;
-      expect(onUpdateArticleTrigger).toBeUndefined();
+    it('trigger is none', () => {
+      const onUpdateArticleTrigger = articleTrigger.value.onUpdate as Some<
+        ActionTrigger<DocChange>
+      >;
+      expect(isNone(onUpdateArticleTrigger)).toStrictEqual(true);
     });
   });
 
   describe('onDelete', () => {
-    it('trigger is undefined', () => {
-      const onDeleteArticleTrigger = trigger['article']?.onDelete;
-      expect(onDeleteArticleTrigger).toBeUndefined();
+    it('trigger is none', () => {
+      const onDeleteArticleTrigger = articleTrigger.value.onDelete as Some<
+        ActionTrigger<DocSnapshot>
+      >;
+      expect(isNone(onDeleteArticleTrigger)).toStrictEqual(true);
     });
   });
 });
