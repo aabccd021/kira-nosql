@@ -138,7 +138,7 @@ export function makeRefDraft({
       ? {
           [colName]: {
             getTransactionCommit: async ({ getDoc, snapshot }) => {
-              const refField = snapshot.doc?.[fieldName];
+              const refField = snapshot.doc[fieldName];
 
               return refField?._type !== 'Ref'
                 ? Failed(
