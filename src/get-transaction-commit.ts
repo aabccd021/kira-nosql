@@ -53,6 +53,8 @@ export function getTransactionCommit<S extends TriggerSnapshot>({
                     ...accColTC,
                     [docId]: optionFold(
                       optionFromNullable(accColTC[docId]),
+                      // ignored since currently no way of making 2 docCommit on a same collection
+                      /* istanbul ignore next */
                       () => docCommit,
                       (accDocCommit) =>
                         UpdateDocCommit({

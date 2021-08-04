@@ -103,7 +103,7 @@ describe('getTransactionCommit', () => {
                 id: 'user-kira',
               }),
             },
-            id: 'article0',
+            id: 'article46',
           },
         });
         expect(mockedGetDoc).toHaveBeenCalledTimes(1);
@@ -111,7 +111,7 @@ describe('getTransactionCommit', () => {
         expect(onCreateArticleTC).toStrictEqual(
           Right({
             article: {
-              article0: UpdateDocCommit({
+              article46: UpdateDocCommit({
                 onDocAbsent: 'doNotUpdate',
                 writeDoc: {
                   author: {
