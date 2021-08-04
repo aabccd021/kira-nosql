@@ -314,8 +314,16 @@ describe('Ref Trigger', () => {
             snapshot: articleChangedSnapshot,
             updateDoc: mockedUpdateDoc,
           });
-          // TODO: called with
           expect(mockedExecOnRelDocs).toHaveBeenCalledTimes(1);
+          expect(mockedExecOnRelDocs).toHaveBeenCalledWith(
+            {
+              refedCol: 'article',
+              refedId: 'article0',
+              referCol: 'comment',
+              referField: 'commentedArticle',
+            },
+            expect.any(Function)
+          );
           expect(mockedUpdateDoc).toHaveBeenCalledTimes(2);
           expect(mockedUpdateDoc).toHaveBeenNthCalledWith(1, {
             key: { col: 'comment', id: 'comment21' },
@@ -391,8 +399,16 @@ describe('Ref Trigger', () => {
           snapshot: deletedArticleSnapshot,
           updateDoc: mockedUpdateDoc,
         });
-        // TODO: called with
         expect(mockedExecOnRelDocs).toHaveBeenCalledTimes(1);
+        expect(mockedExecOnRelDocs).toHaveBeenCalledWith(
+          {
+            refedCol: 'article',
+            refedId: 'article0',
+            referCol: 'comment',
+            referField: 'commentedArticle',
+          },
+          expect.any(Function)
+        );
         expect(mockedDeleteDoc).toHaveBeenCalledTimes(2);
         expect(mockedDeleteDoc).toHaveBeenNthCalledWith(1, { col: 'comment', id: 'comment21' });
         expect(mockedDeleteDoc).toHaveBeenNthCalledWith(2, { col: 'comment', id: 'comment46' });
