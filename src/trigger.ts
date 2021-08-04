@@ -1,6 +1,7 @@
 import { Spec } from 'kira-core';
 import {
   Either,
+  eitherArrayReduce,
   eitherMapRight,
   isSome,
   none,
@@ -20,7 +21,6 @@ import {
   ExecOnRelDocs,
   GetDoc,
   GetTransactionCommitError,
-  IncompatibleDocOpError,
   TransactionCommit,
   Trigger,
   TriggerSnapshot,
@@ -104,73 +104,69 @@ export function getTransactionCommit<S extends TriggerSnapshot>({
   return Promise.all(
     actionTrigger.getTransactionCommits.map((gtc) => gtc({ getDoc, snapshot }))
   ).then((transactionCommits) =>
-    transactionCommits.reduce<Either<GetTransactionCommitError, TransactionCommit>>(
-      (prevTC, curTC) =>
-        eitherMapRight(prevTC, (prevTC) =>
-          eitherMapRight(curTC, (curTC) =>
-            Object.entries(curTC).reduce<Either<GetTransactionCommitError, TransactionCommit>>(
-              (prevTC, [curColName, curColTC]) =>
-                eitherMapRight(prevTC, (prevTC) => {
-                  const prevColTC = prevTC[curColName];
-                  return prevColTC === undefined
-                    ? right({
-                        ...prevTC,
-                        [curColName]: curColTC,
-                      })
-                    : eitherMapRight(
-                        Object.entries(curColTC).reduce<
-                          Either<IncompatibleDocOpError, ColTransactionCommit>
-                        >(
-                          (prevColTC, [docId, docCommit]) =>
-                            eitherMapRight(prevColTC, (prevColTC) => {
-                              const prevCommit = prevColTC[docId];
-                              if (prevCommit === undefined) {
-                                return right({ ...prevColTC, [docId]: docCommit });
-                              }
-                              /**
-                               * can handle doc delete and multiple doc update options, commented
-                               * because no field uses it
-                               */
-                              // if (docCommit._op === 'Delete' && prevCommit?._op === 'Delete') {
-                              //   return right({
-                              //     ...prevColTC,
-                              //     [docId]: DeleteDocCommit(),
-                              //   });
-                              // }
-                              // if (
-                              //   docCommit._op === 'Update' &&
-                              //   prevCommit?._op === 'Update' &&
-                              //   docCommit.onDocAbsent === prevCommit.onDocAbsent
-                              // ) {
-                              return right({
-                                ...prevColTC,
-                                [docId]: UpdateDocCommit({
-                                  onDocAbsent: docCommit.onDocAbsent,
-                                  writeDoc: { ...docCommit.writeDoc, ...prevCommit.writeDoc },
-                                }),
-                              });
-                              // }
-                              // return left(
-                              //   IncompatibleDocOpError({
-                              //     docCommit1: prevCommit,
-                              //     docCommit2: docCommit,
-                              //   })
-                              // );
-                            }),
-                          right(prevColTC)
-                        ),
-                        (updatedColTC) =>
-                          right({
-                            ...prevTC,
-                            [curColName]: updatedColTC,
-                          })
-                      );
-                }),
-              right(prevTC)
-            )
-          )
-        ),
-      right({})
+    eitherArrayReduce(transactionCommits, right({}), (acc, curTC) =>
+      eitherMapRight<TransactionCommit, GetTransactionCommitError, TransactionCommit>(
+        curTC,
+        (curTC) =>
+          eitherArrayReduce<
+            TransactionCommit,
+            GetTransactionCommitError,
+            readonly [string, ColTransactionCommit]
+          >(Object.entries(curTC), right(acc), (prevTC, [curColName, curColTC]) => {
+            const prevColTC = prevTC[curColName];
+            return prevColTC === undefined
+              ? right<TransactionCommit>({
+                  ...prevTC,
+                  [curColName]: curColTC,
+                })
+              : eitherMapRight(
+                  eitherArrayReduce(
+                    Object.entries(curColTC),
+                    right(prevColTC),
+                    (prevColTC, [docId, docCommit]) => {
+                      const prevCommit = prevColTC[docId];
+                      if (prevCommit === undefined) {
+                        return right({ ...prevColTC, [docId]: docCommit });
+                      }
+                      /**
+                       * can handle doc delete and multiple doc update options, commented
+                       * because no field uses it
+                       */
+                      // if (docCommit._op === 'Delete' && prevCommit?._op === 'Delete') {
+                      //   return right({
+                      //     ...prevColTC,
+                      //     [docId]: DeleteDocCommit(),
+                      //   });
+                      // }
+                      // if (
+                      //   docCommit._op === 'Update' &&
+                      //   prevCommit?._op === 'Update' &&
+                      //   docCommit.onDocAbsent === prevCommit.onDocAbsent
+                      // ) {
+                      return right({
+                        ...prevColTC,
+                        [docId]: UpdateDocCommit({
+                          onDocAbsent: docCommit.onDocAbsent,
+                          writeDoc: { ...docCommit.writeDoc, ...prevCommit.writeDoc },
+                        }),
+                      });
+                      // }
+                      // return left(
+                      //   IncompatibleDocOpError({
+                      //     docCommit1: prevCommit,
+                      //     docCommit2: docCommit,
+                      //   })
+                      // );
+                    }
+                  ),
+                  (updatedColTC) =>
+                    right({
+                      ...prevTC,
+                      [curColName]: updatedColTC,
+                    })
+                );
+          })
+      )
     )
   );
 }
