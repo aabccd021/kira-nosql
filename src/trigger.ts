@@ -124,8 +124,8 @@ export function getTransactionCommit<S extends TriggerSnapshot>({
                   eitherArrayReduce(
                     Object.entries(curColTC),
                     right(prevColTC),
-                    (prevColTC, [docId, docCommit]) => {
-                      return optionFold(
+                    (prevColTC, [docId, docCommit]) =>
+                      optionFold(
                         optionFromNullable(prevColTC[docId]),
                         () => right({ ...prevColTC, [docId]: docCommit }),
                         (prevCommit) => {
@@ -159,8 +159,7 @@ export function getTransactionCommit<S extends TriggerSnapshot>({
                           //   })
                           // );
                         }
-                      );
-                    }
+                      )
                   ),
                   (updatedColTC) =>
                     right({
