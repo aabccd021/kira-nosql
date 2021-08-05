@@ -1,29 +1,33 @@
-import { CreationTimeFieldSpec } from 'kira-core';
+import { CreationTimeField, CreationTimeFieldSpec } from 'kira-core';
+import { None, Right, Some } from 'trimop';
 
-import { CreationTimeField, Draft, DraftMakerContext, Right, UpdateDocCommit } from '../type';
+import { Draft, DraftBuilderContext, UpdateDocCommit } from '../type';
 
 export function makeCreationTimeDraft({
   context: { colName, fieldName },
 }: {
-  readonly context: DraftMakerContext;
+  readonly context: DraftBuilderContext;
   readonly spec: CreationTimeFieldSpec;
 }): Draft {
   return {
-    onCreate: {
+    onCreate: Some({
       [colName]: {
-        getTransactionCommit: async ({ snapshot }) => {
-          return Right({
+        getTransactionCommit: Some(async ({ snapshot }) =>
+          Right({
             [colName]: {
               [snapshot.id]: UpdateDocCommit({
                 onDocAbsent: 'doNotUpdate',
-                data: {
+                writeDoc: {
                   [fieldName]: CreationTimeField(),
                 },
               }),
             },
-          });
-        },
+          })
+        ),
+        propagationOp: None(),
       },
-    },
+    }),
+    onDelete: None(),
+    onUpdate: None(),
   };
 }

@@ -1,389 +1,615 @@
 import {
-  GetDocError,
-  InvalidFieldTypeError,
-  Left,
-  makeRefDraft,
+  DateField,
+  DocSnapshot,
+  NumberField,
   RefField,
-  RefWriteField,
-  Right,
-  StringArrayField,
-  StringArrayUnionField,
+  RefUpdateField,
   StringField,
-  testSetup,
-  testTeardown,
+} from 'kira-core';
+import { isNone, isSome, Left, optionFromNullable, Right, Some } from 'trimop';
+
+import {
+  ActionTrigger,
+  ColTrigger,
+  DocChange,
+  getTransactionCommit,
+  InvalidFieldTypeError,
   UpdateDocCommit,
 } from '../../src';
+import { execPropagationOps } from '../../src/exec-propagation-ops';
+import { getTrigger } from '../../src/get-trigger';
 import {
   DeleteDocParam,
   DeleteDocReturn,
+  ExecOnRelDocsParam,
+  ExecOnRelDocsReturn,
   GetDocParam,
   GetDocReturn,
+  testBuildDraft,
   UpdateDocParam,
   UpdateDocReturn,
 } from '../util';
 
-describe('makeRefTrigger', () => {
-  beforeAll(testSetup);
-  afterAll(testTeardown);
-
-  describe('onCreate', () => {
-    it('return error if refField is empty', async () => {
-      const draft = makeRefDraft({
-        context: {
-          colName: 'comment',
-          fieldName: 'commentedArticle',
-        },
-        spec: {
-          _type: 'ref',
-          refedCol: 'article',
-          isOwner: false,
-          syncedFields: { title: true, category: true },
-          thisColRefers: [],
-        },
-      });
-
-      const mockedGetDoc = jest.fn<GetDocReturn, GetDocParam>();
-      const actionResult = await draft.onCreate?.['comment']?.getTransactionCommit?.({
-        db: {
-          getDoc: mockedGetDoc,
-        },
-        snapshot: { id: 'comment0', data: {} },
-      });
-
-      expect(Object.keys(draft.onCreate ?? {})).toStrictEqual(['comment']);
-      expect(mockedGetDoc).not.toHaveBeenCalled();
-      expect(actionResult).toStrictEqual(
-        Left(
-          InvalidFieldTypeError({
-            colName: 'comment',
-            fieldName: 'commentedArticle',
-            expectedFieldType: 'ref',
-            doc: {},
-          })
-        )
-      );
-    });
-
-    it('return error if refField is not type of ref field', async () => {
-      const draft = makeRefDraft({
-        context: {
-          colName: 'comment',
-          fieldName: 'commentedArticle',
-        },
-        spec: {
-          _type: 'ref',
-          refedCol: 'article',
-          isOwner: false,
-          syncedFields: { title: true, category: true },
-          thisColRefers: [],
-        },
-      });
-      const mockedGetDoc = jest.fn<GetDocReturn, GetDocParam>();
-      const actionResult = await draft.onCreate?.['comment']?.getTransactionCommit?.({
-        db: {
-          getDoc: mockedGetDoc,
-        },
-        snapshot: {
-          id: 'comment0',
-          data: {
-            ownerUser: StringField('somerandomstring'),
-          },
-        },
-      });
-
-      expect(Object.keys(draft.onCreate ?? {})).toStrictEqual(['comment']);
-      expect(mockedGetDoc).not.toHaveBeenCalled();
-      expect(actionResult).toStrictEqual(
-        Left(
-          InvalidFieldTypeError({
-            colName: 'comment',
-            doc: {
-              ownerUser: {
-                _type: 'string',
-                value: 'somerandomstring',
-              },
+describe('Ref Trigger', () => {
+  describe('when syncFields defined in spec', () => {
+    const trigger = getTrigger({
+      buildDraft: testBuildDraft,
+      spec: {
+        article: {
+          articleOwner: {
+            _type: 'Ref',
+            isOwner: false,
+            refedCol: 'user',
+            syncedFields: {
+              age: true,
+              displayName: true,
+              role: true,
             },
-            expectedFieldType: 'ref',
-            fieldName: 'commentedArticle',
-          })
-        )
-      );
-    });
-
-    it('return error if get doc is error', async () => {
-      const draft = makeRefDraft({
-        context: {
-          colName: 'comment',
-          fieldName: 'commentedArticle',
-        },
-        spec: {
-          _type: 'ref',
-          refedCol: 'article',
-          isOwner: false,
-          syncedFields: { title: true, category: true },
-          thisColRefers: [],
-        },
-      });
-      const mockedGetDoc = jest.fn<GetDocReturn, GetDocParam>().mockResolvedValueOnce(
-        Left(
-          GetDocError({
-            colName: 'x',
-            fieldName: 'x',
-            expectedFieldType: 'stringArray',
-            doc: {},
-          })
-        )
-      );
-      const actionResult = await draft.onCreate?.['comment']?.getTransactionCommit?.({
-        db: {
-          getDoc: mockedGetDoc,
-        },
-        snapshot: {
-          id: 'comment0',
-          data: {
-            commentedArticle: RefField({
-              id: 'article0',
-              data: {},
-            }),
+            thisColRefers: [
+              {
+                colName: 'comment',
+                fields: [
+                  {
+                    name: 'commentedArticle',
+                    syncedFields: {
+                      articleOwner: {
+                        displayName: true,
+                      },
+                    },
+                  },
+                ],
+                thisColRefers: [],
+              },
+            ],
+          },
+          title: {
+            _type: 'String',
           },
         },
-      });
-
-      expect(Object.keys(draft.onCreate ?? {})).toStrictEqual(['comment']);
-      expect(mockedGetDoc).toHaveBeenCalledTimes(1);
-      expect(mockedGetDoc).toHaveBeenCalledWith({ col: 'article', id: 'article0' });
-      expect(actionResult).toStrictEqual(
-        Left(
-          GetDocError({
-            colName: 'x',
-            fieldName: 'x',
-            expectedFieldType: 'stringArray',
-            doc: {},
-          })
-        )
-      );
+        comment: {},
+        user: {},
+      },
     });
 
-    it('copy ref doc field', async () => {
-      const draft = makeRefDraft({
-        context: {
-          colName: 'comment',
-          fieldName: 'commentedArticle',
-        },
-        spec: {
-          _type: 'ref',
-          refedCol: 'article',
-          syncedFields: { title: true, category: true },
-          isOwner: false,
-          thisColRefers: [],
-        },
-      });
-      const mockedGetDoc = jest.fn<GetDocReturn, GetDocParam>().mockResolvedValueOnce(
-        Right({
-          title: StringField('Article Zero Title'),
-          category: StringField('Animal'),
-          publishedMedia: StringField('book'),
-        })
-      );
-      const actionResult = await draft.onCreate?.['comment']?.getTransactionCommit?.({
-        db: {
-          getDoc: mockedGetDoc,
-        },
-        snapshot: {
-          id: 'comment0',
-          data: {
-            commentedArticle: RefField({
-              id: 'article0',
-              data: {},
-            }),
-          },
-        },
+    const articleTrigger = optionFromNullable(trigger['article']) as Some<ColTrigger>;
+    const userTrigger = optionFromNullable(trigger['user']) as Some<ColTrigger>;
+    const commentTrigger = optionFromNullable(trigger['comment']) as Some<ColTrigger>;
+
+    describe('onCreate', () => {
+      const onCreateUserTrigger = userTrigger.value.onCreate as Some<ActionTrigger<DocSnapshot>>;
+      const onCreateArticleTrigger = articleTrigger.value.onCreate as Some<
+        ActionTrigger<DocSnapshot>
+      >;
+      const onCreateCommentTrigger = commentTrigger.value.onCreate as Some<
+        ActionTrigger<DocSnapshot>
+      >;
+
+      it('user trigger is None', () => {
+        expect(isNone(onCreateUserTrigger)).toStrictEqual(true);
       });
 
-      expect(Object.keys(draft.onCreate ?? {})).toStrictEqual(['comment']);
-      expect(mockedGetDoc).toHaveBeenCalledTimes(1);
-      expect(mockedGetDoc).toHaveBeenCalledWith({ col: 'article', id: 'article0' });
-      expect(actionResult).toStrictEqual(
-        Right({
-          comment: {
-            comment0: UpdateDocCommit({
-              onDocAbsent: 'doNotUpdate',
-              data: {
-                commentedArticle: RefWriteField({
-                  title: StringField('Article Zero Title'),
-                  category: StringField('Animal'),
+      it('article trigger is Some', () => {
+        expect(isSome(onCreateArticleTrigger)).toStrictEqual(true);
+      });
+
+      it('comment trigger is None', () => {
+        expect(isNone(onCreateCommentTrigger)).toStrictEqual(true);
+      });
+
+      describe('getTransactionCommit', () => {
+        it('return error if refField is empty', async () => {
+          const mockedGetDoc = jest.fn<GetDocReturn, GetDocParam>();
+          const onCreateArticleTC = await getTransactionCommit({
+            actionTrigger: onCreateArticleTrigger.value,
+            getDoc: mockedGetDoc,
+            snapshot: { doc: {}, id: 'article0' },
+          });
+
+          expect(mockedGetDoc).not.toHaveBeenCalled();
+          expect(onCreateArticleTC).toStrictEqual(
+            Left(
+              InvalidFieldTypeError({
+                doc: {},
+                fieldName: 'articleOwner',
+              })
+            )
+          );
+        });
+
+        it('return error if refField is not type of ref field', async () => {
+          const mockedGetDoc = jest.fn<GetDocReturn, GetDocParam>();
+          const onCreateArticleTC = await getTransactionCommit({
+            actionTrigger: onCreateArticleTrigger.value,
+            getDoc: mockedGetDoc,
+            snapshot: {
+              doc: { articleOwner: StringField('kira') },
+              id: 'article0',
+            },
+          });
+
+          expect(mockedGetDoc).not.toHaveBeenCalled();
+          expect(onCreateArticleTC).toStrictEqual(
+            Left(
+              InvalidFieldTypeError({
+                doc: {
+                  articleOwner: {
+                    _type: 'String',
+                    value: 'kira',
+                  },
+                },
+                fieldName: 'articleOwner',
+              })
+            )
+          );
+        });
+
+        it('return error if get doc is error', async () => {
+          const mockedGetDoc = jest.fn<GetDocReturn, GetDocParam>().mockResolvedValueOnce(
+            Left({
+              _errorType: 'GetDocError',
+              _getDocError: 'testGetDocError',
+            })
+          );
+          const onCreateArticleTC = await getTransactionCommit({
+            actionTrigger: onCreateArticleTrigger.value,
+            getDoc: mockedGetDoc,
+            snapshot: {
+              doc: {
+                articleOwner: RefField({ doc: {}, id: 'user0' }),
+                title: StringField('Foo Title'),
+              },
+              id: 'article0',
+            },
+          });
+
+          expect(mockedGetDoc).toHaveBeenCalledTimes(1);
+          expect(mockedGetDoc).toHaveBeenCalledWith({ col: 'user', id: 'user0' });
+          expect(onCreateArticleTC).toStrictEqual(
+            Left({
+              _errorType: 'GetDocError',
+              _getDocError: 'testGetDocError',
+            })
+          );
+        });
+
+        it('copy user fields to article field', async () => {
+          const mockedGetDoc = jest.fn<GetDocReturn, GetDocParam>().mockResolvedValueOnce(
+            Right({
+              displayName: StringField('Article Zero Title'),
+              publishedMedia: StringField('book'),
+              role: StringField('Normal User'),
+            })
+          );
+          const onCreateArticleTC = await getTransactionCommit({
+            actionTrigger: onCreateArticleTrigger.value,
+            getDoc: mockedGetDoc,
+            snapshot: {
+              doc: {
+                articleOwner: RefField({ doc: {}, id: 'user0' }),
+                title: StringField('Foo Title'),
+              },
+              id: 'article0',
+            },
+          });
+
+          expect(mockedGetDoc).toHaveBeenCalledTimes(1);
+          expect(mockedGetDoc).toHaveBeenCalledWith({ col: 'user', id: 'user0' });
+          expect(onCreateArticleTC).toStrictEqual(
+            Right({
+              article: {
+                article0: UpdateDocCommit({
+                  onDocAbsent: 'doNotUpdate',
+                  writeDoc: {
+                    articleOwner: RefUpdateField({
+                      displayName: StringField('Article Zero Title'),
+                      role: StringField('Normal User'),
+                    }),
+                  },
                 }),
               },
-            }),
-          },
-          _relation: {
-            comment_commentedArticle_article_article0: UpdateDocCommit({
-              onDocAbsent: 'createDoc',
-              data: {
-                docIds: StringArrayUnionField('comment0'),
+            })
+          );
+        });
+      });
+
+      describe('execPropagationOps', () => {
+        it('never run on article', async () => {
+          const mockedDeleteDoc = jest.fn<DeleteDocReturn, DeleteDocParam>();
+          const mockedUpdateDoc = jest.fn<UpdateDocReturn, UpdateDocParam>();
+          const mockedExecOnRelDocs = jest.fn<ExecOnRelDocsReturn, ExecOnRelDocsParam>();
+          await execPropagationOps({
+            actionTrigger: onCreateArticleTrigger.value,
+            deleteDoc: mockedDeleteDoc,
+            execOnRelDocs: mockedExecOnRelDocs,
+            snapshot: {
+              doc: {
+                articleOwner: RefField({
+                  doc: {},
+                  id: 'user0',
+                }),
               },
-            }),
+              id: 'article0',
+            },
+            updateDoc: mockedUpdateDoc,
+          });
+          expect(mockedDeleteDoc).not.toHaveBeenCalled();
+          expect(mockedUpdateDoc).not.toHaveBeenCalled();
+          expect(mockedExecOnRelDocs).not.toHaveBeenCalled();
+        });
+      });
+    });
+
+    describe('onUpdate', () => {
+      const onUpdateUserTrigger = userTrigger.value.onUpdate as Some<ActionTrigger<DocChange>>;
+      const onUpdateArticleTrigger = articleTrigger.value.onUpdate as Some<
+        ActionTrigger<DocChange>
+      >;
+      const onUpdateCommentTrigger = commentTrigger.value.onUpdate as Some<
+        ActionTrigger<DocChange>
+      >;
+
+      it('user trigger is Some', () => {
+        expect(isSome(onUpdateUserTrigger)).toStrictEqual(true);
+      });
+
+      it('article trigger is None', () => {
+        expect(isNone(onUpdateArticleTrigger)).toStrictEqual(true);
+      });
+
+      it('comment trigger is None', () => {
+        expect(isNone(onUpdateCommentTrigger)).toStrictEqual(true);
+      });
+
+      describe('when doc does not change', () => {
+        const userNotChangedSnapshot = {
+          after: {
+            age: NumberField(18),
+            displayName: StringField('Dorokatsu'),
+            publishTime: DateField(new Date('2020-04-13T00:00:00Z')),
+            role: StringField('Normal User'),
           },
-        })
-      );
+          before: {
+            age: NumberField(18),
+            displayName: StringField('Dorokatsu'),
+            publishTime: DateField(new Date('2020-04-13T00:00:00Z')),
+            role: StringField('Normal User'),
+          },
+          id: 'user0',
+        };
+
+        describe('getTransactionCommit', () => {
+          it('returns empty transaction commit', async () => {
+            const mockedGetDoc = jest.fn<GetDocReturn, GetDocParam>();
+            const onUpdateArticleTC = await getTransactionCommit({
+              actionTrigger: onUpdateUserTrigger.value,
+              getDoc: mockedGetDoc,
+              snapshot: userNotChangedSnapshot,
+            });
+            expect(mockedGetDoc).not.toHaveBeenCalled();
+            expect(onUpdateArticleTC).toStrictEqual(Right({}));
+          });
+        });
+
+        describe('does not run update or delete anything', () => {
+          it('copy user field', async () => {
+            const mockedDeleteDoc = jest.fn<DeleteDocReturn, DeleteDocParam>();
+            const mockedUpdateDoc = jest.fn<UpdateDocReturn, UpdateDocParam>();
+            const mockedExecOnRelDocs = jest
+              .fn<ExecOnRelDocsReturn, ExecOnRelDocsParam>()
+              .mockImplementation((_, execOnDoc) =>
+                Promise.all(['article21', 'article46'].map(execOnDoc))
+              );
+            await execPropagationOps({
+              actionTrigger: onUpdateUserTrigger.value,
+              deleteDoc: mockedDeleteDoc,
+              execOnRelDocs: mockedExecOnRelDocs,
+              snapshot: userNotChangedSnapshot,
+              updateDoc: mockedUpdateDoc,
+            });
+            expect(mockedExecOnRelDocs).not.toHaveBeenCalled();
+            expect(mockedUpdateDoc).not.toHaveBeenCalled();
+            expect(mockedDeleteDoc).not.toHaveBeenCalled();
+          });
+        });
+      });
+
+      describe('when doc changes', () => {
+        const userChangedSnapshot = {
+          after: {
+            age: NumberField(18),
+            displayName: StringField('Kira Masumoto'),
+            publishTime: DateField(new Date('2020-04-13T00:00:00Z')),
+            role: StringField('Super User'),
+          },
+          before: {
+            age: NumberField(18),
+            displayName: StringField('Dorokatsu'),
+            publishTime: DateField(new Date('2020-04-13T00:00:00Z')),
+            role: StringField('Normal User'),
+          },
+          id: 'user0',
+        };
+
+        describe('getTransactionCommit', () => {
+          it('returns empty transaction commit', async () => {
+            const mockedGetDoc = jest.fn<GetDocReturn, GetDocParam>();
+            const onUpdateArticleTC = await getTransactionCommit({
+              actionTrigger: onUpdateUserTrigger.value,
+              getDoc: mockedGetDoc,
+              snapshot: userChangedSnapshot,
+            });
+            expect(mockedGetDoc).not.toHaveBeenCalled();
+            expect(onUpdateArticleTC).toStrictEqual(Right({}));
+          });
+        });
+
+        describe('execPropagationOps', () => {
+          it('copy user fields to referencing articles', async () => {
+            const mockedDeleteDoc = jest.fn<DeleteDocReturn, DeleteDocParam>();
+            const mockedUpdateDoc = jest.fn<UpdateDocReturn, UpdateDocParam>();
+            const mockedExecOnRelDocs = jest
+              .fn<ExecOnRelDocsReturn, ExecOnRelDocsParam>()
+              .mockImplementation(({ refedCol, refedId }, execOnDoc) => {
+                if (refedCol === 'user') {
+                  return Promise.all(['article21', 'article46'].map(execOnDoc));
+                }
+                if (refedCol === 'article') {
+                  if (refedId === 'article21') {
+                    return Promise.all(['comment42'].map(execOnDoc));
+                  }
+                  if (refedId === 'article46') {
+                    return Promise.all(['comment92'].map(execOnDoc));
+                  }
+                }
+                // eslint-disable-next-line functional/no-throw-statement
+                throw Error();
+              });
+            await execPropagationOps({
+              actionTrigger: onUpdateUserTrigger.value,
+              deleteDoc: mockedDeleteDoc,
+              execOnRelDocs: mockedExecOnRelDocs,
+              snapshot: userChangedSnapshot,
+              updateDoc: mockedUpdateDoc,
+            });
+            expect(mockedExecOnRelDocs).toHaveBeenCalledTimes(3);
+            expect(mockedExecOnRelDocs).toHaveBeenNthCalledWith(
+              1,
+              {
+                refedCol: 'user',
+                refedId: 'user0',
+                referCol: 'article',
+                referField: 'articleOwner',
+              },
+              expect.any(Function)
+            );
+            expect(mockedExecOnRelDocs).toHaveBeenNthCalledWith(
+              2,
+              {
+                refedCol: 'article',
+                refedId: 'article21',
+                referCol: 'comment',
+                referField: 'commentedArticle',
+              },
+              expect.any(Function)
+            );
+            expect(mockedExecOnRelDocs).toHaveBeenNthCalledWith(
+              3,
+              {
+                refedCol: 'article',
+                refedId: 'article46',
+                referCol: 'comment',
+                referField: 'commentedArticle',
+              },
+              expect.any(Function)
+            );
+            expect(mockedUpdateDoc).toHaveBeenCalledTimes(4);
+            expect(mockedUpdateDoc).toHaveBeenNthCalledWith(1, {
+              key: { col: 'article', id: 'article21' },
+              writeDoc: {
+                articleOwner: {
+                  _type: 'RefUpdate',
+                  doc: {
+                    displayName: StringField('Kira Masumoto'),
+                    role: StringField('Super User'),
+                  },
+                },
+              },
+            });
+            expect(mockedUpdateDoc).toHaveBeenNthCalledWith(2, {
+              key: { col: 'comment', id: 'comment42' },
+              writeDoc: {
+                commentedArticle: {
+                  _type: 'RefUpdate',
+                  doc: {
+                    articleOwner: RefField({
+                      doc: {
+                        displayName: StringField('Kira Masumoto'),
+                      },
+                      id: 'user0',
+                    }),
+                  },
+                },
+              },
+            });
+            expect(mockedUpdateDoc).toHaveBeenNthCalledWith(3, {
+              key: { col: 'article', id: 'article46' },
+              writeDoc: {
+                articleOwner: {
+                  _type: 'RefUpdate',
+                  doc: {
+                    displayName: StringField('Kira Masumoto'),
+                    role: StringField('Super User'),
+                  },
+                },
+              },
+            });
+            expect(mockedUpdateDoc).toHaveBeenNthCalledWith(4, {
+              key: { col: 'comment', id: 'comment92' },
+              writeDoc: {
+                commentedArticle: {
+                  _type: 'RefUpdate',
+                  doc: {
+                    articleOwner: RefField({
+                      doc: {
+                        displayName: StringField('Kira Masumoto'),
+                      },
+                      id: 'user0',
+                    }),
+                  },
+                },
+              },
+            });
+            expect(mockedDeleteDoc).not.toHaveBeenCalled();
+          });
+        });
+      });
+    });
+    describe('onDelete', () => {
+      const onDeleteUserTrigger = userTrigger.value.onDelete as Some<ActionTrigger<DocSnapshot>>;
+      const onDeleteArticleTrigger = articleTrigger.value.onDelete as Some<
+        ActionTrigger<DocSnapshot>
+      >;
+      const onDeleteCommentTrigger = commentTrigger.value.onDelete as Some<
+        ActionTrigger<DocSnapshot>
+      >;
+
+      it('user trigger is Some', () => {
+        expect(isSome(onDeleteUserTrigger)).toStrictEqual(true);
+      });
+
+      it('article trigger is None', () => {
+        expect(isNone(onDeleteArticleTrigger)).toStrictEqual(true);
+      });
+
+      it('comment trigger is None', () => {
+        expect(isNone(onDeleteCommentTrigger)).toStrictEqual(true);
+      });
+
+      const deleteUserSnapshot = {
+        doc: {
+          content: StringField('Its renamed sir'),
+          displayName: StringField('Keyakizaka46 renamed to Sakurazaka46'),
+          publishTime: DateField(new Date('2020-09-13T00:00:00Z')),
+          readMinute: NumberField(10),
+        },
+        id: 'user0',
+      };
+
+      describe('getTransactionCommit', () => {
+        it('returns empty transaction commit', async () => {
+          const mockedGetDoc = jest.fn<GetDocReturn, GetDocParam>();
+          const onDeleteUserTC = await getTransactionCommit({
+            actionTrigger: onDeleteUserTrigger.value,
+            getDoc: mockedGetDoc,
+            snapshot: deleteUserSnapshot,
+          });
+          expect(mockedGetDoc).not.toHaveBeenCalled();
+          expect(onDeleteUserTC).toStrictEqual(Right({}));
+        });
+      });
+
+      describe('execPropagationOps', () => {
+        it('delete referencing articles', async () => {
+          const mockedDeleteDoc = jest.fn<DeleteDocReturn, DeleteDocParam>();
+          const mockedUpdateDoc = jest.fn<UpdateDocReturn, UpdateDocParam>();
+          const mockedExecOnRelDocs = jest
+            .fn<ExecOnRelDocsReturn, ExecOnRelDocsParam>()
+            .mockImplementation((_, execOnDoc) =>
+              Promise.all(['article21', 'article46'].map(execOnDoc))
+            );
+          await execPropagationOps({
+            actionTrigger: onDeleteUserTrigger.value,
+            deleteDoc: mockedDeleteDoc,
+            execOnRelDocs: mockedExecOnRelDocs,
+            snapshot: deleteUserSnapshot,
+            updateDoc: mockedUpdateDoc,
+          });
+          expect(mockedExecOnRelDocs).toHaveBeenCalledTimes(1);
+          expect(mockedExecOnRelDocs).toHaveBeenCalledWith(
+            {
+              refedCol: 'user',
+              refedId: 'user0',
+              referCol: 'article',
+              referField: 'articleOwner',
+            },
+            expect.any(Function)
+          );
+          expect(mockedDeleteDoc).toHaveBeenCalledTimes(2);
+          expect(mockedDeleteDoc).toHaveBeenNthCalledWith(1, { col: 'article', id: 'article21' });
+          expect(mockedDeleteDoc).toHaveBeenNthCalledWith(2, { col: 'article', id: 'article46' });
+          expect(mockedUpdateDoc).not.toHaveBeenCalled();
+        });
+      });
     });
   });
 
-  // describe('onUpdate', () => {
-  //   it('return empty trigger if no comment data changed', async () => {
-  //     const draft = makeRefDraft({
-  //       colName: 'comment',
-  //       fieldName: 'commentedArticle',
-  //       spec: {
-  //         type: 'ref',
-  //         refedCol: 'article',
-  //         syncedFields: { title: true, readMinute: true },
-  //         isOwner: false,
-  //         thisColRefers: [],
-  //       },
-  //     });
-  //     const mockedGetDoc = jest.fn<GetDocReturn, GetDocParam>();
-  //     const actionResult = await draft.onUpdate?.['article']?.getTransactionCommit?.({
-  //       getDoc: mockedGetDoc,
-  //       snapshot: {
-  //         id: 'article0',
-  //         before: {
-  //           title: StringField('Keyakizaka renamed to Sakurazaka' },
-  //           publishTime: { type: 'date', value: new Date(2018, 9, 13, 0, 0, 0, 0) },
-  //           readMinute: { type: 'number', value: 10 },
-  //           content: StringField('Its renamed' },
-  //         },
-  //         after: {
-  //           title: StringField('Keyakizaka renamed to Sakurazaka' },
-  //           publishTime: { type: 'date', value: new Date(2018, 9, 13, 0, 0, 0, 0) },
-  //           readMinute: { type: 'number', value: 10 },
-  //           content: StringField('Its renamed' },
-  //         },
-  //       },
-  //     });
-  //     expect(Object.keys(draft.onUpdate ?? {})).toStrictEqual(['article']);
-  //     expect(mockedGetDoc).not.toHaveBeenCalled();
-  //     expect(actionResult).toStrictEqual({ tag: 'right', value: {} });
-  //   });
-
-  //   it('copy article field', async () => {
-  //     const draft = makeRefDraft({
-  //       colName: 'comment',
-  //       fieldName: 'commentedArticle',
-  //       spec: {
-  //         type: 'ref',
-  //         refedCol: 'article',
-  //         syncedFields: { title: true, readMinute: true },
-  //         isOwner: false,
-  //         thisColRefers: [],
-  //       },
-  //     });
-  //     const mockedGetDoc = jest.fn<GetDocReturn, GetDocParam>();
-  //     const actionResult = await draft.onUpdate?.['article']?.getTransactionCommit?.({
-  //       getDoc: mockedGetDoc,
-  //       snapshot: {
-  //         id: 'article0',
-  //         before: {
-  //           title: StringField('Keyakizaka renamed to Sakurazaka' },
-  //           publishTime: { type: 'date', value: new Date(2018, 9, 13, 0, 0, 0, 0) },
-  //           readMinute: { type: 'number', value: 10 },
-  //           content: StringField('Its renamed' },
-  //         },
-  //         after: {
-  //           title: StringField('Keyakizaka46 renamed to Sakurazaka46' },
-  //           publishTime: { type: 'date', value: new Date(2018, 9, 13, 0, 0, 0, 0) },
-  //           readMinute: { type: 'number', value: 10 },
-  //           content: StringField('Its renamed sir' },
-  //         },
-  //       },
-  //     });
-  //     expect(Object.keys(draft.onUpdate ?? {})).toStrictEqual(['article']);
-  //     expect(mockedGetDoc).not.toHaveBeenCalled();
-  //     expect(actionResult).toStrictEqual({
-  //       tag: 'right',
-  //       value: {
-  //         comment: {
-  //           comment46: {
-  //             op: 'update',
-  //             runTrigger: true,
-  //             data: {
-  //               commentedArticle: {
-  //                 type: 'ref',
-  //                 value: {
-  //                   title: StringField('Keyakizaka46 renamed to Sakurazaka46' },
-  //                 },
-  //               },
-  //             },
-  //           },
-  //           comment21: {
-  //             op: 'update',
-  //             runTrigger: true,
-  //             data: {
-  //               commentedArticle: {
-  //                 type: 'ref',
-  //                 value: {
-  //                   title: StringField('Keyakizaka46 renamed to Sakurazaka46' },
-  //                 },
-  //               },
-  //             },
-  //           },
-  //         },
-  //       },
-  //     });
-  //   });
-  // });
-
-  describe('onDelete', () => {
-    it('delete referencer comment doc', async () => {
-      const draft = makeRefDraft({
-        context: {
-          colName: 'comment',
-          fieldName: 'commentedArticle',
-        },
-        spec: {
-          _type: 'ref',
-          refedCol: 'article',
-          syncedFields: {},
-          isOwner: false,
-          thisColRefers: [],
-        },
-      });
-      const mockedGetDoc = jest.fn<GetDocReturn, GetDocParam>().mockResolvedValueOnce(
-        Right({
-          docIds: StringArrayField(['comment0', 'comment46']),
-        })
-      );
-
-      const mockedDeleteDoc = jest.fn<DeleteDocReturn, DeleteDocParam>();
-      const mockedUpdateDoc = jest.fn<UpdateDocReturn, UpdateDocParam>();
-      await draft.onDelete?.['article']?.mayFailOp?.({
-        db: {
-          getDoc: mockedGetDoc,
-          deleteDoc: mockedDeleteDoc,
-          updateDoc: mockedUpdateDoc,
-        },
-        snapshot: {
-          id: 'article0',
-          data: {
-            title: StringField('ARTICLE ZERO TITLE'),
+  describe('when syncFields are empty in spec', () => {
+    const trigger = getTrigger({
+      buildDraft: testBuildDraft,
+      spec: {
+        article: {
+          articleOwner: {
+            _type: 'Ref',
+            isOwner: false,
+            refedCol: 'user',
+            syncedFields: {},
+            thisColRefers: [],
+          },
+          title: {
+            _type: 'String',
           },
         },
+        comment: {},
+        user: {},
+      },
+    });
+
+    const articleTrigger = optionFromNullable(trigger['article']) as Some<ColTrigger>;
+    const userTrigger = optionFromNullable(trigger['user']) as Some<ColTrigger>;
+    const commentTrigger = optionFromNullable(trigger['comment']) as Some<ColTrigger>;
+
+    describe('onCreate', () => {
+      const onCreateUserTrigger = userTrigger.value.onCreate as Some<ActionTrigger<DocSnapshot>>;
+      const onCreateArticleTrigger = articleTrigger.value.onCreate as Some<
+        ActionTrigger<DocSnapshot>
+      >;
+      const onCreateCommentTrigger = commentTrigger.value.onCreate as Some<
+        ActionTrigger<DocSnapshot>
+      >;
+
+      it('user trigger is None', () => {
+        expect(isNone(onCreateUserTrigger)).toStrictEqual(true);
       });
 
-      expect(Object.keys(draft.onDelete ?? {})).toStrictEqual(['comment', 'article']);
-      expect(mockedUpdateDoc).not.toHaveBeenCalled();
-      expect(mockedGetDoc).toHaveBeenCalledTimes(1);
-      expect(mockedGetDoc).toHaveBeenCalledWith({
-        col: '_relation',
-        id: 'comment_commentedArticle_article_article0',
+      it('article trigger is None', () => {
+        expect(isNone(onCreateArticleTrigger)).toStrictEqual(true);
       });
-      expect(mockedDeleteDoc).toHaveBeenCalledTimes(3);
-      expect(mockedDeleteDoc).toHaveBeenNthCalledWith(1, {
-        col: '_relation',
-        id: 'comment_commentedArticle_article_article0',
+
+      it('comment trigger is None', () => {
+        expect(isNone(onCreateCommentTrigger)).toStrictEqual(true);
       });
-      expect(mockedDeleteDoc).toHaveBeenNthCalledWith(2, { id: 'comment0', col: 'comment' });
-      expect(mockedDeleteDoc).toHaveBeenNthCalledWith(3, { id: 'comment46', col: 'comment' });
+    });
+
+    describe('onUpdate', () => {
+      const onUpdateUserTrigger = userTrigger.value.onUpdate as Some<ActionTrigger<DocChange>>;
+      const onUpdateArticleTrigger = articleTrigger.value.onUpdate as Some<
+        ActionTrigger<DocChange>
+      >;
+      const onUpdateCommentTrigger = commentTrigger.value.onUpdate as Some<
+        ActionTrigger<DocChange>
+      >;
+
+      it('user trigger is None', () => {
+        expect(isNone(onUpdateUserTrigger)).toStrictEqual(true);
+      });
+
+      it('article trigger is None', () => {
+        expect(isNone(onUpdateArticleTrigger)).toStrictEqual(true);
+      });
+
+      it('comment trigger is None', () => {
+        expect(isNone(onUpdateCommentTrigger)).toStrictEqual(true);
+      });
     });
   });
 });
