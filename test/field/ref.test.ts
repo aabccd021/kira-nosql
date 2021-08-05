@@ -109,8 +109,8 @@ describe('Ref Trigger', () => {
           expect(onCreateArticleTC).toStrictEqual(
             Left(
               InvalidFieldTypeError({
-                expectedFieldTypes: ['Ref'],
-                field: undefined,
+                doc: {},
+                fieldName: 'articleOwner',
               })
             )
           );
@@ -131,8 +131,13 @@ describe('Ref Trigger', () => {
           expect(onCreateArticleTC).toStrictEqual(
             Left(
               InvalidFieldTypeError({
-                expectedFieldTypes: ['Ref'],
-                field: StringField('kira'),
+                doc: {
+                  articleOwner: {
+                    _type: 'String',
+                    value: 'kira',
+                  },
+                },
+                fieldName: 'articleOwner',
               })
             )
           );

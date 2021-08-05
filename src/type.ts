@@ -81,6 +81,8 @@ export type DraftBuilderContext = {
  */
 export type InvalidFieldTypeError = {
   readonly _errorType: 'InvalidFieldType';
+  readonly doc: Doc;
+  readonly fieldName: string;
 };
 
 export const InvalidFieldTypeError: (
@@ -93,9 +95,10 @@ export const InvalidFieldTypeError: (
 /**
  *
  */
-export type DraftGetTransactionCommitError =
-  | ({ readonly _errorType: string } & InvalidFieldTypeError)
-  | GetDocError;
+export type DraftGetTransactionCommitError = { readonly _errorType: string } & (
+  | InvalidFieldTypeError
+  | GetDocError
+);
 
 /**
  *

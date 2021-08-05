@@ -138,8 +138,13 @@ describe('Count trigger', () => {
         expect(onCreateBookmarkTC).toStrictEqual(
           Left(
             InvalidFieldTypeError({
-              expectedFieldTypes: ['Ref'],
-              field: NumberField(0),
+              doc: {
+                bookmarkedArticle: {
+                  _type: 'Number',
+                  value: 0,
+                },
+              },
+              fieldName: 'bookmarkCount',
             })
           )
         );
@@ -160,8 +165,8 @@ describe('Count trigger', () => {
         expect(onCreateBookmarkTC).toStrictEqual(
           Left(
             InvalidFieldTypeError({
-              expectedFieldTypes: ['Ref'],
-              field: undefined,
+              doc: {},
+              fieldName: 'bookmarkCount',
             })
           )
         );
@@ -280,8 +285,13 @@ describe('Count trigger', () => {
         expect(onDeleteBookmarkTC).toStrictEqual(
           Left(
             InvalidFieldTypeError({
-              expectedFieldTypes: ['Ref'],
-              field: NumberField(0),
+              doc: {
+                bookmarkedArticle: {
+                  _type: 'Number',
+                  value: 0,
+                },
+              },
+              fieldName: 'bookmarkCount',
             })
           )
         );
@@ -299,8 +309,8 @@ describe('Count trigger', () => {
         expect(onDeleteBookmarkTC).toStrictEqual(
           Left(
             InvalidFieldTypeError({
-              expectedFieldTypes: ['Ref'],
-              field: undefined,
+              doc: {},
+              fieldName: 'bookmarkCount',
             })
           )
         );

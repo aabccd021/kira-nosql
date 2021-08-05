@@ -34,8 +34,8 @@ export function makeCountDraft({
           if (counterDoc?._type !== 'Ref') {
             return Left(
               InvalidFieldTypeError({
-                expectedFieldTypes: ['Ref'],
-                field: counterDoc,
+                doc: snapshot.doc,
+                fieldName,
               })
             );
           }
@@ -62,8 +62,8 @@ export function makeCountDraft({
           if (counterDoc?._type !== 'Ref') {
             return Left(
               InvalidFieldTypeError({
-                expectedFieldTypes: ['Ref'],
-                field: counterDoc,
+                doc: snapshot.doc,
+                fieldName,
               })
             );
           }

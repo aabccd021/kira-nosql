@@ -116,8 +116,8 @@ export function makeRefDraft({
               return refField?._type !== 'Ref'
                 ? Left(
                     InvalidFieldTypeError({
-                      expectedFieldTypes: ['Ref'],
-                      field: refField,
+                      doc: snapshot.doc,
+                      fieldName,
                     })
                   )
                 : eitherMapRight(
