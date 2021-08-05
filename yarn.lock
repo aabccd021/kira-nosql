@@ -3155,10 +3155,10 @@ kind-of@^6.0.3:
   resolved "https://registry.yarnpkg.com/kind-of/-/kind-of-6.0.3.tgz#07c05034a6c349fa06e24fa35aa76db4580ce4dd"
   integrity sha512-dcS1ul+9tmeD95T+x28/ehLgd9mENa3LsvDTtzm3vyBEO7RPptvAD+t44WVXaUjTBRcrpFeFlC8WCruUR456hw==
 
-kira-core@^0.3.30:
-  version "0.3.30"
-  resolved "https://registry.yarnpkg.com/kira-core/-/kira-core-0.3.30.tgz#07ff7f180fb5d0641d359394b25c07ae230d544a"
-  integrity sha512-WaQmTm/PurVoK6htz0iW2io3657FarrGKORHjQIC0+fbwBPXKQ0a3q822/CgQB6Gc8tJvWU+SDbVsXxPFXDm4Q==
+kira-core@^0.3.31:
+  version "0.3.31"
+  resolved "https://registry.yarnpkg.com/kira-core/-/kira-core-0.3.31.tgz#26c084680ec894290ec6aa92a6b964f3ce700f90"
+  integrity sha512-yYQxFckVowCud6BmDbH5kLte+Q0TIdYwzGIKGZWt4sVpY1hJAicahovY5sYVf11ooLzQNnnoWLrg1FvyV6l07g==
   dependencies:
     trimop "0.1.13"
 

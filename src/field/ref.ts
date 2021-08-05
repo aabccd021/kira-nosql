@@ -1,6 +1,7 @@
 import {
   ColRefer,
   Doc,
+  Field,
   filterSyncedFields,
   isFieldEqual,
   RefField,
@@ -41,13 +42,13 @@ async function propagateRefUpdate({
 }): Promise<unknown> {
   const filteredDoc: Doc = Object.fromEntries(
     Object.entries(refedDoc.after).filter(([fieldName, afterField]) => {
-      return !isFieldEqual(afterField, refedDoc.before[fieldName]);
+      return !isFieldEqual(afterField, optionFromNullable<Field>(refedDoc.before[fieldName]));
     })
   );
 
   return eitherMapRight(filterSyncedFields({ doc: filteredDoc, syncedFields }), (syncData) =>
     Right(
-      optionMapSome(optionFromNullable(syncData), (syncData) =>
+      optionMapSome(syncData, (syncData) =>
         Some(
           execOnRelDocs(
             {
