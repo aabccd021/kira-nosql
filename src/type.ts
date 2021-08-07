@@ -24,7 +24,6 @@ export type ExecOnRelDocs = (
  */
 export type GetDocError = {
   readonly _errorType: 'GetDocError';
-  readonly _getDocError: string;
 };
 
 export type GetDoc<F extends GetDocError = GetDocError> = (key: DocKey) => Promise<Either<F, Doc>>;
@@ -34,7 +33,6 @@ export type GetDoc<F extends GetDocError = GetDocError> = (key: DocKey) => Promi
  */
 export type UpdateDocError = {
   readonly _errorType: 'GetDocError';
-  readonly _updateDocError: string;
 };
 
 export type UpdateDoc<F extends UpdateDocError = UpdateDocError, TResult = unknown> = (param: {
@@ -46,7 +44,6 @@ export type UpdateDoc<F extends UpdateDocError = UpdateDocError, TResult = unkno
  *
  */
 export type DeleteDocError = {
-  readonly _deleteDocError: string;
   readonly _errorType: 'DeleteDocError';
 };
 

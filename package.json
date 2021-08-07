@@ -1,6 +1,6 @@
 {
   "name": "kira-nosql",
-  "version": "0.1.24",
+  "version": "0.1.25",
   "description": "NoSQL utils for Kira",
   "repository": "git@github.com:aabccd021/kira-nosql.git",
   "author": "aabccd021 <aabccd021@gmail.com>",
@@ -22,31 +22,31 @@
     "test": "jest --coverage --verbose",
     "latest": "yarn upgrade-interactive --latest",
     "please": "yarn tsc --noEmit && yarn lint --fix && yarn test ",
-    "pull-request": "git pull origin main --no-edit && npm version patch && git push && yarn open-cli https://github.com/aabccd021/kira-core/compare/main...$(git branch --show-current)"
+    "pull-request": "git pull origin main --no-edit && npm version patch && git push && yarn open-cli https://github.com/aabccd021/kira-nosql/compare/main...$(git branch --show-current)"
   },
   "dependencies": {
     "assert-never": "^1.2.1",
-    "kira-core": "^0.3.31",
-    "trimop": "^0.1.13"
+    "kira-core": "^0.3.32",
+    "trimop": "^0.1.14"
   },
   "devDependencies": {
     "@types/jest": "^26.0.24",
-    "@typescript-eslint/eslint-plugin": "^4.28.5",
-    "@typescript-eslint/parser": "^4.28.5",
+    "@typescript-eslint/eslint-plugin": "^4.29.0",
+    "@typescript-eslint/parser": "^4.29.0",
     "eslint": "^7.32.0",
     "eslint-config-prettier": "^8.1.0",
-    "eslint-plugin-filenames": "^1.3.2",
-    "eslint-plugin-functional": "^3.5.0",
+    "eslint-plugin-functional": "^3.4.1",
     "eslint-plugin-import": "^2.23.4",
     "eslint-plugin-jest": "^24.4.0",
     "eslint-plugin-no-null": "^1.0.2",
     "eslint-plugin-only-warn": "^1.0.3",
     "eslint-plugin-prettier": "^3.3.1",
     "eslint-plugin-simple-import-sort": "^7.0.0",
-    "eslint-plugin-sort-keys-fix": "^1.1.1",
+    "eslint-plugin-sort-keys-fix": "^1.1.2",
     "eslint-plugin-typescript-sort-keys": "^1.7.0",
     "eslint-plugin-unused-imports": "^1.1.2",
     "jest": "^27.0.6",
+    "jest-extended": "^0.11.5",
     "open-cli": "^7.0.0",
     "prettier": "^2.3.2",
     "ts-jest": "^27.0.4",
@@ -60,6 +60,9 @@
     ],
     "coveragePathIgnorePatterns": [
       "test/"
+    ],
+    "setupFilesAfterEnv": [
+      "jest-extended"
     ]
   },
   "eslintConfig": {
@@ -100,8 +103,7 @@
         ],
         "rules": {
           "no-null/no-null": "off",
-          "functional/prefer-readonly-type": "off",
-          "import/no-unused-modules": "off"
+          "functional/prefer-readonly-type": "off"
         }
       }
     ],
