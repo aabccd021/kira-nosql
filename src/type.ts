@@ -32,7 +32,7 @@ export type GetDoc<F extends GetDocError = GetDocError> = (key: DocKey) => Promi
  *
  */
 export type UpdateDocError = {
-  readonly _errorType: 'GetDocError';
+  readonly _errorType: 'UpdateDocError';
 };
 
 export type UpdateDoc<F extends UpdateDocError = UpdateDocError, TResult = unknown> = (param: {
