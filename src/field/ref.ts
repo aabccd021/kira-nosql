@@ -1,6 +1,5 @@
 import {
   ColRefer,
-  Doc,
   Field,
   filterSyncedFields,
   isFieldEqual,
@@ -40,61 +39,65 @@ async function propagateRefUpdate({
   };
   readonly updateDoc: UpdateDoc;
 }): Promise<unknown> {
-  const filteredDoc: Doc = Object.fromEntries(
-    Object.entries(refedDoc.after).filter(([fieldName, afterField]) => {
-      return !isFieldEqual(afterField, optionFromNullable<Field>(refedDoc.before[fieldName]));
-    })
-  );
-
-  return eitherMapRight(filterSyncedFields({ doc: filteredDoc, syncedFields }), (syncData) =>
-    Right(
-      optionMapSome(syncData, (syncData) =>
-        Some(
-          execOnRelDocs(
-            {
-              refedCol,
-              refedId: refedDoc.id,
-              referCol,
-              referField,
-            },
-            (id) =>
-              Promise.all([
-                updateDoc({
-                  key: { col: referCol, id },
-                  writeDoc: {
-                    [referField]: RefUpdateField(syncData),
-                  },
-                }),
-                ...thisColRefers.flatMap((thisColRefer) =>
-                  thisColRefer.fields.map((thisColReferField) =>
-                    propagateRefUpdate({
-                      execOnRelDocs,
-                      refedDoc: {
-                        after: {
-                          [referField]: RefField({
-                            doc: syncData,
-                            id: refedDoc.id,
-                          }),
+  return eitherMapRight(
+    filterSyncedFields({
+      doc: Object.fromEntries(
+        Object.entries(refedDoc.after).filter(
+          ([fieldName, afterField]) =>
+            !isFieldEqual(afterField, optionFromNullable<Field>(refedDoc.before[fieldName]))
+        )
+      ),
+      syncedFields,
+    }),
+    (syncData) =>
+      Right(
+        optionMapSome(syncData, (syncData) =>
+          Some(
+            execOnRelDocs(
+              {
+                refedCol,
+                refedId: refedDoc.id,
+                referCol,
+                referField,
+              },
+              (id) =>
+                Promise.all([
+                  updateDoc({
+                    key: { col: referCol, id },
+                    writeDoc: {
+                      [referField]: RefUpdateField(syncData),
+                    },
+                  }),
+                  ...thisColRefers.flatMap((thisColRefer) =>
+                    thisColRefer.fields.map((thisColReferField) =>
+                      propagateRefUpdate({
+                        execOnRelDocs,
+                        refedDoc: {
+                          after: {
+                            [referField]: RefField({
+                              doc: syncData,
+                              id: refedDoc.id,
+                            }),
+                          },
+                          before: {},
+                          id,
                         },
-                        before: {},
-                        id,
-                      },
-                      referCol: thisColRefer.colName,
-                      referField: thisColReferField.name,
-                      spec: {
-                        refedCol: referCol,
-                        syncedFields: thisColReferField.syncedFields,
-                        thisColRefers: thisColRefer.thisColRefers,
-                      },
-                      updateDoc,
-                    })
-                  )
-                ),
-              ])
+                        referCol: thisColRefer.colName,
+                        referField: thisColReferField.name,
+                        spec: {
+                          refedCol: referCol,
+                          syncedFields: thisColReferField.syncedFields,
+                          thisColRefers: thisColRefer.thisColRefers,
+                        },
+                        updateDoc,
+                      })
+                    )
+                  ),
+                ])
+            )
           )
         )
       )
-    )
   );
 }
 

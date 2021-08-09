@@ -5,8 +5,8 @@ import {
   DeleteDoc,
   ExecOnRelDocs,
   GetDoc,
-  makeCountDraft,
-  makeCreationTimeDraft,
+  buildCountDraft,
+  buildCreationTimeDraft,
   makeRefDraft,
   UpdateDoc,
 } from '../src';
@@ -22,10 +22,10 @@ export type ExecOnRelDocsParam = Parameters<ExecOnRelDocs>;
 
 export const testBuildDraft: BuildDraft = ({ context, spec }) => {
   if (spec._type === 'CreationTime') {
-    return makeCreationTimeDraft({ context, spec });
+    return buildCreationTimeDraft({ context, spec });
   }
   if (spec._type === 'Count') {
-    return makeCountDraft({ context, spec });
+    return buildCountDraft({ context, spec });
   }
   if (spec._type === 'Ref') {
     return makeRefDraft({ context, spec });

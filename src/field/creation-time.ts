@@ -3,7 +3,7 @@ import { None, Right, Some } from 'trimop';
 
 import { Draft, DraftBuilderContext, UpdateDocCommit } from '../type';
 
-export function makeCreationTimeDraft({
+export function buildCreationTimeDraft({
   context: { colName, fieldName },
 }: {
   readonly context: DraftBuilderContext;

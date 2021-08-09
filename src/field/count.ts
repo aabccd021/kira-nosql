@@ -3,7 +3,7 @@ import { Left, None, Right, Some } from 'trimop';
 
 import { Draft, DraftBuilderContext, InvalidFieldTypeError, UpdateDocCommit } from '../type';
 
-export function makeCountDraft({
+export function buildCountDraft({
   context: { colName, fieldName },
   spec,
 }: {
