@@ -188,7 +188,7 @@ export type BuildDraft = (param: {
     readonly fieldName: string;
   };
   readonly spec: FieldSpec;
-}) => Draft;
+}) => Option<Draft>;
 
 /**
  *
