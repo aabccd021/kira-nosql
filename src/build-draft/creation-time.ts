@@ -8,8 +8,8 @@ export function buildCreationTimeDraft({
 }: {
   readonly context: DraftBuilderContext;
   readonly spec: CreationTimeFieldSpec;
-}): Draft {
-  return {
+}): Some<Draft> {
+  return Some({
     onCreate: Some({
       [colName]: {
         getTransactionCommit: Some(async ({ snapshot }) =>
@@ -29,5 +29,5 @@ export function buildCreationTimeDraft({
     }),
     onDelete: None(),
     onUpdate: None(),
-  };
+  });
 }

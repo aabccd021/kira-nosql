@@ -101,15 +101,15 @@ async function propagateRefUpdate({
   );
 }
 
-export function makeRefDraft({
+export function buildRefDraft({
   context: { colName, fieldName },
   spec,
 }: {
   readonly context: DraftBuilderContext;
   readonly spec: RefFieldSpec;
-}): Draft {
+}): Some<Draft> {
   const needSync = Object.keys(spec.syncedFields).length !== 0;
-  return {
+  return Some({
     onCreate: needSync
       ? Some({
           [colName]: {
@@ -183,5 +183,5 @@ export function makeRefDraft({
           },
         })
       : None(),
-  };
+  });
 }

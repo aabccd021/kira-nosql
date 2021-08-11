@@ -9,8 +9,8 @@ export function buildCountDraft({
 }: {
   readonly context: DraftBuilderContext;
   readonly spec: CountFieldSpec;
-}): Draft {
-  return {
+}): Some<Draft> {
+  return Some({
     onCreate: Some({
       [colName]: {
         getTransactionCommit: Some(async ({ snapshot }) =>
@@ -83,5 +83,5 @@ export function buildCountDraft({
       },
     }),
     onUpdate: None(),
-  };
+  });
 }
