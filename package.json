@@ -1,6 +1,6 @@
 {
   "name": "kira-nosql",
-  "version": "0.1.26",
+  "version": "0.1.27",
   "description": "NoSQL utils for Kira",
   "repository": "git@github.com:aabccd021/kira-nosql.git",
   "author": "aabccd021 <aabccd021@gmail.com>",
@@ -25,7 +25,6 @@
     "pull-request": "git pull origin main --no-edit && npm version patch && git push && yarn open-cli https://github.com/aabccd021/kira-nosql/compare/main...$(git branch --show-current)"
   },
   "dependencies": {
-    "assert-never": "^1.2.1",
     "kira-core": "^0.3.32",
     "trimop": "^0.1.14"
   },

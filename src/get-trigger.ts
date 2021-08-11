@@ -34,17 +34,29 @@ export function getTrigger({
       {
         onCreate: colDraftsToActionTrigger(
           drafts.map((draft) =>
-            optionMapSome(draft.onCreate, (actionDraft) => optionFromNullable(actionDraft[colName]))
+            optionMapSome(draft, (draft) =>
+              optionMapSome(draft.onCreate, (actionDraft) =>
+                optionFromNullable(actionDraft[colName])
+              )
+            )
           )
         ),
         onDelete: colDraftsToActionTrigger(
           drafts.map((draft) =>
-            optionMapSome(draft.onDelete, (actionDraft) => optionFromNullable(actionDraft[colName]))
+            optionMapSome(draft, (draft) =>
+              optionMapSome(draft.onDelete, (actionDraft) =>
+                optionFromNullable(actionDraft[colName])
+              )
+            )
           )
         ),
         onUpdate: colDraftsToActionTrigger(
           drafts.map((draft) =>
-            optionMapSome(draft.onUpdate, (actionDraft) => optionFromNullable(actionDraft[colName]))
+            optionMapSome(draft, (draft) =>
+              optionMapSome(draft.onUpdate, (actionDraft) =>
+                optionFromNullable(actionDraft[colName])
+              )
+            )
           )
         ),
       },

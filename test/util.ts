@@ -1,12 +1,12 @@
-import { None } from 'trimop';
+import { None, Some } from 'trimop';
 
 import {
+  buildCountDraft,
+  buildCreationTimeDraft,
   BuildDraft,
   DeleteDoc,
   ExecOnRelDocs,
   GetDoc,
-  makeCountDraft,
-  makeCreationTimeDraft,
   makeRefDraft,
   UpdateDoc,
 } from '../src';
@@ -22,17 +22,13 @@ export type ExecOnRelDocsParam = Parameters<ExecOnRelDocs>;
 
 export const testBuildDraft: BuildDraft = ({ context, spec }) => {
   if (spec._type === 'CreationTime') {
-    return makeCreationTimeDraft({ context, spec });
+    return Some(buildCreationTimeDraft({ context, spec }));
   }
   if (spec._type === 'Count') {
-    return makeCountDraft({ context, spec });
+    return Some(buildCountDraft({ context, spec }));
   }
   if (spec._type === 'Ref') {
-    return makeRefDraft({ context, spec });
+    return Some(makeRefDraft({ context, spec }));
   }
-  return {
-    onCreate: None(),
-    onDelete: None(),
-    onUpdate: None(),
-  };
+  return None();
 };
